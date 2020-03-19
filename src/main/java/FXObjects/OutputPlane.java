@@ -7,11 +7,20 @@ import Evaluation.Evaluator;
 import Evaluation.EvaluatorFactory;
 import Exceptions.EvaluationException;
 import Exceptions.RootNotFound;
+import javafx.geometry.Insets;
 import javafx.geometry.Point2D;
+import javafx.scene.Node;
+import javafx.scene.control.Label;
 import javafx.scene.control.TextField;
 import javafx.scene.input.KeyCode;
 import javafx.scene.input.MouseEvent;
+import javafx.scene.layout.Border;
+import javafx.scene.layout.BorderStroke;
+import javafx.scene.layout.BorderStrokeStyle;
+import javafx.scene.layout.BorderWidths;
 import javafx.scene.paint.Color;
+import javafx.scene.shape.Rectangle;
+import javafx.scene.text.Text;
 import javafx.scene.transform.Affine;
 import javafx.scene.transform.Rotate;
 
@@ -24,6 +33,7 @@ public class OutputPlane extends CoordPlane
 	private double t = 0;
 	List<initCond> initials;
 	List<CriticalPoint> criticalPoints;
+	List<Node> needsReset;
 	double inc = .01;
 	private double a, b;
 	private Derivative dx, dy;
@@ -37,6 +47,7 @@ public class OutputPlane extends CoordPlane
 		evalType = EvalType.RungeKutta;
 		initials = new LinkedList<>();
 		criticalPoints = new LinkedList<>();
+		needsReset = new LinkedList<>();
 		draw();
 		tField.setText(Double.toString(t));
 		tField.setOnKeyPressed((e) ->
@@ -135,24 +146,45 @@ public class OutputPlane extends CoordPlane
 
 	private void labelCritical(CriticalPoint p)
 	{
-		c.getGraphicsContext2D().setFill(Color.RED);
-		c.getGraphicsContext2D().fillOval(normToScrX(p.point.getX()), normToScrY(p.point.getY()), 4, 4);
-		c.getGraphicsContext2D().setFill(Color.BLACK);
-		System.out.println(p.type.getStringRep());
+		if(inBounds(p.point))
+		{
+			c.getGraphicsContext2D().setFill(Color.RED);
+			c.getGraphicsContext2D().fillOval(normToScrX(p.point.getX()) - 2.5, normToScrY(p.point.getY()) - 2.5, 5, 5);
+			c.getGraphicsContext2D().setFill(Color.BLACK);
+			Rectangle rect = new Rectangle();
+			Label text = new Label(p.type.getStringRep());
+			text.setPadding(new Insets(2));
+			text.setBorder(new Border(new BorderStroke(Color.BLACK, BorderStrokeStyle.SOLID, null, new BorderWidths(1))));
+			this.getChildren().add(text);
+			text.setLayoutX(normToScrX(p.point.getX()) + 8);
+			text.setLayoutY(normToScrY(p.point.getY()) - 24);
+			if(text.getLayoutY() < 0)
+			{
+				text.setLayoutY(p.point.getY() + 24);
+			}
+			if(text.getLayoutX() + text.getWidth() > getWidth())
+			{
+				System.out.println("out of bounds");
+			}
+			text.setVisible(true);
+			needsReset.add(text);
+		}
 	}
 
 	private void drawGraphs()
 	{
+		for(Node n : needsReset)
+		{
+			n.setVisible(false);
+		}
+		needsReset.clear();
 		for(initCond i : initials)
 		{
 			drawGraph(i);
 		}
-		for(CriticalPoint i : criticalPoints)
+		for(CriticalPoint p : criticalPoints)
 		{
-			c.getGraphicsContext2D().setFill(Color.RED);
-			c.getGraphicsContext2D().fillOval(normToScrX(i.point.getX()) - 2.5, normToScrY(i.point.getY()) - 2.5, 5, 5);
-			c.getGraphicsContext2D().setFill(Color.BLACK);
-			System.out.println(i.type.getStringRep());
+			labelCritical(p);
 		}
 	}
 	private void drawGraph(initCond init)
@@ -204,6 +236,10 @@ public class OutputPlane extends CoordPlane
 	private boolean inBounds(double x, double y)
 	{
 		return x <= xMax && x >= xMin && y <= yMax && y >= yMin;
+	}
+	private boolean inBounds(Point2D p)
+	{
+		return inBounds(p.getX(), p.getY());
 	}
 	private void drawArrow(double x, double y, double dx, double dy)
 	{
