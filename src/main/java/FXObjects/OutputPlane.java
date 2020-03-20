@@ -19,7 +19,6 @@ import javafx.scene.layout.BorderStroke;
 import javafx.scene.layout.BorderStrokeStyle;
 import javafx.scene.layout.BorderWidths;
 import javafx.scene.paint.Color;
-import javafx.scene.shape.Rectangle;
 import javafx.scene.text.Text;
 import javafx.scene.transform.Affine;
 import javafx.scene.transform.Rotate;
@@ -151,20 +150,22 @@ public class OutputPlane extends CoordPlane
 			c.getGraphicsContext2D().setFill(Color.RED);
 			c.getGraphicsContext2D().fillOval(normToScrX(p.point.getX()) - 2.5, normToScrY(p.point.getY()) - 2.5, 5, 5);
 			c.getGraphicsContext2D().setFill(Color.BLACK);
-			Rectangle rect = new Rectangle();
+
 			Label text = new Label(p.type.getStringRep());
 			text.setPadding(new Insets(2));
 			text.setBorder(new Border(new BorderStroke(Color.BLACK, BorderStrokeStyle.SOLID, null, new BorderWidths(1))));
 			this.getChildren().add(text);
 			text.setLayoutX(normToScrX(p.point.getX()) + 8);
 			text.setLayoutY(normToScrY(p.point.getY()) - 24);
+			final Text t = new Text(text.getText());
+
 			if(text.getLayoutY() < 0)
 			{
-				text.setLayoutY(p.point.getY() + 24);
+				text.setLayoutY(normToScrY(p.point.getY()) + 4);
 			}
-			if(text.getLayoutX() + text.getWidth() > getWidth())
+			if(text.getLayoutX() + t.getLayoutBounds().getWidth() + 4 > this.getWidth())
 			{
-				System.out.println("out of bounds");
+				text.setLayoutX(normToScrX(p.point.getX()) - 12 - t.getLayoutBounds().getWidth());
 			}
 			text.setVisible(true);
 			needsReset.add(text);

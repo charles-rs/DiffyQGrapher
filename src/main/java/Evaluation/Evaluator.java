@@ -19,10 +19,13 @@ public abstract class Evaluator
 	{
 		this.dy = dy;
 		this.dx = dx;
-		d2ydx = dy.differentiate('x');
-		d2ydy = dy.differentiate('y');
-		d2xdx = dx.differentiate('x');
-		d2xdy = dx.differentiate('y');
+		try
+		{
+			d2ydx = dy.differentiate('x');
+			d2ydy = dy.differentiate('y');
+			d2xdx = dx.differentiate('x');
+			d2xdy = dx.differentiate('y');
+		} catch (NullPointerException ignored){}
 	}
 	abstract public Point2D evaluate(double x, double y, double a, double b, double t, double inc);
 
