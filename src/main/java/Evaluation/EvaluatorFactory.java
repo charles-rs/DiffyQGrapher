@@ -14,6 +14,6 @@ public class EvaluatorFactory
 	}
 	public static Evaluator getRungeKuttaEval(Derivative dx, Derivative dy)
 	{
-		return new MidEulerEvaluator(dx, dy);
+		return new RungeKuttaEvaluator(dx, dy);
 	}
 }

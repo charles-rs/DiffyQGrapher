@@ -15,10 +15,12 @@ public abstract class Evaluator
 	protected Derivative dy, dx;
 	private Node d2ydx, d2ydy, d2xdx, d2xdy;
 	private final double TOLERANCE = .0000001;
+	protected double t, x, y, a, b, inc;
 	protected Evaluator(Derivative dx, Derivative dy)
 	{
 		this.dy = dy;
 		this.dx = dx;
+		t = 0.;
 		try
 		{
 			d2ydx = dy.differentiate('x');
@@ -28,7 +30,20 @@ public abstract class Evaluator
 		} catch (NullPointerException ignored){}
 	}
 	abstract public Point2D evaluate(double x, double y, double a, double b, double t, double inc);
-
+	abstract public Point2D next();
+	public void initialise(double x, double y, double t, double a, double b, double inc)
+	{
+		this.t = t;
+		this.x = x;
+		this.y = y;
+		this.a = a;
+		this.b = b;
+		this.inc = inc;
+	}
+	public double getT()
+	{
+		return t;
+	}
 	public CriticalPoint findCritical(Point2D start, double a, double b, double t) throws RootNotFound
 	{
 		Point2D first = newtonNext(start, a, b, t);
@@ -66,8 +81,7 @@ public abstract class Evaluator
 					else
 						type = CritPointTypes.CENTER;
 				}
-				if(type == null) throw new RootNotFound();
-				else return new CriticalPoint(first, type);
+				return new CriticalPoint(first, type);
 			} catch (EvaluationException e)
 			{
 				throw new RootNotFound();

@@ -99,6 +99,7 @@ public class Main extends Application
 		Button update = new Button("Update Graph");
 		update.setOnAction(actionEvent ->
 		{
+			outPlane.clearObjects();
 			outPlane.draw();
 		});
 		buttonBox.getChildren().addAll(clearOut, resetZoom, update);

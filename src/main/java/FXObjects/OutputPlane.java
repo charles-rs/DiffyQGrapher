@@ -5,7 +5,6 @@ import Evaluation.CriticalPoint;
 import Evaluation.EvalType;
 import Evaluation.Evaluator;
 import Evaluation.EvaluatorFactory;
-import Exceptions.EvaluationException;
 import Exceptions.RootNotFound;
 import javafx.geometry.Insets;
 import javafx.geometry.Point2D;
@@ -30,9 +29,9 @@ import java.util.List;
 public class OutputPlane extends CoordPlane
 {
 	private double t = 0;
-	List<initCond> initials;
-	List<CriticalPoint> criticalPoints;
-	List<Node> needsReset;
+	private List<initCond> initials;
+	private List<CriticalPoint> criticalPoints;
+	private List<Node> needsReset;
 	double inc = .01;
 	private double a, b;
 	private Derivative dx, dy;
@@ -98,6 +97,12 @@ public class OutputPlane extends CoordPlane
 
 	}
 
+	public void clearObjects()
+	{
+		criticalPoints.clear();
+		for(Node n : needsReset) n.setVisible(false);
+		needsReset.clear();
+	}
 	public void updateA(double a)
 	{
 		this.a = a;
@@ -209,8 +214,28 @@ public class OutputPlane extends CoordPlane
 		}
 		Point2D initialDir = eval.evaluate(x, y, a, b, t, inc);
 		drawArrow(x, y, initialDir.getX(), initialDir.getY());
-		Point2D nextDir;
-		for(double ti = t; ti < 100 + t; ti+= inc)
+		Point2D prev;
+		Point2D next;
+		eval.initialise(x, y, t, a, b, inc);
+		prev = new Point2D(x, y);
+
+		while(eval.getT() < 100 + t)
+		{
+			next = eval.next();
+			if(inBounds(prev) || inBounds(next))
+				gc.strokeLine(normToScrX(prev.getX()), normToScrY(prev.getY()), normToScrX(next.getX()), normToScrY(next.getY()));
+			prev = next;
+		}
+		eval.initialise(x, y, t, a, b, -inc);
+		prev = new Point2D(x, y);
+		while(eval.getT() > t - 100)
+		{
+			next = eval.next();
+			if(inBounds(prev) || inBounds(next))
+				gc.strokeLine(normToScrX(prev.getX()), normToScrY(prev.getY()), normToScrX(next.getX()), normToScrY(next.getY()));
+			prev = next;
+		}
+		/*for(double ti = t; ti < 100 + t; ti+= inc)
 		{
 			//if(x > xMax || x < xMin || y > yMax || y < yMin) break;
 			nextDir = eval.evaluate(x, y, a, b, t, inc);
@@ -232,7 +257,7 @@ public class OutputPlane extends CoordPlane
 			gc.strokeLine(normToScrX(x), normToScrY(y), normToScrX(xTemp), normToScrY(yTemp));
 			x = xTemp;
 			y = yTemp;
-		}
+		}*/
 	}
 	private boolean inBounds(double x, double y)
 	{
@@ -257,40 +282,6 @@ public class OutputPlane extends CoordPlane
 	}
 
 
-	private double dx(double x, double y, double t)
-	{
-		try
-		{
-			return dx.eval(x, y, a, b, t);
-		} catch (EvaluationException e)
-		{
-			System.err.println(e.getMessage());
-			return Double.MAX_VALUE;
-		} catch (NullPointerException e)
-		{
-			return 0;
-		}
-		//return Math.sin(x)*(-.1*Math.cos(x) - Math.cos(y));
-		//return -x * y;
-		//return 2 * Math.cos(.01*t) + Math.sin(.02 * t) * Math.cos(.60 * t);
-	}
-	private double dy(double x, double y, double t)
-	{
-		try
-		{
-			return dy.eval(x, y, a, b, t);
-		} catch (EvaluationException e)
-		{
-			System.err.println(e.getMessage());
-			return Double.MAX_VALUE;
-		} catch (NullPointerException e)
-		{
-			return 0;
-		}
-		//return Math.sin(y)*(Math.cos(x) - .1*Math.cos(y));
-		//return -y + x * x - y * y;
-		//return Math.sin(.02 * t) + Math.sin(.60 * t);
-	}
 	public void clear()
 	{
 		initials.clear();

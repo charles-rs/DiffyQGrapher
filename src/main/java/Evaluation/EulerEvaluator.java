@@ -27,4 +27,25 @@ public class EulerEvaluator extends Evaluator
 			return new Point2D(0, 0);
 		}
 	}
+
+	@Override
+	public Point2D next()
+	{
+		try
+		{
+			y +=  inc * dy.eval(x, y, a, b, t);
+			x += inc * dx.eval(x, y, a, b, t);
+			t += inc;
+			return new Point2D(x, y);
+
+		} catch (EvaluationException e)
+		{
+			t = Double.MAX_VALUE;
+			return new Point2D(Double.MAX_VALUE, Double.MAX_VALUE);
+		} catch (NullPointerException n)
+		{
+			t = Double.MAX_VALUE;
+			return new Point2D(0, 0);
+		}
+	}
 }
