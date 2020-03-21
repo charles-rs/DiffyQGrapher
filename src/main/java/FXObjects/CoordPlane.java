@@ -190,6 +190,11 @@ public class CoordPlane extends Pane
 		gc.fillText(strxMax, c.getWidth() - 7 * strxMax.length(), c.getHeight()/2 - 4);
 	}
 
+	protected boolean inBounds(double x, double y)
+	{
+		return x <= xMax && x >= xMin && y <= yMax && y >= yMin;
+	}
+
 	public void handleMouseClick(MouseEvent e)
 	{
 		throw new UnsupportedOperationException();

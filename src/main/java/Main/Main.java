@@ -4,6 +4,7 @@ import AST.Derivative;
 import Evaluation.EvalType;
 import Exceptions.SyntaxError;
 import FXObjects.ClickModeType;
+import FXObjects.DerivativeGraph;
 import FXObjects.InputPlane;
 import FXObjects.OutputPlane;
 import Parser.Tokenizer;
@@ -38,6 +39,7 @@ public class Main extends Application
 		Menu file = new Menu("File");
 		Menu options = new Menu("Options");
 		Menu help = new Menu("Help");
+		Menu view = new Menu("View");
 
 		//MENU ITEMS GO HERE
 		/////////////////////////////////////////////////////////////
@@ -60,8 +62,21 @@ public class Main extends Application
 		MenuItem drawPath = new MenuItem(strDrawGraph + " x");
 		MenuItem findCritical = new MenuItem(strFindCritical);
 		clickOpt.getItems().addAll(drawPath, findCritical);
+
+		Menu menDyDt = new Menu("dy/dt vs");
+		Menu menDxDt = new Menu("dx/dt vs");
+		MenuItem itmDxt, itmDyt, itmDxx, itmDyx, itmDxy, itmDyy;
+		itmDxt = new MenuItem("t");
+		itmDxx = new MenuItem("x");
+		itmDxy = new MenuItem("y");
+		itmDyt = new MenuItem("t");
+		itmDyx = new MenuItem("x");
+		itmDyy = new MenuItem("y");
+		menDxDt.getItems().addAll(itmDxt, itmDxx, itmDxy);
+		menDyDt.getItems().addAll(itmDyt, itmDyx, itmDyy);
+		view.getItems().addAll(menDxDt, menDyDt);
 		////////////////////////////////////////////////////////
-		bar.getMenus().addAll(file, options, help);
+		bar.getMenus().addAll(file, options, help, view);
 
 		mainH = new HBox();
 		root.getChildren().addAll(bar, anchor);
@@ -179,8 +194,6 @@ public class Main extends Application
 				}
 			}
 		});
-
-
 		euler.setOnAction((e) ->
 		{
 			euler.setText(strEuler + " x");
@@ -216,7 +229,30 @@ public class Main extends Application
 			drawPath.setText(strDrawGraph);
 			outPlane.clickMode = ClickModeType.FINDCRITICAL;
 		});
-
+		itmDxt.setOnAction((e) ->
+		{
+			openSecondary(outPlane.getDx(), 't', inPlane.getA(), inPlane.getB(), 0, 0, 0);
+		});
+		itmDxx.setOnAction((e) ->
+		{
+			openSecondary(outPlane.getDx(), 'x', inPlane.getA(), inPlane.getB(), 0, 0, 0);
+		});
+		itmDxy.setOnAction((e) ->
+		{
+			openSecondary(outPlane.getDx(), 'y', inPlane.getA(), inPlane.getB(), 0, 0, 0);
+		});
+		itmDyt.setOnAction((e) ->
+		{
+			openSecondary(outPlane.getDy(), 't', inPlane.getA(), inPlane.getB(), 0, 0, 0);
+		});
+		itmDyx.setOnAction((e) ->
+		{
+			openSecondary(outPlane.getDy(), 'x', inPlane.getA(), inPlane.getB(), 0, 0, 0);
+		});
+		itmDyy.setOnAction((e) ->
+		{
+			openSecondary(outPlane.getDy(), 'y', inPlane.getA(), inPlane.getB(), 0, 0, 0);
+		});
 
 
 
@@ -232,5 +268,36 @@ public class Main extends Application
 	public static void main(String[] args)
 	{
 		launch(args);
+	}
+
+	private void openSecondary(Derivative n, char var, double a, double b, double x, double y, double t)
+	{
+		Stage newWindow = new Stage();
+		newWindow.setTitle("d" + n.getType() + "/dt vs " + var);
+		TextField xInput = new TextField();
+		TextField yInput = new TextField();
+		TextField tInput = new TextField();
+		xInput.setText(String.valueOf(x));
+		yInput.setText(String.valueOf(y));
+		tInput.setText(String.valueOf(t));
+		Label xLabel = new Label("Enter x value:");
+		Label yLabel = new Label("Enter y value:");
+		Label tLabel = new Label("Enter t value:");
+		HBox mainH = new HBox();
+		VBox inputBox = new VBox();
+		DerivativeGraph graph = new DerivativeGraph(300, n, var, a, b, x, y, t, xInput, yInput, tInput);
+		HBox xBox = new HBox();
+		HBox yBox = new HBox();
+		HBox tBox = new HBox();
+		xBox.getChildren().addAll(xLabel, xInput);
+		yBox.getChildren().addAll(yLabel, yInput);
+		tBox.getChildren().addAll(tLabel, tInput);
+		inputBox.getChildren().addAll(xBox, yBox, tBox);
+		mainH.getChildren().addAll(inputBox, graph);
+		Scene newScene = new Scene(mainH);
+		newWindow.setScene(newScene);
+		newWindow.show();
+		graph.draw();
+
 	}
 }

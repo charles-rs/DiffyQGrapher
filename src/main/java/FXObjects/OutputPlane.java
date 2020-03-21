@@ -91,11 +91,17 @@ public class OutputPlane extends CoordPlane
 				e.consume();
 			}
 		});
-
-
-
-
 	}
+
+	public Derivative getDx()
+	{
+		return (Derivative) dx.clone();
+	}
+	public Derivative getDy()
+	{
+		return (Derivative) dy.clone();
+	}
+
 
 	public void clearObjects()
 	{
@@ -259,10 +265,7 @@ public class OutputPlane extends CoordPlane
 			y = yTemp;
 		}*/
 	}
-	private boolean inBounds(double x, double y)
-	{
-		return x <= xMax && x >= xMin && y <= yMax && y >= yMin;
-	}
+
 	private boolean inBounds(Point2D p)
 	{
 		return inBounds(p.getX(), p.getY());
