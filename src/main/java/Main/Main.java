@@ -12,6 +12,7 @@ import javafx.application.Application;
 import javafx.geometry.Pos;
 import javafx.scene.Scene;
 import javafx.scene.control.*;
+import javafx.scene.input.KeyCode;
 import javafx.scene.layout.*;
 import javafx.stage.Stage;
 
@@ -40,6 +41,7 @@ public class Main extends Application
 		Menu options = new Menu("Options");
 		Menu help = new Menu("Help");
 		Menu view = new Menu("View");
+		Menu draw = new Menu("Draw");
 
 		//MENU ITEMS GO HERE
 		/////////////////////////////////////////////////////////////
@@ -75,8 +77,11 @@ public class Main extends Application
 		menDxDt.getItems().addAll(itmDxt, itmDxx, itmDxy);
 		menDyDt.getItems().addAll(itmDyt, itmDyx, itmDyy);
 		view.getItems().addAll(menDxDt, menDyDt);
+
+		MenuItem separatrices = new MenuItem("Separatrices");
+		draw.getItems().addAll(separatrices);
 		////////////////////////////////////////////////////////
-		bar.getMenus().addAll(file, options, help, view);
+		bar.getMenus().addAll(file, options, view, draw, help);
 
 		mainH = new HBox();
 		root.getChildren().addAll(bar, anchor);
@@ -229,6 +234,25 @@ public class Main extends Application
 			drawPath.setText(strDrawGraph);
 			outPlane.clickMode = ClickModeType.FINDCRITICAL;
 		});
+		root.setOnKeyPressed((k) ->
+		{
+			if(k.getCode() == KeyCode.T && k.isControlDown())
+			{
+				switch (outPlane.clickMode)
+				{
+					case DRAWPATH:
+						findCritical.setText(strFindCritical + " x");
+						drawPath.setText(strDrawGraph);
+						outPlane.clickMode = ClickModeType.FINDCRITICAL;
+						break;
+					case FINDCRITICAL:
+						drawPath.setText(strDrawGraph + " x");
+						findCritical.setText(strFindCritical);
+						outPlane.clickMode = ClickModeType.DRAWPATH;
+						break;
+				}
+			}
+		});
 		itmDxt.setOnAction((e) ->
 		{
 			openSecondary(outPlane.getDx(), 't', inPlane.getA(), inPlane.getB(), 0, 0, 0);
@@ -253,6 +277,10 @@ public class Main extends Application
 		{
 			openSecondary(outPlane.getDy(), 'y', inPlane.getA(), inPlane.getB(), 0, 0, 0);
 		});
+		separatrices.setOnAction((e) ->
+		{
+			outPlane.drawSeparatrices();
+		});
 
 
 
@@ -269,6 +297,7 @@ public class Main extends Application
 	{
 		launch(args);
 	}
+
 
 	private void openSecondary(Derivative n, char var, double a, double b, double x, double y, double t)
 	{

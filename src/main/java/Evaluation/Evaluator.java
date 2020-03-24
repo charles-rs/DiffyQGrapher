@@ -14,7 +14,7 @@ public abstract class Evaluator
 {
 	protected Derivative dy, dx;
 	private Node d2ydx, d2ydy, d2xdx, d2xdy;
-	private final double TOLERANCE = .0000001;
+	private final double TOLERANCE = .001;
 	protected double t, x, y, a, b, inc;
 	protected Evaluator(Derivative dx, Derivative dy)
 	{
@@ -48,7 +48,7 @@ public abstract class Evaluator
 	{
 		Point2D first = newtonNext(start, a, b, t);
 		Point2D old = start;
-		for(int i = 0; i < 8; i++)
+		for(int i = 0; i < 10; i++)
 		{
 			old = first;
 			first = newtonNext(first, a, b, t);
@@ -63,25 +63,26 @@ public abstract class Evaluator
 				deriv.setRow(1, 0, d2ydx.eval(first.getX(), first.getY(), a, b, t), d2ydy.eval(first.getX(), first.getY(), a, b, t));
 				@SuppressWarnings("rawtypes")
 				SimpleEVD evd = deriv.eig();
-				//if(evd.getEigenvalue(0).isReal() && evd.getEigenvalue(1).isReal())
-				if(evd.getEigenvalue(0).getImaginary() < TOLERANCE && evd.getEigenvalue(1).getImaginary() < TOLERANCE)
+
+				if(Math.abs(evd.getEigenvalue(0).getImaginary()) < TOLERANCE &&
+						Math.abs(evd.getEigenvalue(1).getImaginary()) < TOLERANCE)
 				{
-					if(evd.getEigenvalue(0).getReal() > 0 && evd.getEigenvalue(1).getReal() > 0)
+					if(evd.getEigenvalue(0).getReal() > TOLERANCE && evd.getEigenvalue(1).getReal() > TOLERANCE)
 						type = CritPointTypes.NODESOURCE;
-					else if(evd.getEigenvalue(0).getReal() < 0 && evd.getEigenvalue(1).getReal() < 0)
+					else if(evd.getEigenvalue(0).getReal() < - TOLERANCE && evd.getEigenvalue(1).getReal() < - TOLERANCE)
 						type = CritPointTypes.NODESINK;
 					else type = CritPointTypes.SADDLE;
 				}
 				else
 				{
-					if(evd.getEigenvalue(0).getReal() > 0)
+					if(evd.getEigenvalue(0).getReal() > TOLERANCE)
 						type = CritPointTypes.SPIRALSOURCE;
-					else if(evd.getEigenvalue(0).getReal() < 0)
+					else if(evd.getEigenvalue(0).getReal() < - TOLERANCE)
 						type = CritPointTypes.SPIRALSINK;
 					else
 						type = CritPointTypes.CENTER;
 				}
-				return new CriticalPoint(first, type);
+				return new CriticalPoint(first, type, evd);
 			} catch (EvaluationException e)
 			{
 				throw new RootNotFound();

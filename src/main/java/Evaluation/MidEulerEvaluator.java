@@ -41,11 +41,11 @@ public class MidEulerEvaluator extends Evaluator
 			return new Point2D(x, y);
 		} catch (EvaluationException e)
 		{
-			t = Double.MAX_VALUE;
+			t = Double.MAX_VALUE * Math.signum(inc);
 			return new Point2D(Double.MAX_VALUE, Double.MAX_VALUE);
 		} catch (NullPointerException e)
 		{
-			t = Double.MAX_VALUE;
+			t = Double.MAX_VALUE * Math.signum(inc);
 			return new Point2D(0, 0);
 		}
 	}

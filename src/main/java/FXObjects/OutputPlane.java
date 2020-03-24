@@ -1,10 +1,7 @@
 package FXObjects;
 
 import AST.Derivative;
-import Evaluation.CriticalPoint;
-import Evaluation.EvalType;
-import Evaluation.Evaluator;
-import Evaluation.EvaluatorFactory;
+import Evaluation.*;
 import Exceptions.RootNotFound;
 import javafx.geometry.Insets;
 import javafx.geometry.Point2D;
@@ -37,6 +34,7 @@ public class OutputPlane extends CoordPlane
 	private Derivative dx, dy;
 	public EvalType evalType;
 	public ClickModeType clickMode = ClickModeType.DRAWPATH;
+	private boolean drawSep = false;
 
 
 	public OutputPlane(double side, TextField tField)
@@ -112,11 +110,13 @@ public class OutputPlane extends CoordPlane
 	public void updateA(double a)
 	{
 		this.a = a;
+		draw();
 	}
 
 	public void updateB(double b)
 	{
 		this.b = b;
+		draw();
 	}
 	public void updateDX(Derivative temp)
 	{
@@ -136,7 +136,7 @@ public class OutputPlane extends CoordPlane
 				double y = scrToNormY(e.getY());
 				initCond temp = new initCond(x, y, t);
 				initials.add(temp);
-				drawGraph(temp);
+				drawGraph(temp, true);
 				break;
 			case FINDCRITICAL:
 				Point2D start = new Point2D(scrToNormX(e.getX()), scrToNormY(e.getY()));
@@ -154,17 +154,34 @@ public class OutputPlane extends CoordPlane
 
 	}
 
+	private CriticalPoint critical(Point2D start) throws RootNotFound
+	{
+		return EvaluatorFactory.getEulerEval(dx, dy).findCritical(start, a, b, t);
+	}
+	private void updateCritical()
+	{
+		List<CriticalPoint> temp = new LinkedList<>();
+		for (CriticalPoint c : criticalPoints)
+		{
+			try
+			{
+				temp.add(critical(c.point));
+			} catch (RootNotFound ignored) {}
+		}
+		criticalPoints = temp;
+	}
+
 	private void labelCritical(CriticalPoint p)
 	{
 		if(inBounds(p.point))
 		{
 			c.getGraphicsContext2D().setFill(Color.RED);
 			c.getGraphicsContext2D().fillOval(normToScrX(p.point.getX()) - 2.5, normToScrY(p.point.getY()) - 2.5, 5, 5);
-			c.getGraphicsContext2D().setFill(Color.BLACK);
+
 
 			Label text = new Label(p.type.getStringRep());
 			text.setPadding(new Insets(2));
-			text.setBorder(new Border(new BorderStroke(Color.BLACK, BorderStrokeStyle.SOLID, null, new BorderWidths(1))));
+			text.setBorder(new Border(new BorderStroke(Color.RED, BorderStrokeStyle.SOLID, null, new BorderWidths(1))));
 			this.getChildren().add(text);
 			text.setLayoutX(normToScrX(p.point.getX()) + 8);
 			text.setLayoutY(normToScrY(p.point.getY()) - 24);
@@ -178,8 +195,11 @@ public class OutputPlane extends CoordPlane
 			{
 				text.setLayoutX(normToScrX(p.point.getX()) - 12 - t.getLayoutBounds().getWidth());
 			}
+			text.setTextFill(Color.RED);
+
 			text.setVisible(true);
 			needsReset.add(text);
+			c.getGraphicsContext2D().setFill(Color.BLACK);
 		}
 	}
 
@@ -192,16 +212,16 @@ public class OutputPlane extends CoordPlane
 		needsReset.clear();
 		for(initCond i : initials)
 		{
-			drawGraph(i);
+			drawGraph(i, true);
 		}
 		for(CriticalPoint p : criticalPoints)
 		{
 			labelCritical(p);
 		}
 	}
-	private void drawGraph(initCond init)
+	private void drawGraph(initCond init, boolean arrow)
 	{
-		double xTemp, yTemp, x, y;
+		double x, y;
 		x = init.x;
 		y = init.y;
 		t = init.t;
@@ -219,7 +239,7 @@ public class OutputPlane extends CoordPlane
 				eval = EvaluatorFactory.getRungeKuttaEval(dx, dy);
 		}
 		Point2D initialDir = eval.evaluate(x, y, a, b, t, inc);
-		drawArrow(x, y, initialDir.getX(), initialDir.getY());
+		if(arrow) drawArrow(x, y, initialDir.getX(), initialDir.getY());
 		Point2D prev;
 		Point2D next;
 		eval.initialise(x, y, t, a, b, inc);
@@ -241,29 +261,6 @@ public class OutputPlane extends CoordPlane
 				gc.strokeLine(normToScrX(prev.getX()), normToScrY(prev.getY()), normToScrX(next.getX()), normToScrY(next.getY()));
 			prev = next;
 		}
-		/*for(double ti = t; ti < 100 + t; ti+= inc)
-		{
-			//if(x > xMax || x < xMin || y > yMax || y < yMin) break;
-			nextDir = eval.evaluate(x, y, a, b, t, inc);
-			xTemp = x + inc * nextDir.getX();
-			yTemp = y + inc * nextDir.getY();
-			if(inBounds(x, y) || inBounds(xTemp, yTemp))
-				gc.strokeLine(normToScrX(x), normToScrY(y), normToScrX(xTemp), normToScrY(yTemp));
-			x = xTemp;
-			y = yTemp;
-		}
-		x = init.x;
-		y = init.y;
-		for(double ti = t; ti > -100 + t; ti-= inc)
-		{
-			//if(x > xMax || x < xMin || y > yMax || y < yMin) break;
-			nextDir = eval.evaluate(x, y, a, b, t, inc);
-			xTemp = x - inc * nextDir.getX();
-			yTemp = y - inc * nextDir.getY();
-			gc.strokeLine(normToScrX(x), normToScrY(y), normToScrX(xTemp), normToScrY(yTemp));
-			x = xTemp;
-			y = yTemp;
-		}*/
 	}
 
 	private boolean inBounds(Point2D p)
@@ -284,6 +281,11 @@ public class OutputPlane extends CoordPlane
 
 	}
 
+	public void drawSeparatrices()
+	{
+		drawSep = true;
+		draw();
+	}
 
 	public void clear()
 	{
@@ -295,7 +297,35 @@ public class OutputPlane extends CoordPlane
 	public void draw()
 	{
 		super.draw();
+		updateCritical();
 		drawGraphs();
+		if(drawSep)
+		{
+			double tol = .00000000001;
+			gc.setStroke(Color.GREEN);
+			for (CriticalPoint c : criticalPoints)
+			{
+				if(c.type == CritPointTypes.SADDLE)
+				{
+					initCond point1 = new initCond(c.point.getX() + tol * c.matrix.getEigenVector(0).get(0),
+							c.point.getY() + tol * c.matrix.getEigenVector(0).get(1), t);
+
+					initCond point2 = new initCond(c.point.getX() + tol * c.matrix.getEigenVector(1).get(0),
+							c.point.getY() + tol * c.matrix.getEigenVector(1).get(1), t);
+					drawGraph(point1, false);
+					drawGraph(point2, false);
+					initCond point3 = new initCond(c.point.getX() - tol * c.matrix.getEigenVector(0).get(0),
+							c.point.getY() - tol * c.matrix.getEigenVector(0).get(1), t);
+					initCond point4 = new initCond(c.point.getX() - tol * c.matrix.getEigenVector(1).get(0),
+							c.point.getY() - tol * c.matrix.getEigenVector(1).get(1), t);
+					drawGraph(point3, false);
+					drawGraph(point4, false);
+				}
+			}
+			gc.setStroke(Color.BLACK);
+
+		}
+
 	}
 
 	public void resetZoom()
@@ -307,7 +337,7 @@ public class OutputPlane extends CoordPlane
 		draw();
 	}
 
-	private class initCond
+	private static class initCond
 	{
 		public double x, y, t;
 		public initCond(double x, double y, double t)

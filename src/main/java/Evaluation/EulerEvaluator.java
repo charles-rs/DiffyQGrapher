@@ -40,11 +40,11 @@ public class EulerEvaluator extends Evaluator
 
 		} catch (EvaluationException e)
 		{
-			t = Double.MAX_VALUE;
+			t = Double.MAX_VALUE * Math.signum(inc);
 			return new Point2D(Double.MAX_VALUE, Double.MAX_VALUE);
 		} catch (NullPointerException n)
 		{
-			t = Double.MAX_VALUE;
+			t = Double.MAX_VALUE * Math.signum(inc);
 			return new Point2D(0, 0);
 		}
 	}
