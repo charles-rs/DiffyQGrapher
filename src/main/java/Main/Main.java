@@ -58,12 +58,14 @@ public class Main extends Application
 
 		Menu clickOpt = new Menu("Change Mode");
 		options.getItems().addAll(clickOpt);
-		String strDrawGraph, strFindCritical;
+		String strDrawGraph, strFindCritical, strDrawIso;
 		strDrawGraph = "Draw Path";
 		strFindCritical = "Find Critical Points";
+		strDrawIso = "Draw Isocline";
 		MenuItem drawPath = new MenuItem(strDrawGraph + " x");
 		MenuItem findCritical = new MenuItem(strFindCritical);
-		clickOpt.getItems().addAll(drawPath, findCritical);
+		MenuItem drawIso = new MenuItem(strDrawIso);
+		clickOpt.getItems().addAll(drawPath, findCritical, drawIso);
 
 		Menu menDyDt = new Menu("dy/dt vs");
 		Menu menDxDt = new Menu("dx/dt vs");
@@ -226,13 +228,22 @@ public class Main extends Application
 		{
 			drawPath.setText(strDrawGraph + " x");
 			findCritical.setText(strFindCritical);
+			drawIso.setText(strDrawIso);
 			outPlane.clickMode = ClickModeType.DRAWPATH;
 		});
 		findCritical.setOnAction((e) ->
 		{
 			findCritical.setText(strFindCritical + " x");
 			drawPath.setText(strDrawGraph);
+			drawIso.setText(strDrawIso);
 			outPlane.clickMode = ClickModeType.FINDCRITICAL;
+		});
+		drawIso.setOnAction((e) ->
+		{
+			drawIso.setText(strDrawIso + " x");
+			drawPath.setText(strDrawGraph);
+			findCritical.setText(strFindCritical);
+			outPlane.clickMode = ClickModeType.DRAWISO;
 		});
 		root.setOnKeyPressed((k) ->
 		{

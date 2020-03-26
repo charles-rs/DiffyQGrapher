@@ -54,11 +54,11 @@ public class Function extends Node
 			case TAN:
 				return Math.tan(val);
 			case SEC:
-				return 1/Math.cos(val);
+				return 1/ Math.cos(val);
 			case CSC:
-				return 1/Math.sin(val);
+				return 1/ Math.sin(val);
 			case COT:
-				return 1/Math.tan(val);
+				return 1/ Math.tan(val);
 			case ASIN:
 				return Math.asin(val);
 			case ACOS:
@@ -78,11 +78,11 @@ public class Function extends Node
 			case TANH:
 				return Math.tanh(val);
 			case SECH:
-				return 1/Math.cosh(val);
+				return 1/ Math.cosh(val);
 			case CSCH:
-				return 1/Math.sinh(val);
+				return 1/ Math.sinh(val);
 			case COTH:
-				return 1/Math.tanh(val);
+				return 1/ Math.tanh(val);
 			case ASINH:
 				return asinh(val);
 			case ACOSH:

@@ -46,21 +46,14 @@ public abstract class Evaluator
 	}
 	public CriticalPoint findCritical(Point2D start, double a, double b, double t) throws RootNotFound
 	{
-		Point2D first = newtonNext(start, a, b, t);
-		Point2D old = start;
-		for(int i = 0; i < 10; i++)
-		{
-			old = first;
-			first = newtonNext(first, a, b, t);
-		}
-		if(old.distance(first) < .00001)
+		Point2D sol = NewtonEvaluator.solve(10, start, a, b, t,dx, dy, 'x', 'y');
 		{
 			CritPointTypes type = null;
 			try
 			{
 				SimpleMatrix deriv = new SimpleMatrix(2, 2);
-				deriv.setRow(0, 0, d2xdx.eval(first.getX(), first.getY(), a, b, t), d2xdy.eval(first.getX(), first.getY(), a, b, t));
-				deriv.setRow(1, 0, d2ydx.eval(first.getX(), first.getY(), a, b, t), d2ydy.eval(first.getX(), first.getY(), a, b, t));
+				deriv.setRow(0, 0, d2xdx.eval(sol.getX(), sol.getY(), a, b, t), d2xdy.eval(sol.getX(), sol.getY(), a, b, t));
+				deriv.setRow(1, 0, d2ydx.eval(sol.getX(), sol.getY(), a, b, t), d2ydy.eval(sol.getX(), sol.getY(), a, b, t));
 				@SuppressWarnings("rawtypes")
 				SimpleEVD evd = deriv.eig();
 
@@ -82,50 +75,12 @@ public abstract class Evaluator
 					else
 						type = CritPointTypes.CENTER;
 				}
-				return new CriticalPoint(first, type, evd);
+				return new CriticalPoint(sol, type, evd);
 			} catch (EvaluationException e)
 			{
 				throw new RootNotFound();
 			}
 		}
-		else throw new RootNotFound();
-	}
-
-	private Point2D newtonNext(Point2D start, double a, double b, double t) throws RootNotFound
-	{
-
-		try
-		{
-			SimpleMatrix deriv = new SimpleMatrix(2, 2);
-			SimpleMatrix init = new SimpleMatrix(2, 1);
-			SimpleMatrix fx = new SimpleMatrix(2, 1);
-			SimpleMatrix derivInv;
-			fx.set(0, 0, dx.eval(start.getX(), start.getY(), a, b, t));
-			fx.set(1, 0, dy.eval(start.getX(), start.getY(), a, b, t));
-
-			init.set(0, 0, start.getX());
-			init.set(1, 0, start.getY());
-
-			deriv.set(0, 0, d2xdx.eval(start.getX(), start.getY(), a, b, t));
-			deriv.set(0, 1, d2xdy.eval(start.getX(), start.getY(), a, b, t));
-			deriv.set(1, 0, d2ydx.eval(start.getX(), start.getY(), a, b, t));
-			deriv.set(1, 1, d2ydy.eval(start.getX(), start.getY(), a, b, t));
-
-			try
-			{
-				derivInv = deriv.invert();
-			} catch (SingularMatrixException s)
-			{
-				throw new RootNotFound();
-			}
-			SimpleMatrix result = init.minus(derivInv.mult(fx));
-			return new Point2D(result.get(0, 0), result.get(1, 0));
-		} catch (EvaluationException e)
-		{
-			throw new RootNotFound();
-		}
-
-
 	}
 
 }
