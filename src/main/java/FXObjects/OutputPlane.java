@@ -220,6 +220,7 @@ public class OutputPlane extends CoordPlane
 
 	private void drawGraphs()
 	{
+		gc.setStroke(solutionColor);
 		for(Node n : needsReset)
 		{
 			n.setVisible(false);
@@ -233,10 +234,10 @@ public class OutputPlane extends CoordPlane
 		{
 			labelCritical(p);
 		}
+		gc.setStroke(Color.BLACK);
 	}
 	private void drawGraph(initCond init, boolean arrow)
 	{
-		gc.setStroke(solutionColor);
 		double x, y;
 		x = init.x;
 		y = init.y;
@@ -277,7 +278,6 @@ public class OutputPlane extends CoordPlane
 				gc.strokeLine(normToScrX(prev.getX()), normToScrY(prev.getY()), normToScrX(next.getX()), normToScrY(next.getY()));
 			prev = next;
 		}
-		gc.setStroke(Color.BLACK);
 	}
 	private void drawIsoclines()
 	{
@@ -291,52 +291,83 @@ public class OutputPlane extends CoordPlane
 		gc.setStroke(isoclineColor);
 		try
 		{
-			Point2D first, second;
-			first = new Point2D(init.x, init.y);
-			double inc = (xMax - xMin)/c.getWidth();
+			double inc = .5 * (xMax - xMin)/c.getWidth();
+			//System.out.println(inc);
 			double val = dy.eval(init.x, init.y, a, b, t) / dx.eval(init.x, init.y, a, b, t);
 			AST.Node slope = Maths.minus(Maths.divide(dy, dx), new Value(val));
-			AST.Node slopeDeriv = slope.differentiate('y');
-			AST.Node thing = Maths.divide(slope, slopeDeriv);
-			while(inBounds(first))
-			{
-				double x = first.getX() + inc;
-				double yOld = first.getY();
-				double y = first.getY();
-				for(int i = 0; i < 10; i++)
-				{
-					yOld = y;
-					y = y - thing.eval(x, y, a, b, t);
-				}
-				if(Math.abs(y - yOld) < .00001)
-				{
-					second = new Point2D(x, y);
-					gc.strokeLine(normToScrX(first.getX()), normToScrY(first.getY()), normToScrX(second.getX()), normToScrY(second.getY()));
-					first = second;
-				} else break;
-			}
-			first = new Point2D(init.x, init.y);
-			while(inBounds(first))
-			{
-				double x = first.getX() - inc;
-				double yOld = first.getY();
-				double y = first.getY();
-				for(int i = 0; i < 10; i++)
-				{
-					yOld = y;
-					y = y - thing.eval(x, y, a, b, t);
-				}
-				if(Math.abs(y - yOld) < .00001)
-				{
-					second = new Point2D(x, y);
-					gc.strokeLine(normToScrX(first.getX()), normToScrY(first.getY()), normToScrX(second.getX()), normToScrY(second.getY()));
-					first = second;
-				} else break;
-			}
+			drawIsoHelper(slope, new Point2D(init.x, init.y), inc);
+			drawIsoHelper(slope, new Point2D(init.x, init.y), -inc);
+
+
 		} catch (EvaluationException ignored){}
 		gc.setStroke(Color.BLACK);
 	}
-
+	private void drawIsoHelper(AST.Node slope, Point2D init, double inc)
+	{
+		try
+		{
+			boolean firstTime = true;
+			boolean isX = true;
+			Point2D first, second;
+			first = init;
+			AST.Node slopeDeriv = slope.differentiate('y');
+			AST.Node thing = Maths.divide(slope, slopeDeriv);
+			double sign = 1;
+			double tol = 3.;
+			long time = System.nanoTime();
+			while (inBounds(first) && System.nanoTime() - time < 100000000)
+			{
+				if (isX)
+				{
+					double x = first.getX() + inc;
+					double yOld = first.getY();
+					double y = first.getY();
+					for (int i = 0; i < 10; i++)
+					{
+						yOld = y;
+						y = y - thing.eval(x, y, a, b, t);
+					}
+					if (Math.abs(y - yOld) < .00001 && ((Math.abs((y - first.getY()) / (x - first.getX())) < tol) || firstTime))
+					{
+						firstTime = false;
+						if (Math.abs((y - first.getY()) / (x - first.getX())) > 1)
+						{
+							isX = false;
+							slopeDeriv = slope.differentiate('x');
+							thing = Maths.divide(slope, slopeDeriv);
+							sign = Math.signum((y - first.getY()) / (x - first.getX()));
+						}
+						second = new Point2D(x, y);
+						gc.strokeLine(normToScrX(first.getX()), normToScrY(first.getY()), normToScrX(second.getX()), normToScrY(second.getY()));
+						first = second;
+					} else break;
+				} else
+				{
+					if (sign == 0.0) break;
+					double y = first.getY() + (inc * sign);
+					double xOld = first.getX();
+					double x = first.getX();
+					for (int i = 0; i < 10; i++)
+					{
+						xOld = x;
+						x = x - thing.eval(x, y, a, b, t);
+					}
+					if (Math.abs(x - xOld) < .00001 && (Math.abs((y - first.getY()) / (x - first.getX())) > 1 / tol))
+					{
+						if (Math.abs((y - first.getY()) / (x - first.getX())) < 1)
+						{
+							isX = true;
+							slopeDeriv = slope.differentiate('y');
+							thing = Maths.divide(slope, slopeDeriv);
+						}
+						second = new Point2D(x, y);
+						gc.strokeLine(normToScrX(first.getX()), normToScrY(first.getY()), normToScrX(second.getX()), normToScrY(second.getY()));
+						first = second;
+					} else break;
+				}
+			}
+		} catch (EvaluationException ignored){}
+	}
 	private boolean inBounds(Point2D p)
 	{
 		return inBounds(p.getX(), p.getY());

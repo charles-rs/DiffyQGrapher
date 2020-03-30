@@ -50,14 +50,17 @@ public class NewtonEvaluator
 	}
 	public static Point2D solve(int iterations, Point2D start, double a, double b, double t, Node dx, Node dy, char fst, char scd) throws RootNotFound
 	{
+		double tol = Double.MIN_VALUE;
 		Point2D first = NewtonEvaluator.newtonNext(start, a, b, t,dx, dy, 'x', 'y');//newtonNext(start, a, b, t);
 		Point2D old = start;
 		for(int i = 0; i < iterations; i++)
 		{
+			if(old.distance(first) < tol) return first;
 			old = first;
 			first = NewtonEvaluator.newtonNext(start, a, b, t,dx, dy, 'x', 'y');//newtonNext(first, a, b, t);
+
 		}
-		if(old.distance(first) < .00001) return first;
+		if(old.distance(first) < tol) return first;
 		else throw new RootNotFound();
 	}
 }
