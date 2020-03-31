@@ -257,10 +257,16 @@ public class Main extends Application
 						outPlane.clickMode = ClickModeType.FINDCRITICAL;
 						break;
 					case FINDCRITICAL:
-						drawPath.setText(strDrawGraph + " x");
+						drawPath.setText(strDrawGraph);
+						drawIso.setText(strDrawIso + " x");
 						findCritical.setText(strFindCritical);
-						outPlane.clickMode = ClickModeType.DRAWPATH;
+						outPlane.clickMode = ClickModeType.DRAWISO;
 						break;
+					case DRAWISO:
+						drawIso.setText(strDrawIso);
+						findCritical.setText(strFindCritical);
+						drawPath.setText(strDrawGraph + " x");
+						outPlane.clickMode = ClickModeType.DRAWPATH;
 				}
 			}
 		});

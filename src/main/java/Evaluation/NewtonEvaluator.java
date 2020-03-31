@@ -11,10 +11,10 @@ public class NewtonEvaluator
 {
 	private static Point2D newtonNext(Point2D start, double a, double b, double t, Node dx, Node dy, char fst, char scd) throws RootNotFound
 	{
-		Node d2xd1 = dx.differentiate(fst);
-		Node d2xd2 = dx.differentiate(scd);
-		Node d2yd1 = dy.differentiate(fst);
-		Node d2yd2 = dy.differentiate(scd);
+		Node d2xd1 = dx.differentiate(fst).collapse();
+		Node d2xd2 = dx.differentiate(scd).collapse();
+		Node d2yd1 = dy.differentiate(fst).collapse();
+		Node d2yd2 = dy.differentiate(scd).collapse();
 		try
 		{
 			SimpleMatrix deriv = new SimpleMatrix(2, 2);
@@ -24,6 +24,8 @@ public class NewtonEvaluator
 			fx.set(0, 0, dx.eval(start.getX(), start.getY(), a, b, t));
 			fx.set(1, 0, dy.eval(start.getX(), start.getY(), a, b, t));
 
+
+
 			init.set(0, 0, start.getX());
 			init.set(1, 0, start.getY());
 
@@ -31,7 +33,6 @@ public class NewtonEvaluator
 			deriv.set(0, 1, d2xd2.eval(start.getX(), start.getY(), a, b, t));
 			deriv.set(1, 0, d2yd1.eval(start.getX(), start.getY(), a, b, t));
 			deriv.set(1, 1, d2yd2.eval(start.getX(), start.getY(), a, b, t));
-
 			try
 			{
 				derivInv = deriv.invert();
@@ -50,14 +51,17 @@ public class NewtonEvaluator
 	}
 	public static Point2D solve(int iterations, Point2D start, double a, double b, double t, Node dx, Node dy, char fst, char scd) throws RootNotFound
 	{
-		double tol = Double.MIN_VALUE;
-		Point2D first = NewtonEvaluator.newtonNext(start, a, b, t,dx, dy, 'x', 'y');//newtonNext(start, a, b, t);
+		double tol =  10E-8;//Double.MIN_VALUE;
+		Point2D first = NewtonEvaluator.newtonNext(start, a, b, t, dx, dy, fst, scd);//newtonNext(start, a, b, t);
 		Point2D old = start;
 		for(int i = 0; i < iterations; i++)
 		{
-			if(old.distance(first) < tol) return first;
 			old = first;
-			first = NewtonEvaluator.newtonNext(start, a, b, t,dx, dy, 'x', 'y');//newtonNext(first, a, b, t);
+			first = NewtonEvaluator.newtonNext(first, a, b, t, dx, dy, fst, scd);//newtonNext(first, a, b, t);
+			if(old.distance(first) < tol)
+			{
+				return first;
+			}
 
 		}
 		if(old.distance(first) < tol) return first;

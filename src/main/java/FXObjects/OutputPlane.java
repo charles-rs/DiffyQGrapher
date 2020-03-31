@@ -313,7 +313,7 @@ public class OutputPlane extends CoordPlane
 			AST.Node slopeDeriv = slope.differentiate('y');
 			AST.Node thing = Maths.divide(slope, slopeDeriv);
 			double sign = 1;
-			double tol = 3.;
+			double tol = 30.;
 			long time = System.nanoTime();
 			while (inBounds(first) && System.nanoTime() - time < 100000000)
 			{

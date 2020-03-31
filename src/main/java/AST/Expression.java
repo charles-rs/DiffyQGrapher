@@ -42,7 +42,7 @@ public class Expression extends Node
 	@Override
 	public Node differentiate(char c)
 	{
-		return new Expression(a.differentiate(c), b.differentiate(c), '+');
+		return new Expression(a.differentiate(c), b.differentiate(c), op);
 	}
 
 	@Override
