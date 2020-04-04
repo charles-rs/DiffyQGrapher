@@ -79,6 +79,12 @@ public class Value extends Node
 			case T:
 				if(c == 't') return new Value(1.);
 				else return new Value(0.);
+			case A:
+				if(c == 'a') return new Value(1.);
+				else return new Value(0.);
+			case B:
+				if(c == 'b') return new Value(1.);
+				else return new Value(0.);
 			default:
 				return new Value(0.);
 		}

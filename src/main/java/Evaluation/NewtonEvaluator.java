@@ -4,6 +4,7 @@ import AST.Node;
 import Exceptions.EvaluationException;
 import Exceptions.RootNotFound;
 import javafx.geometry.Point2D;
+import javafx.geometry.Point3D;
 import org.ejml.data.SingularMatrixException;
 import org.ejml.simple.SimpleMatrix;
 
@@ -67,4 +68,5 @@ public class NewtonEvaluator
 		if(old.distance(first) < tol) return first;
 		else throw new RootNotFound();
 	}
+
 }

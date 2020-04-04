@@ -2,6 +2,7 @@ package Main;
 
 import AST.Derivative;
 import Evaluation.EvalType;
+import Events.SaddleSelected;
 import Exceptions.SyntaxError;
 import FXObjects.ClickModeType;
 import FXObjects.DerivativeGraph;
@@ -9,6 +10,9 @@ import FXObjects.InputPlane;
 import FXObjects.OutputPlane;
 import Parser.Tokenizer;
 import javafx.application.Application;
+import javafx.event.ActionEvent;
+import javafx.event.EventHandler;
+import javafx.event.EventType;
 import javafx.geometry.Pos;
 import javafx.scene.Scene;
 import javafx.scene.control.*;
@@ -32,7 +36,7 @@ public class Main extends Application
 
 		AnchorPane anchor = new AnchorPane();
 		TextArea inputArea = new TextArea();
-		inputArea.setText("dy/dt = \ndx/dt = ");
+		inputArea.setText("dx/dt = \ndy/dt = ");
 		inputArea.setPrefRowCount(8);
 		inputArea.setPrefColumnCount(20);
 		VBox root = new VBox();
@@ -42,6 +46,7 @@ public class Main extends Application
 		Menu help = new Menu("Help");
 		Menu view = new Menu("View");
 		Menu draw = new Menu("Draw");
+		Menu bifurcation = new Menu("Find Bifurcation");
 
 		//MENU ITEMS GO HERE
 		/////////////////////////////////////////////////////////////
@@ -81,9 +86,16 @@ public class Main extends Application
 		view.getItems().addAll(menDxDt, menDyDt);
 
 		MenuItem separatrices = new MenuItem("Separatrices");
-		draw.getItems().addAll(separatrices);
+		MenuItem horizIso = new MenuItem("Horizontal Isocline");
+		MenuItem vertIso = new MenuItem("Vertical Isocline");
+		draw.getItems().addAll(separatrices, horizIso, vertIso);
+
+
+		MenuItem saddleBif = new MenuItem("Saddle Node Bifurcation");
+		MenuItem hopfBif = new MenuItem("Hopf Bifurcation");
+		bifurcation.getItems().addAll(saddleBif, hopfBif);
 		////////////////////////////////////////////////////////
-		bar.getMenus().addAll(file, options, view, draw, help);
+		bar.getMenus().addAll(file, options, view, draw, bifurcation, help);
 
 		mainH = new HBox();
 		root.getChildren().addAll(bar, anchor);
@@ -105,8 +117,8 @@ public class Main extends Application
 		Pane inP, outP;
 		inP = new Pane();
 		outP = new Pane();
-		InputPlane inPlane = new InputPlane(300, aField, bField);
 		OutputPlane outPlane = new OutputPlane(600, tField);
+		InputPlane inPlane = new InputPlane(300, aField, bField, outPlane);
 		HBox buttonBox = new HBox();
 		Button clearOut = new Button("Clear");
 		clearOut.setOnAction(actionEvent ->
@@ -298,7 +310,28 @@ public class Main extends Application
 		{
 			outPlane.drawSeparatrices();
 		});
+		horizIso.setOnAction((e) ->
+		{
+			outPlane.clickMode = ClickModeType.DRAWHORIZISO;
+		});
+		vertIso.setOnAction((e) ->
+		{
+			outPlane.clickMode = ClickModeType.DRAWVERTISO;
+		});
+		saddleBif.setOnAction((e) ->
+		{
+			outPlane.clickMode = ClickModeType.SELECTSADDLE;
 
+		});
+		EventHandler<SaddleSelected> handler = new EventHandler<SaddleSelected>()
+		{
+			@Override
+			public void handle(SaddleSelected e)
+			{
+					inPlane.saddleBif(e.pt);
+			}
+		};
+		outPlane.addEventHandler(new EventType("saddle"), handler);
 
 
 
