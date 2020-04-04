@@ -3,12 +3,17 @@ package FXObjects;
 import AST.Maths;
 import AST.Node;
 import Exceptions.EvaluationException;
+import Exceptions.RootNotFound;
 import javafx.geometry.Point2D;
 import javafx.scene.control.TextField;
 import javafx.scene.input.KeyCode;
 import javafx.scene.input.MouseEvent;
 import javafx.scene.paint.Color;
+import org.ejml.data.SingularMatrixException;
 import org.ejml.simple.SimpleMatrix;
+
+import java.util.LinkedList;
+import java.util.List;
 
 public class InputPlane extends CoordPlane
 {
@@ -17,6 +22,7 @@ public class InputPlane extends CoordPlane
 	private OutputPlane op;
 	private TextField aField, bField;
 	private Color saddleBifColor = Color.BLUE;
+	List<double[]> saddleBifs;
 
 	public InputPlane(double side, TextField aField, TextField bField, OutputPlane op)
 	{
@@ -25,25 +31,23 @@ public class InputPlane extends CoordPlane
 		this.op = op;
 		this.aField = aField;
 		this.bField = bField;
+		saddleBifs = new LinkedList<>();
 		draw();
 		setOnKeyPressed((e) ->
 		{
 			KeyCode temp = e.getCode();
-			if(temp == right)
+			if (temp == right)
 			{
-				a += (xMax - xMin)/1000;
-			}
-			else if (temp == left)
+				a += (xMax - xMin) / 1000;
+			} else if (temp == left)
 			{
-				a -= (xMax - xMin)/1000;
-			}
-			else if (temp == up)
+				a -= (xMax - xMin) / 1000;
+			} else if (temp == up)
 			{
-				b += (yMax - yMin)/1000;
-			}
-			else if (temp == down)
+				b += (yMax - yMin) / 1000;
+			} else if (temp == down)
 			{
-				b -= (yMax - yMin)/1000;
+				b -= (yMax - yMin) / 1000;
 			}
 			e.consume();
 			draw();
@@ -69,28 +73,31 @@ public class InputPlane extends CoordPlane
 				draw();
 			} catch (NumberFormatException n)
 			{
-				if(b != 0.0)
-				bField.setText(Double.toString(b));
+				if (b != 0.0)
+					bField.setText(Double.toString(b));
 			}
 		});
 
 	}
+
 	@Override
 	public void handleMouseClick(MouseEvent e)
 	{
-		if(!e.isConsumed())
+		if (!e.isConsumed())
 		{
 			a = scrToNormX(e.getX());
 			b = scrToNormY(e.getY());
 			draw();
 		}
 	}
+
 	private void drawPoint()
 	{
 		gc.setFill(Color.RED);
 		gc.fillOval(normToScrX(a) - 2, normToScrY(b) - 2, 4, 4);
 		gc.setFill(Color.BLACK);
 	}
+
 	private void showValues()
 	{
 		aField.setText(Double.toString(a));
@@ -101,19 +108,21 @@ public class InputPlane extends CoordPlane
 	{
 		return a;
 	}
+
 	public double getB()
 	{
 		return b;
 	}
 
-	public void saddleBif(Point2D start)
+	private void saddleBifHelp(double[] start, boolean add)
 	{
 		gc.setStroke(saddleBifColor);
+
 		Node dx = op.getDx();
 		Node dy = op.getDy();
 		Node det = Maths.minus(Maths.mult(dx.differentiate('x'), dy.differentiate('y')),
 				Maths.mult(dx.differentiate('y'), dy.differentiate('x'))).collapse();
-		Node derivative [][] = new Node[3][4];
+		Node derivative[][] = new Node[3][4];
 		derivative[0][0] = dx.differentiate('x').collapse();
 		derivative[0][1] = dx.differentiate('y').collapse();
 		derivative[0][2] = dx.differentiate('a').collapse();
@@ -128,18 +137,55 @@ public class InputPlane extends CoordPlane
 		derivative[2][1] = det.differentiate('y').collapse();
 		derivative[2][2] = det.differentiate('a').collapse();
 		derivative[2][3] = det.differentiate('b').collapse();
-
-		double first [] = new double[]{start.getX(), start.getY(), a, b};
-		double second [] = bifHelp(first[0], first[1], first[2], first[3], dx, dy, det, derivative, 'a');
-		while(inBounds(first[2], first[3]) && second != null)
+		double xInc = (xMax - xMin) / c.getWidth();
+		double yInc = (yMax - yMin) / c.getHeight();
+		boolean isA = true;
+		double first[] = start;
+		double second[];
+		try
 		{
-			gc.strokeLine(first[2], first[3], second[2], second[3]);
+			second = bifHelp(first[0], first[1], first[2], first[3], dx, dy, det, derivative, 'a');
+		} catch (SingularMatrixException s)
+		{
+			isA = false;
+			second = bifHelp(first[0], first[1], first[2], first[3], dx, dy, det, derivative, 'b');
 		}
-
+		if(add) saddleBifs.add(second);
+		while (inBounds(first[2], first[3]) && second != null)
+		{
+			first = second;
+			if (isA)
+				second = bifHelp(first[0], first[1], first[2] + xInc, first[3], dx, dy, det, derivative, 'a');
+			else second = bifHelp(first[0], first[1], first[2], first[3] + yInc, dx, dy, det, derivative, 'b');
+			gc.strokeLine(normToScrX(first[2]), normToScrY(first[3]), normToScrX(second[2]), normToScrY(second[3]));
+		}
+		first = start;
+		try
+		{
+			second = bifHelp(first[0], first[1], first[2], first[3], dx, dy, det, derivative, 'a');
+		} catch (SingularMatrixException s)
+		{
+			isA = false;
+			second = bifHelp(first[0], first[1], first[2], first[3], dx, dy, det, derivative, 'b');
+		}
+		while (inBounds(first[2], first[3]) && second != null)
+		{
+			first = second;
+			if (isA)
+				second = bifHelp(first[0], first[1], first[2] - xInc, first[3], dx, dy, det, derivative, 'a');
+			else second = bifHelp(first[0], first[1], first[2], first[3] - yInc, dx, dy, det, derivative, 'b');
+			gc.strokeLine(normToScrX(first[2]), normToScrY(first[3]), normToScrX(second[2]), normToScrY(second[3]));
+		}
 
 		gc.setStroke(Color.BLACK);
 	}
-	private double bifHelp(double x, double y, double aTemp, double bTemp, Node n1, Node n2, Node n3, Node derivative[][], char cons) []
+
+	public void saddleBif(Point2D start)
+	{
+		saddleBifHelp(new double[]{start.getX(), start.getY(), a, b}, true);
+	}
+
+	private double bifHelp(double x, double y, double aTemp, double bTemp, Node n1, Node n2, Node n3, Node derivative[][], char cons)[]
 	{
 		double t = op.getT();
 		double temp[] = new double[4];
@@ -149,12 +195,12 @@ public class InputPlane extends CoordPlane
 			double yt = y;
 			double at = aTemp;
 			double bt = bTemp;
-			for(int j = 0; j < 10; j++)
+			for (int j = 0; j < 10; j++)
 			{
 				SimpleMatrix init = new SimpleMatrix(3, 1);
 				init.setColumn(0, 0, xt, yt);
-				if (cons == 'a') init.set(3, 0, bt);
-				else init.set(3, 0, at);
+				if (cons == 'a') init.set(2, 0, bt);
+				else init.set(2, 0, at);
 				SimpleMatrix deriv = new SimpleMatrix(3, 3);
 				for (int i = 0; i < 3; i++)
 				{
@@ -179,9 +225,9 @@ public class InputPlane extends CoordPlane
 					at = temp[2] = result.get(2, 0);
 					temp[3] = bTemp;
 				}
-				if(Math.pow(init.get(0,0) - result.get(0,0), 2) +
-						Math.pow(init.get(1,0) - result.get(1,0), 2) +
-						Math.pow(init.get(2,0) - result.get(2,0), 2) < .0001)
+				if (Math.pow(init.get(0, 0) - result.get(0, 0), 2) +
+						Math.pow(init.get(1, 0) - result.get(1, 0), 2) +
+						Math.pow(init.get(2, 0) - result.get(2, 0), 2) < .0001)
 					return temp;
 			}
 		} catch (EvaluationException e)
@@ -197,6 +243,10 @@ public class InputPlane extends CoordPlane
 		super.draw();
 		showValues();
 		drawPoint();
+		for (double[] saddleBif : saddleBifs)
+		{
+			saddleBifHelp(saddleBif, false);
+		}
 	}
 
 

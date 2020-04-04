@@ -323,15 +323,16 @@ public class Main extends Application
 			outPlane.clickMode = ClickModeType.SELECTSADDLE;
 
 		});
-		EventHandler<SaddleSelected> handler = new EventHandler<SaddleSelected>()
+		EventHandler<ActionEvent> handler = e ->
 		{
-			@Override
-			public void handle(SaddleSelected e)
+			if(e instanceof SaddleSelected)
 			{
-					inPlane.saddleBif(e.pt);
+				if(((SaddleSelected) e).pt != null)
+					inPlane.saddleBif(((SaddleSelected) e).pt);
+				outPlane.clickMode = ClickModeType.DRAWPATH;
 			}
 		};
-		outPlane.addEventHandler(new EventType("saddle"), handler);
+		outPlane.addEventHandler(ActionEvent.ANY, handler);
 
 
 
