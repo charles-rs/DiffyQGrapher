@@ -5,6 +5,7 @@ import AST.Maths;
 import AST.Value;
 import Evaluation.*;
 import Events.SaddleSelected;
+import Events.SourceSelected;
 import Exceptions.EvaluationException;
 import Exceptions.RootNotFound;
 import javafx.geometry.Insets;
@@ -202,11 +203,23 @@ public class OutputPlane extends CoordPlane
 				}
 				fireEvent(new SaddleSelected(selectedSaddle));
 				break;
+			case SELECTSOURCE:
+				try
+				{
+					fireEvent(new SourceSelected(getSource(pt)));
+				} catch (RootNotFound ignored) {}
 		}
 
 	}
 
-	public Point2D getSaddle(Point2D start) throws RootNotFound
+	private Point2D getSource(Point2D start) throws RootNotFound
+	{
+		CriticalPoint temp = critical(start);
+		if(temp.type != CritPointTypes.NODESOURCE && temp.type != CritPointTypes.SPIRALSOURCE) throw new RootNotFound();
+		else return temp.point;
+	}
+
+	private Point2D getSaddle(Point2D start) throws RootNotFound
 	{
 		CriticalPoint temp = critical(start);
 		if(temp.type != CritPointTypes.SADDLE) throw new RootNotFound();
@@ -370,7 +383,7 @@ public class OutputPlane extends CoordPlane
 		gc.setStroke(horizIsoColor);
 		try
 		{
-			AST.Node thing = Maths.divide(dy, dy.differentiate('y'));
+			AST.Node thing = Maths.divide(dy, dy.differentiate('y')).collapse();
 			double yOld = pt.getY();
 			double y = pt.getY();
 			double x = pt.getX();
@@ -383,6 +396,23 @@ public class OutputPlane extends CoordPlane
 			{
 				drawIsoHelper(dy, new Point2D(x, y));
 			}
+			else
+			{
+				thing = Maths.divide(dy, dy.differentiate('x')).collapse();
+				double xOld = pt.getX();
+				y = pt.getY();
+				x = pt.getX();
+				for (int i = 0; i < 10; i++)
+				{
+					xOld = x;
+					x = x - thing.eval(x, y, a, b, t);
+
+				}
+				if (Math.abs(x - xOld) < .000001)
+				{
+					drawIsoHelper(dy, new Point2D(x, y));
+				}
+			}
 		} catch (EvaluationException ignored)
 		{
 		}
@@ -394,7 +424,7 @@ public class OutputPlane extends CoordPlane
 		gc.setStroke(vertIsoColor);
 		try
 		{
-			AST.Node thing = Maths.divide(dx, dx.differentiate('x'));
+			AST.Node thing = Maths.divide(dx, dx.differentiate('x')).collapse();
 			double xOld = pt.getX();
 			double y = pt.getY();
 			double x = pt.getX();
@@ -402,14 +432,30 @@ public class OutputPlane extends CoordPlane
 			{
 				xOld = x;
 				x = x - thing.eval(x, y, a, b, t);
+
 			}
 			if (Math.abs(x - xOld) < .000001)
 			{
 				drawIsoHelper(dx, new Point2D(x, y));
 			}
+			else
+			{
+				thing = Maths.divide(dx, dx.differentiate('y')).collapse();
+				double yOld = pt.getY();
+				y = pt.getY();
+				x = pt.getX();
+				for (int i = 0; i < 10; i++)
+				{
+					yOld = y;
+					y = y - thing.eval(x, y, a, b, t);
+				}
+				if (Math.abs(y - yOld) < .000001)
+				{
+					drawIsoHelper(dx, new Point2D(x, y));
+				}
+			}
 		} catch (EvaluationException ignored)
-		{
-		}
+		{}
 		gc.setStroke(Color.BLACK);
 	}
 

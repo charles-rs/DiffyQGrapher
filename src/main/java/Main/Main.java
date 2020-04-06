@@ -3,6 +3,7 @@ package Main;
 import AST.Derivative;
 import Evaluation.EvalType;
 import Events.SaddleSelected;
+import Events.SourceSelected;
 import Exceptions.SyntaxError;
 import FXObjects.ClickModeType;
 import FXObjects.DerivativeGraph;
@@ -323,12 +324,22 @@ public class Main extends Application
 			outPlane.clickMode = ClickModeType.SELECTSADDLE;
 
 		});
+		hopfBif.setOnAction((e) ->
+		{
+			outPlane.clickMode = ClickModeType.SELECTSOURCE;
+		});
 		EventHandler<ActionEvent> handler = e ->
 		{
 			if(e instanceof SaddleSelected)
 			{
 				if(((SaddleSelected) e).pt != null)
 					inPlane.saddleBif(((SaddleSelected) e).pt);
+				outPlane.clickMode = ClickModeType.DRAWPATH;
+			}
+			if(e instanceof SourceSelected)
+			{
+				if(((SourceSelected) e).pt != null)
+					inPlane.hopfBif(((SourceSelected) e).pt);
 				outPlane.clickMode = ClickModeType.DRAWPATH;
 			}
 		};

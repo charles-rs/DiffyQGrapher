@@ -22,7 +22,9 @@ public class InputPlane extends CoordPlane
 	private OutputPlane op;
 	private TextField aField, bField;
 	private Color saddleBifColor = Color.BLUE;
+	private Color hopfBifColor = Color.ORANGE;
 	List<double[]> saddleBifs;
+	List<double[]> hopfBifs;
 
 	public InputPlane(double side, TextField aField, TextField bField, OutputPlane op)
 	{
@@ -32,6 +34,7 @@ public class InputPlane extends CoordPlane
 		this.aField = aField;
 		this.bField = bField;
 		saddleBifs = new LinkedList<>();
+		hopfBifs = new LinkedList<>();
 		draw();
 		setOnKeyPressed((e) ->
 		{
@@ -114,7 +117,7 @@ public class InputPlane extends CoordPlane
 		return b;
 	}
 
-	private void saddleBifHelp(double[] start, boolean add)
+	private void saddleBifHelp(double start [], boolean add)
 	{
 		gc.setStroke(saddleBifColor);
 
@@ -174,6 +177,7 @@ public class InputPlane extends CoordPlane
 			if (isA)
 				second = bifHelp(first[0], first[1], first[2] - xInc, first[3], dx, dy, det, derivative, 'a');
 			else second = bifHelp(first[0], first[1], first[2], first[3] - yInc, dx, dy, det, derivative, 'b');
+			if(second == null) break;
 			gc.strokeLine(normToScrX(first[2]), normToScrY(first[3]), normToScrX(second[2]), normToScrY(second[3]));
 		}
 
@@ -184,6 +188,82 @@ public class InputPlane extends CoordPlane
 	{
 		saddleBifHelp(new double[]{start.getX(), start.getY(), a, b}, true);
 	}
+
+	public void hopfBif(Point2D start)
+	{
+		hopfBifHelp(new double[]{start.getX(), start.getY(), a, b}, true);
+	}
+	private void hopfBifHelp(double start [], boolean add)
+	{
+		gc.setStroke(hopfBifColor);
+
+		Node dx = op.getDx();
+		Node dy = op.getDy();
+		Node tr = Maths.add(dx.differentiate('x'), dy.differentiate('y')).collapse();
+		Node det = Maths.minus(Maths.mult(dx.differentiate('x'), dy.differentiate('y')),
+				Maths.mult(dx.differentiate('y'), dy.differentiate('x'))).collapse();
+		Node derivative[][] = new Node[3][4];
+		derivative[0][0] = dx.differentiate('x').collapse();
+		derivative[0][1] = dx.differentiate('y').collapse();
+		derivative[0][2] = dx.differentiate('a').collapse();
+		derivative[0][3] = dx.differentiate('b').collapse();
+
+		derivative[1][0] = dy.differentiate('x').collapse();
+		derivative[1][1] = dy.differentiate('y').collapse();
+		derivative[1][2] = dy.differentiate('a').collapse();
+		derivative[1][3] = dy.differentiate('b').collapse();
+
+		derivative[2][0] = tr.differentiate('x').collapse();
+		derivative[2][1] = tr.differentiate('y').collapse();
+		derivative[2][2] = tr.differentiate('a').collapse();
+		derivative[2][3] = tr.differentiate('b').collapse();
+		double xInc = (xMax - xMin) / c.getWidth();
+		double yInc = (yMax - yMin) / c.getHeight();
+		boolean isA = true;
+		double first[] = start;
+		double second[];
+		try
+		{
+			second = bifHelp(first[0], first[1], first[2], first[3], dx, dy, tr, derivative, 'a');
+		} catch (SingularMatrixException s)
+		{
+			isA = false;
+			second = bifHelp(first[0], first[1], first[2], first[3], dx, dy, tr, derivative, 'b');
+		}
+		if(add) hopfBifs.add(second);
+		double t = op.getT();
+		try
+		{
+			while (inBounds(first[2], first[3]) && second != null && det.eval(first[0], first[1], first[2], first[3], t) > 0.)
+			{
+				first = second;
+				if (isA)
+					second = bifHelp(first[0], first[1], first[2] + xInc, first[3], dx, dy, tr, derivative, 'a');
+				else second = bifHelp(first[0], first[1], first[2], first[3] + yInc, dx, dy, tr, derivative, 'b');
+				gc.strokeLine(normToScrX(first[2]), normToScrY(first[3]), normToScrX(second[2]), normToScrY(second[3]));
+			}
+			first = start;
+			try
+			{
+				second = bifHelp(first[0], first[1], first[2], first[3], dx, dy, tr, derivative, 'a');
+			} catch (SingularMatrixException s)
+			{
+				isA = false;
+				second = bifHelp(first[0], first[1], first[2], first[3], dx, dy, tr, derivative, 'b');
+			}
+			while (inBounds(first[2], first[3]) && second != null && det.eval(first[0], first[1], first[2], first[3], t) > 0.)
+			{
+				first = second;
+				if (isA)
+					second = bifHelp(first[0], first[1], first[2] - xInc, first[3], dx, dy, tr, derivative, 'a');
+				else second = bifHelp(first[0], first[1], first[2], first[3] - yInc, dx, dy, tr, derivative, 'b');
+				if (second == null) break;
+				gc.strokeLine(normToScrX(first[2]), normToScrY(first[3]), normToScrX(second[2]), normToScrY(second[3]));
+			}
+		} catch (EvaluationException ignored) {}
+		gc.setStroke(Color.BLACK);
+	}
+
 
 	private double bifHelp(double x, double y, double aTemp, double bTemp, Node n1, Node n2, Node n3, Node derivative[][], char cons)[]
 	{
@@ -243,9 +323,13 @@ public class InputPlane extends CoordPlane
 		super.draw();
 		showValues();
 		drawPoint();
-		for (double[] saddleBif : saddleBifs)
+		for(double saddleBif []: saddleBifs)
 		{
 			saddleBifHelp(saddleBif, false);
+		}
+		for(double hopfBif []: hopfBifs)
+		{
+			hopfBifHelp(hopfBif, false);
 		}
 	}
 
