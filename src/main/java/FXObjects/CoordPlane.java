@@ -1,5 +1,6 @@
 package FXObjects;
 
+import javafx.geometry.Point2D;
 import javafx.scene.canvas.Canvas;
 import javafx.scene.canvas.GraphicsContext;
 import javafx.scene.input.KeyCode;
@@ -215,5 +216,13 @@ public class CoordPlane extends Pane
 	protected double normToScrY(double y)
 	{
 		return (y / (yMin - yMax) - (yMax / (yMin - yMax))) * c.getHeight();
+	}
+	protected void drawLine(double x1, double y1, double x2, double y2)
+	{
+		gc.strokeLine(normToScrX(x1), normToScrY(y1), normToScrX(x2), normToScrY(y2));
+	}
+	protected void drawLine(Point2D p1, Point2D p2)
+	{
+		drawLine(p1.getX(), p1.getY(), p2.getX(), p2.getY());
 	}
 }

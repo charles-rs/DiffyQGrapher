@@ -332,6 +332,11 @@ public class InputPlane extends CoordPlane
 			hopfBifHelp(hopfBif, false);
 		}
 	}
+	public void clear()
+	{
+		saddleBifs.clear();
+		hopfBifs.clear();
+	}
 
 
 }

@@ -94,7 +94,8 @@ public class Main extends Application
 
 		MenuItem saddleBif = new MenuItem("Saddle Node Bifurcation");
 		MenuItem hopfBif = new MenuItem("Hopf Bifurcation");
-		bifurcation.getItems().addAll(saddleBif, hopfBif);
+		MenuItem sdlConBif = new MenuItem("Saddle Connection Bifurcation");
+		bifurcation.getItems().addAll(saddleBif, hopfBif, sdlConBif);
 		////////////////////////////////////////////////////////
 		bar.getMenus().addAll(file, options, view, draw, bifurcation, help);
 
@@ -136,6 +137,7 @@ public class Main extends Application
 		{
 			outPlane.clearObjects();
 			outPlane.draw();
+			inPlane.clear();
 		});
 		buttonBox.getChildren().addAll(clearOut, resetZoom, update);
 		buttonBox.setAlignment(Pos.CENTER);
@@ -327,6 +329,10 @@ public class Main extends Application
 		hopfBif.setOnAction((e) ->
 		{
 			outPlane.clickMode = ClickModeType.SELECTSOURCE;
+		});
+		sdlConBif.setOnAction((e) ->
+		{
+			outPlane.clickMode = ClickModeType.DRAWSEG;
 		});
 		EventHandler<ActionEvent> handler = e ->
 		{

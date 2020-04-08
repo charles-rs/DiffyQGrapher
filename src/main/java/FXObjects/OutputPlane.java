@@ -24,6 +24,7 @@ import javafx.scene.text.Text;
 import javafx.scene.transform.Affine;
 import javafx.scene.transform.Rotate;
 
+
 import java.util.LinkedList;
 import java.util.List;
 
@@ -31,19 +32,22 @@ import java.util.List;
 public class OutputPlane extends CoordPlane
 {
 	private double t = 0;
-	private List<initCond> initials;
-	private List<initCond> isoclines;
+	private final List<initCond> initials;
+	private final List<initCond> isoclines;
 	private List<CriticalPoint> criticalPoints;
-	private List<Point2D> horizIsos;
-	private List<Point2D> vertIsos;
-	private List<Node> needsReset;
+	private final List<Point2D> selectedCritPoints;
+	private final List<Point2D> horizIsos;
+	private final List<Point2D> vertIsos;
+	private final List<Node> needsReset;
+	private final List<sepStart> selectedSeps;
 	double inc = .01;
 	private double a, b;
 	private Derivative dx, dy;
 	public EvalType evalType;
 	public ClickModeType clickMode = ClickModeType.DRAWPATH;
 	private boolean drawSep = false;
-	public Point2D selectedSaddle = null;
+	private Point2D line [] = new Point2D[2];
+	private CriticalPoint currentPoint = null;
 
 	private Color solutionColor = Color.BLACK;
 	private Color isoclineColor = Color.BLUE;
@@ -52,6 +56,7 @@ public class OutputPlane extends CoordPlane
 	private Color stblSeparatrixColor = Color.ORANGERED;
 	private Color unstblSeparatrixColor = Color.DARKCYAN;
 	private Color criticalColor = Color.RED;
+	private Color lnColor = Color.CADETBLUE;
 
 
 	public OutputPlane(double side, TextField tField)
@@ -64,6 +69,8 @@ public class OutputPlane extends CoordPlane
 		needsReset = new LinkedList<>();
 		horizIsos = new LinkedList<>();
 		vertIsos = new LinkedList<>();
+		selectedCritPoints = new LinkedList<>();
+		selectedSeps = new LinkedList<>();
 		draw();
 		tField.setText(Double.toString(t));
 
@@ -127,9 +134,12 @@ public class OutputPlane extends CoordPlane
 
 	public void clearObjects()
 	{
+		selectedCritPoints.clear();
 		criticalPoints.clear();
+		selectedSeps.clear();
 		for (Node n : needsReset) n.setVisible(false);
 		needsReset.clear();
+		line = new Point2D[2];
 	}
 
 	public void updateA(double a)
@@ -196,35 +206,92 @@ public class OutputPlane extends CoordPlane
 			case SELECTSADDLE:
 				try
 				{
-					selectedSaddle = getSaddle(pt);
-				} catch (RootNotFound r)
-				{
-					selectedSaddle = null;
-				}
-				fireEvent(new SaddleSelected(selectedSaddle));
+					Point2D p = getSaddle(pt);
+					fireEvent(new SaddleSelected(p));
+					selectedCritPoints.add(p);
+					drawSelectedCritPoints();
+				} catch (RootNotFound ignored) {}
 				break;
 			case SELECTSOURCE:
 				try
 				{
-					fireEvent(new SourceSelected(getSource(pt)));
+					Point2D p = getSource(pt);
+					fireEvent(new SourceSelected(p));
+					selectedCritPoints.add(p);
+					drawSelectedCritPoints();
+				} catch (RootNotFound ignored) {}
+			case DRAWSEG:
+				if(line[0] == null)
+				{
+					line[0] = pt;
+				} else
+				{
+					line[1] = pt;
+					gc.setStroke(lnColor);
+					drawLine(line[0], line[1]);
+					clickMode = ClickModeType.DRAWPATH;
+					gc.setStroke(Color.BLACK);
+					selectedCritPoints.clear();
+					clickMode = ClickModeType.SELECTSEP;
+				}
+				break;
+			case SELECTSEP:
+				try
+				{
+					if(currentPoint != null && selectedSeps.size() < 2)
+					{
+						double tol = .00001;
+						Point2D p1 = new Point2D(currentPoint.point.getX() + tol * currentPoint.matrix.getEigenVector(0).get(0),
+								currentPoint.point.getY() + tol * currentPoint.matrix.getEigenVector(0).get(1));
+						Point2D p2 = new Point2D(currentPoint.point.getX() - tol * currentPoint.matrix.getEigenVector(0).get(0),
+								currentPoint.point.getY() - tol * currentPoint.matrix.getEigenVector(0).get(1));
+
+						Point2D p3 = new Point2D(currentPoint.point.getX() + tol * currentPoint.matrix.getEigenVector(1).get(0),
+								currentPoint.point.getY() + tol * currentPoint.matrix.getEigenVector(1).get(1));
+						Point2D p4 = new Point2D(currentPoint.point.getX() - tol * currentPoint.matrix.getEigenVector(1).get(0),
+								currentPoint.point.getY() - tol * currentPoint.matrix.getEigenVector(1).get(1));
+						double d1 = pt.distance(p1);
+						double d2 = pt.distance(p2);
+						double d3 = pt.distance(p3);
+						double d4 = pt.distance(p4);
+						double min = Math.min(Math.min(d1, d2), Math.min(d3, d4));
+						boolean firstPos = currentPoint.matrix.getEigenvalue(0).getReal() > 0;
+						if(d1 == min)
+							selectedSeps.add(new sepStart(p1, firstPos));
+						else if(d2 == min)
+							selectedSeps.add(new sepStart(p2, firstPos));
+						else if(d3 == min)
+							selectedSeps.add(new sepStart(p3, !firstPos));
+						else
+							selectedSeps.add(new sepStart(p4, !firstPos));
+						if(selectedSeps.size() == 2)
+							clickMode = ClickModeType.DRAWPATH;
+					} else if(currentPoint == null)
+					{
+						currentPoint = critical(pt);
+						selectedCritPoints.add(currentPoint.point);
+					}
 				} catch (RootNotFound ignored) {}
 		}
 
 	}
 
+
 	private Point2D getSource(Point2D start) throws RootNotFound
 	{
 		CriticalPoint temp = critical(start);
-		if(temp.type != CritPointTypes.NODESOURCE && temp.type != CritPointTypes.SPIRALSOURCE) throw new RootNotFound();
+		if (temp.type != CritPointTypes.NODESOURCE && temp.type != CritPointTypes.SPIRALSOURCE)
+			throw new RootNotFound();
 		else return temp.point;
 	}
 
 	private Point2D getSaddle(Point2D start) throws RootNotFound
 	{
 		CriticalPoint temp = critical(start);
-		if(temp.type != CritPointTypes.SADDLE) throw new RootNotFound();
+		if (temp.type != CritPointTypes.SADDLE) throw new RootNotFound();
 		else return temp.point;
 	}
+
 	private CriticalPoint critical(Point2D start) throws RootNotFound
 	{
 		return EvaluatorFactory.getEulerEval(dx, dy).findCritical(start, a, b, t);
@@ -395,8 +462,7 @@ public class OutputPlane extends CoordPlane
 			if (Math.abs(y - yOld) < .000001)
 			{
 				drawIsoHelper(dy, new Point2D(x, y));
-			}
-			else
+			} else
 			{
 				thing = Maths.divide(dy, dy.differentiate('x')).collapse();
 				double xOld = pt.getX();
@@ -437,8 +503,7 @@ public class OutputPlane extends CoordPlane
 			if (Math.abs(x - xOld) < .000001)
 			{
 				drawIsoHelper(dx, new Point2D(x, y));
-			}
-			else
+			} else
 			{
 				thing = Maths.divide(dx, dx.differentiate('y')).collapse();
 				double yOld = pt.getY();
@@ -455,7 +520,8 @@ public class OutputPlane extends CoordPlane
 				}
 			}
 		} catch (EvaluationException ignored)
-		{}
+		{
+		}
 		gc.setStroke(Color.BLACK);
 	}
 
@@ -565,10 +631,50 @@ public class OutputPlane extends CoordPlane
 	{
 		initials.clear();
 		criticalPoints.clear();
+		selectedSeps.clear();
+		line = new Point2D[2];
+		selectedCritPoints.clear();
 		isoclines.clear();
 		vertIsos.clear();
 		horizIsos.clear();
 		draw();
+	}
+
+	private void drawSep(CriticalPoint c)
+	{
+		double tol = .00000001;
+		try
+		{
+			if (c.type == CritPointTypes.SADDLE)
+			{
+				if (c.matrix.getEigenvalue(0).getReal() > 0) gc.setStroke(stblSeparatrixColor);
+				else gc.setStroke(unstblSeparatrixColor);
+				initCond point1 = new initCond(c.point.getX() + tol * c.matrix.getEigenVector(0).get(0),
+						c.point.getY() + tol * c.matrix.getEigenVector(0).get(1), t);
+				initCond point3 = new initCond(c.point.getX() - tol * c.matrix.getEigenVector(0).get(0),
+						c.point.getY() - tol * c.matrix.getEigenVector(0).get(1), t);
+				drawGraphBack(point1, false, '+');
+				drawGraphBack(point3, false, '+');
+				if (c.matrix.getEigenvalue(1).getReal() > 0) gc.setStroke(stblSeparatrixColor);
+				else gc.setStroke(unstblSeparatrixColor);
+				initCond point2 = new initCond(c.point.getX() + tol * c.matrix.getEigenVector(1).get(0),
+						c.point.getY() + tol * c.matrix.getEigenVector(1).get(1), t);
+				initCond point4 = new initCond(c.point.getX() - tol * c.matrix.getEigenVector(1).get(0),
+						c.point.getY() - tol * c.matrix.getEigenVector(1).get(1), t);
+				drawGraphBack(point2, false, '-');
+				drawGraphBack(point4, false, '-');
+			}
+		} catch (NullPointerException ignored)
+		{}
+	}
+	private void drawSelectedCritPoints()
+	{
+		gc.setStroke(criticalColor);
+		for(Point2D p : selectedCritPoints)
+		{
+			gc.strokeOval(normToScrX(p.getX()) - 8, normToScrY(p.getY()) - 8, 16, 16);
+		}
+		gc.setStroke(Color.BLACK);
 	}
 
 	@Override
@@ -580,38 +686,19 @@ public class OutputPlane extends CoordPlane
 		drawIsoclines();
 		if (drawSep)
 		{
-			double tol = .000000001;
 			for (CriticalPoint c : criticalPoints)
 			{
-				try
-				{
-					if (c.type == CritPointTypes.SADDLE)
-					{
-						if (c.matrix.getEigenvalue(0).getReal() > 0) gc.setStroke(stblSeparatrixColor);
-						else gc.setStroke(unstblSeparatrixColor);
-						initCond point1 = new initCond(c.point.getX() + tol * c.matrix.getEigenVector(0).get(0),
-								c.point.getY() + tol * c.matrix.getEigenVector(0).get(1), t);
-						initCond point3 = new initCond(c.point.getX() - tol * c.matrix.getEigenVector(0).get(0),
-								c.point.getY() - tol * c.matrix.getEigenVector(0).get(1), t);
-						drawGraphBack(point1, false, '+');
-						drawGraphBack(point3, false, '+');
-						if (c.matrix.getEigenvalue(1).getReal() > 0) gc.setStroke(stblSeparatrixColor);
-						else gc.setStroke(unstblSeparatrixColor);
-						initCond point2 = new initCond(c.point.getX() + tol * c.matrix.getEigenVector(1).get(0),
-								c.point.getY() + tol * c.matrix.getEigenVector(1).get(1), t);
-						initCond point4 = new initCond(c.point.getX() - tol * c.matrix.getEigenVector(1).get(0),
-								c.point.getY() - tol * c.matrix.getEigenVector(1).get(1), t);
-						drawGraphBack(point2, false, '-');
-						drawGraphBack(point4, false, '-');
-					}
-				} catch (NullPointerException ignored)
-				{
-				}
+				drawSep(c);
 			}
-			gc.setStroke(Color.BLACK);
 
 		}
-
+		if(line[1] != null)
+		{
+			gc.setStroke(lnColor);
+			drawLine(line[0], line[1]);
+		}
+		drawSelectedCritPoints();
+		gc.setStroke(Color.BLACK);
 	}
 
 	public void resetZoom()
@@ -632,6 +719,23 @@ public class OutputPlane extends CoordPlane
 			this.x = x;
 			this.y = y;
 			this.t = t;
+		}
+		public initCond(Point2D p)
+		{
+			this.t = t;
+			this.x = p.getX();
+			this.y = p.getY();
+		}
+	}
+	private static class sepStart
+	{
+		public Point2D start;
+		public boolean positive;
+
+		public sepStart(Point2D s, boolean p)
+		{
+			start = s;
+			positive = p;
 		}
 	}
 
