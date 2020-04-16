@@ -25,6 +25,7 @@ public class InputPlane extends CoordPlane
 	private Color hopfBifColor = Color.ORANGE;
 	List<double[]> saddleBifs;
 	List<double[]> hopfBifs;
+	List<SaddleCon> saddleCons;
 
 	public InputPlane(double side, TextField aField, TextField bField, OutputPlane op)
 	{
@@ -35,6 +36,7 @@ public class InputPlane extends CoordPlane
 		this.bField = bField;
 		saddleBifs = new LinkedList<>();
 		hopfBifs = new LinkedList<>();
+		saddleCons = new LinkedList<>();
 		draw();
 		setOnKeyPressed((e) ->
 		{
@@ -330,6 +332,10 @@ public class InputPlane extends CoordPlane
 		for(double hopfBif []: hopfBifs)
 		{
 			hopfBifHelp(hopfBif, false);
+		}
+		for(SaddleCon sad : saddleCons)
+		{
+			op.renderSaddleCon(sad.pt, sad.s1, sad.s2, sad.line, false);
 		}
 	}
 	public void clear()

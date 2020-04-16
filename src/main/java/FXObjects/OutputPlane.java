@@ -8,9 +8,12 @@ import Events.SaddleSelected;
 import Events.SourceSelected;
 import Exceptions.EvaluationException;
 import Exceptions.RootNotFound;
+import javafx.application.Platform;
 import javafx.geometry.Insets;
 import javafx.geometry.Point2D;
 import javafx.scene.Node;
+import javafx.scene.canvas.Canvas;
+import javafx.scene.canvas.GraphicsContext;
 import javafx.scene.control.Label;
 import javafx.scene.control.TextField;
 import javafx.scene.input.KeyCode;
@@ -23,8 +26,14 @@ import javafx.scene.paint.Color;
 import javafx.scene.text.Text;
 import javafx.scene.transform.Affine;
 import javafx.scene.transform.Rotate;
+import org.ejml.data.FMatrixRMaj;
+import org.ejml.dense.row.misc.RrefGaussJordanRowPivot_DDRM;
+import org.ejml.dense.row.misc.RrefGaussJordanRowPivot_FDRM;
+import org.ejml.interfaces.linsol.ReducedRowEchelonForm;
+import org.ejml.simple.SimpleMatrix;
 
 
+import java.util.ArrayList;
 import java.util.LinkedList;
 import java.util.List;
 
@@ -46,7 +55,7 @@ public class OutputPlane extends CoordPlane
 	public EvalType evalType;
 	public ClickModeType clickMode = ClickModeType.DRAWPATH;
 	private boolean drawSep = false;
-	private Point2D line [] = new Point2D[2];
+	private Point2D line[] = new Point2D[2];
 	private CriticalPoint currentPoint = null;
 
 	private Color solutionColor = Color.BLACK;
@@ -57,6 +66,7 @@ public class OutputPlane extends CoordPlane
 	private Color unstblSeparatrixColor = Color.DARKCYAN;
 	private Color criticalColor = Color.RED;
 	private Color lnColor = Color.CADETBLUE;
+	public InputPlane in;
 
 
 	public OutputPlane(double side, TextField tField)
@@ -70,7 +80,7 @@ public class OutputPlane extends CoordPlane
 		horizIsos = new LinkedList<>();
 		vertIsos = new LinkedList<>();
 		selectedCritPoints = new LinkedList<>();
-		selectedSeps = new LinkedList<>();
+		selectedSeps = new ArrayList<>(2);
 		draw();
 		tField.setText(Double.toString(t));
 
@@ -210,7 +220,9 @@ public class OutputPlane extends CoordPlane
 					fireEvent(new SaddleSelected(p));
 					selectedCritPoints.add(p);
 					drawSelectedCritPoints();
-				} catch (RootNotFound ignored) {}
+				} catch (RootNotFound ignored)
+				{
+				}
 				break;
 			case SELECTSOURCE:
 				try
@@ -219,9 +231,11 @@ public class OutputPlane extends CoordPlane
 					fireEvent(new SourceSelected(p));
 					selectedCritPoints.add(p);
 					drawSelectedCritPoints();
-				} catch (RootNotFound ignored) {}
+				} catch (RootNotFound ignored)
+				{
+				}
 			case DRAWSEG:
-				if(line[0] == null)
+				if (line[0] == null)
 				{
 					line[0] = pt;
 				} else
@@ -238,7 +252,7 @@ public class OutputPlane extends CoordPlane
 			case SELECTSEP:
 				try
 				{
-					if(currentPoint != null && selectedSeps.size() < 2)
+					if (currentPoint != null && selectedSeps.size() < 2)
 					{
 						double tol = .00001;
 						Point2D p1 = new Point2D(currentPoint.point.getX() + tol * currentPoint.matrix.getEigenVector(0).get(0),
@@ -256,26 +270,196 @@ public class OutputPlane extends CoordPlane
 						double d4 = pt.distance(p4);
 						double min = Math.min(Math.min(d1, d2), Math.min(d3, d4));
 						boolean firstPos = currentPoint.matrix.getEigenvalue(0).getReal() > 0;
-						if(d1 == min)
+						if (d1 == min)
 							selectedSeps.add(new sepStart(p1, firstPos));
-						else if(d2 == min)
+						else if (d2 == min)
 							selectedSeps.add(new sepStart(p2, firstPos));
-						else if(d3 == min)
+						else if (d3 == min)
 							selectedSeps.add(new sepStart(p3, !firstPos));
 						else
 							selectedSeps.add(new sepStart(p4, !firstPos));
-						if(selectedSeps.size() == 2)
+						draw();
+						if (selectedSeps.size() == 2)
+						{
+							renderSaddleCon(new Point2D(a, b), selectedSeps.get(0), selectedSeps.get(1), line, true);
+							selectedSeps.clear();
+							selectedCritPoints.clear();
 							clickMode = ClickModeType.DRAWPATH;
-					} else if(currentPoint == null)
+						}
+					} else if (currentPoint == null)
 					{
 						currentPoint = critical(pt);
 						selectedCritPoints.add(currentPoint.point);
+						drawSelectedCritPoints();
 					}
-				} catch (RootNotFound ignored) {}
+				} catch (RootNotFound ignored)
+				{
+				}
 		}
 
 	}
 
+
+	private Point2D getIntersection(Point2D p1, Point2D p2, Point2D q1, Point2D q2) throws RootNotFound
+	{
+		double a1 = p2.getY() - p1.getY();
+		double b1 = p2.getX() - p1.getX();
+		double c1 = a1 * p1.getX() + b1 * p1.getY();
+
+		double a2 = q2.getY() - q1.getY();
+		double b2 = q2.getX() - q1.getX();
+		double c2 = a2 * q1.getX() + b2 * q1.getY();
+
+		double det = a1 * b2 - a2 * b1;
+		if (det == 0) throw new RootNotFound();
+		else
+		{
+			double x = (b2 * c1 - b1 * c2) / det;
+			double y = (a1 * c2 - a2 * c1) / det;
+			return new Point2D(x, y);
+		}
+	}
+
+
+	public void renderSaddleCon(Point2D start, sepStart s1, sepStart s2, Point2D ln[], boolean add)
+	{
+		double aInc = (in.xMax - in.xMin) / in.c.getWidth();
+		double bInc = (in.yMax - in.yMin) / in.c.getHeight();
+		Point2D prev;
+		Point2D next;
+		Point2D temp;
+		boolean justThrew = false;
+		boolean isA = false;
+		for (int i = 0; i < 2; i++)
+		{
+			try
+			{
+				prev = saddleConnection(s1, s2, isA, start.getX(), start.getY(), ln);
+				if (add)
+				{
+					in.saddleCons.add(new SaddleCon(prev, s1, s2, ln));
+					add = false;
+				}
+			} catch (RootNotFound r)
+			{
+				try
+				{
+					isA = !isA;
+					prev = saddleConnection(s1, s2, isA, start.getX(), start.getY(), ln);
+					if (add)
+					{
+						in.saddleCons.add(new SaddleCon(prev, s1, s2, ln));
+						add = false;
+					}
+				} catch (RootNotFound r1)
+				{
+					return;
+				}
+			}
+
+			while (in.inBounds(prev.getX(), prev.getY()))
+			{
+				if (isA) temp = new Point2D(prev.getX() + aInc, prev.getY());
+				else temp = new Point2D(prev.getX(), prev.getY() + bInc);
+				try
+				{
+					next = saddleConnection(s1, s2, isA, temp.getX(), temp.getY(), ln);
+					in.drawLine(prev, next);
+					prev = next;
+					justThrew = false;
+				} catch (RootNotFound r)
+				{
+					if (justThrew) break;
+					isA = !isA;
+					justThrew = true;
+				}
+			}
+			aInc = -aInc;
+			bInc = -bInc;
+		}
+
+	}
+
+	private Point2D saddleConnection(sepStart s1, sepStart s2, boolean isA, double at, double bt, Point2D ln[]) throws RootNotFound
+	{
+		double inc = .1;
+		double tol = .001;
+		double dist = sepIntersect(s1, at, bt, ln).distance(sepIntersect(s2, at, bt, ln));
+		double distTemp;
+		while (dist > tol)
+		{
+			System.out.println("dist: " + dist);
+//			System.out.println("inc: " + inc);
+//			System.out.println("a: " + at);
+			if (isA) bt += inc;
+			else at += inc;
+			distTemp = sepIntersect(s1, at, bt, ln).distance(sepIntersect(s2, at, bt, ln));
+			if (distTemp >= dist)
+			{
+				inc = -(inc * .9);
+				if (Math.abs(inc) <= .000000000000000001) throw new RootNotFound();
+			}
+			//if(distTemp == dist) throw new RootNotFound();
+
+			dist = distTemp;
+		}
+		return new Point2D(at, bt);
+
+	}
+
+	private Point2D sepIntersect(sepStart s, double a, double b, Point2D[] ln) throws RootNotFound
+	{
+		double x, y;
+		x = s.start.getX();
+		y = s.start.getY();
+		Evaluator eval;
+		switch (evalType)
+		{
+			case Euler:
+				eval = EvaluatorFactory.getEulerEval(dx, dy);
+				break;
+			case MidEuler:
+				eval = EvaluatorFactory.getEulerMidEval(dx, dy);
+				break;
+			case RungeKutta:
+			default:
+				eval = EvaluatorFactory.getRungeKuttaEval(dx, dy);
+		}
+		Point2D prev;
+		Point2D next;
+		prev = new Point2D(x, y);
+		Point2D temp;
+		if (s.positive)
+			eval.initialise(x, y, t, a, b, inc);
+		else
+			eval.initialise(x, y, t, a, b, -inc);
+		while (eval.getT() < 100 + t)
+		{
+			next = eval.next();
+			if (orientation(prev, ln) == 0) return prev;
+			else if (Math.signum(orientation(prev, ln)) != Math.signum(orientation(next, ln)))
+			{
+				temp = prev.midpoint(next);
+				double dot = (temp.getX() - ln[0].getX()) * (ln[1].getX() - ln[0].getX()) +
+						(temp.getY() - ln[0].getY()) * (ln[1].getY() - ln[0].getY());
+				if (0 <= dot && dot < Math.pow(ln[0].distance(ln[1]), 2))
+					if (Math.signum(temp.getX() - ln[0].getX()) != Math.signum(temp.getX() - ln[1].getX()) &&
+							Math.signum(temp.getY() - ln[0].getY()) != Math.signum(temp.getY() - ln[1].getY()))//!Double.isNaN(temp.getX()) && !Double.isNaN(temp.getY()))
+					{
+						//System.out.println(temp);
+						return temp;
+					}
+			}
+			prev = next;
+		}
+		throw new RootNotFound();
+	}
+
+	private double orientation(Point2D p, Point2D ln[])
+	{
+		return (p.getX() - ln[0].getX()) * (ln[1].getY() - ln[0].getY()) -
+				(p.getY() - ln[0].getY()) * (ln[1].getX() - ln[0].getX());
+	}
 
 	private Point2D getSource(Point2D start) throws RootNotFound
 	{
@@ -665,12 +849,14 @@ public class OutputPlane extends CoordPlane
 				drawGraphBack(point4, false, '-');
 			}
 		} catch (NullPointerException ignored)
-		{}
+		{
+		}
 	}
+
 	private void drawSelectedCritPoints()
 	{
 		gc.setStroke(criticalColor);
-		for(Point2D p : selectedCritPoints)
+		for (Point2D p : selectedCritPoints)
 		{
 			gc.strokeOval(normToScrX(p.getX()) - 8, normToScrY(p.getY()) - 8, 16, 16);
 		}
@@ -692,12 +878,26 @@ public class OutputPlane extends CoordPlane
 			}
 
 		}
-		if(line[1] != null)
+		if (line[1] != null)
 		{
 			gc.setStroke(lnColor);
 			drawLine(line[0], line[1]);
 		}
 		drawSelectedCritPoints();
+		gc.setLineWidth(2);
+		for (sepStart s : selectedSeps)
+		{
+			if (s.positive)
+			{
+				gc.setStroke(stblSeparatrixColor);
+				drawGraphBack(new initCond(s.start.getX(), s.start.getY(), t), false, '+');
+			} else
+			{
+				gc.setStroke(unstblSeparatrixColor);
+				drawGraphBack(new initCond(s.start.getX(), s.start.getY(), t), false, '-');
+			}
+		}
+		gc.setLineWidth(1);
 		gc.setStroke(Color.BLACK);
 	}
 
@@ -720,22 +920,12 @@ public class OutputPlane extends CoordPlane
 			this.y = y;
 			this.t = t;
 		}
+
 		public initCond(Point2D p)
 		{
 			this.t = t;
 			this.x = p.getX();
 			this.y = p.getY();
-		}
-	}
-	private static class sepStart
-	{
-		public Point2D start;
-		public boolean positive;
-
-		public sepStart(Point2D s, boolean p)
-		{
-			start = s;
-			positive = p;
 		}
 	}
 

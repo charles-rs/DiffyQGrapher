@@ -121,6 +121,7 @@ public class Main extends Application
 		outP = new Pane();
 		OutputPlane outPlane = new OutputPlane(600, tField);
 		InputPlane inPlane = new InputPlane(300, aField, bField, outPlane);
+		outPlane.in = inPlane;
 		HBox buttonBox = new HBox();
 		Button clearOut = new Button("Clear");
 		clearOut.setOnAction(actionEvent ->
