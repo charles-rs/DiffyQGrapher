@@ -44,6 +44,10 @@ public abstract class Evaluator
 	{
 		return t;
 	}
+	public double getInc()
+	{
+		return inc;
+	}
 	public CriticalPoint findCritical(Point2D start, double a, double b, double t) throws RootNotFound
 	{
 		Point2D sol = NewtonEvaluator.solve(20, start, a, b, t, dx, dy, 'x', 'y');

@@ -23,6 +23,7 @@ public class InputPlane extends CoordPlane
 	private TextField aField, bField;
 	private Color saddleBifColor = Color.BLUE;
 	private Color hopfBifColor = Color.ORANGE;
+	Color saddleConColor = Color.PURPLE;
 	List<double[]> saddleBifs;
 	List<double[]> hopfBifs;
 	List<SaddleCon> saddleCons;
@@ -335,7 +336,13 @@ public class InputPlane extends CoordPlane
 		}
 		for(SaddleCon sad : saddleCons)
 		{
-			op.renderSaddleCon(sad.pt, sad.s1, sad.s2, sad.line, false);
+			new Thread(() ->
+			{
+				synchronized (this)
+				{
+					op.renderSaddleCon(sad.pt, sad.s1, sad.s2, sad.line, false);
+				}
+			}).start();
 		}
 	}
 	public void clear()

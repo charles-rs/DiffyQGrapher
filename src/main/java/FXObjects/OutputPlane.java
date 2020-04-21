@@ -16,6 +16,7 @@ import javafx.scene.canvas.Canvas;
 import javafx.scene.canvas.GraphicsContext;
 import javafx.scene.control.Label;
 import javafx.scene.control.TextField;
+import javafx.scene.image.Image;
 import javafx.scene.input.KeyCode;
 import javafx.scene.input.MouseEvent;
 import javafx.scene.layout.Border;
@@ -33,6 +34,8 @@ import org.ejml.interfaces.linsol.ReducedRowEchelonForm;
 import org.ejml.simple.SimpleMatrix;
 
 
+import javax.imageio.stream.ImageOutputStream;
+import java.awt.image.BufferedImage;
 import java.util.ArrayList;
 import java.util.LinkedList;
 import java.util.List;
@@ -282,82 +285,106 @@ public class OutputPlane extends CoordPlane
 						draw();
 						if (selectedSeps.size() == 2)
 						{
-							renderSaddleCon(new Point2D(a, b), selectedSeps.get(0), selectedSeps.get(1), line, true);
-							selectedSeps.clear();
+							new Thread(() ->
+							{
+								synchronized (in)
+								{
+									renderSaddleCon(new Point2D(a, b), selectedSeps.get(0), selectedSeps.get(1), line, true);
+									selectedSeps.clear();
+								}
+							}).start();
+
 							selectedCritPoints.clear();
 							clickMode = ClickModeType.DRAWPATH;
 						}
 					}
-				} catch (RootNotFound ignored){}
+				} catch (RootNotFound ignored)
+				{
+				}
 		}
 
 	}
 
-	private SimpleMatrix getDerivsOfSaddle(sepStart p, double a, double b)
+	private SimpleMatrix getDerivsOfSol(Point2D p, double a, double b)
 	{
-		AST.Node res [] = new AST.Node [2];
-		AST.Node derivAB [][] = new AST.Node [2][2];
+		AST.Node res[] = new AST.Node[2];
+		AST.Node derivAB[][] = new AST.Node[2][2];
 		derivAB[0][0] = dx.differentiate('a').collapse();
 		derivAB[0][1] = dx.differentiate('b').collapse();
 		derivAB[1][0] = dy.differentiate('a').collapse();
 		derivAB[1][1] = dy.differentiate('b').collapse();
 
-		AST.Node derivXY [][] = new AST.Node [2][2];
+		AST.Node derivXY[][] = new AST.Node[2][2];
 		derivXY[0][0] = dx.differentiate('x').collapse();
 		derivXY[0][1] = dx.differentiate('y').collapse();
 		derivXY[1][0] = dy.differentiate('x').collapse();
 		derivXY[1][1] = dy.differentiate('y').collapse();
 
-		SimpleMatrix dab = new SimpleMatrix(2,2);
-		SimpleMatrix dxy = new SimpleMatrix(2,2);
+		SimpleMatrix dab = new SimpleMatrix(2, 2);
+		SimpleMatrix dxy = new SimpleMatrix(2, 2);
 		try
 		{
-			for(int i = 0; i < 2; i++)
+			for (int i = 0; i < 2; i++)
 			{
 				for (int j = 0; j < 2; j++)
 				{
-					dab.set(i, j, derivAB[i][j].eval(p.start.getX(), p.start.getY(), a, b, 0));
-					dxy.set(i, j, derivXY[i][j].eval(p.start.getX(), p.start.getY(), a, b, 0));
+					dab.set(i, j, derivAB[i][j].eval(p.getX(), p.getY(), a, b, 0));
+					dxy.set(i, j, derivXY[i][j].eval(p.getX(), p.getY(), a, b, 0));
 				}
 			}
-			return dab.invert().negative().mult(dxy);
+			return dab;//.invert().negative().mult(dxy);
 		} catch (EvaluationException r)
 		{
 			return null;
 		}
 	}
 
-
-	private Point2D getIntersection(Point2D p1, Point2D p2, Point2D q1, Point2D q2) throws RootNotFound
+	private SimpleMatrix getDerivOfLine(sepStart s1, double a, double b) throws RootNotFound
 	{
-		double a1 = p2.getY() - p1.getY();
-		double b1 = p2.getX() - p1.getX();
-		double c1 = a1 * p1.getX() + b1 * p1.getY();
-
-		double a2 = q2.getY() - q1.getY();
-		double b2 = q2.getX() - q1.getX();
-		double c2 = a2 * q1.getX() + b2 * q1.getY();
-
-		double det = a1 * b2 - a2 * b1;
-		if (det == 0) throw new RootNotFound();
+		SimpleMatrix V = SimpleMatrix.identity(2);
+		SimpleMatrix D = getDerivsOfSol(s1.start, a, b);
+		SimpleMatrix Vp = D.mult(V);
+		Point2D iSect = null;
+		double x = s1.start.getX();
+		double y = s1.start.getY();
+		double t0 = sepIntersect(s1, a, b, line, iSect);
+		Evaluator eval = EvaluatorFactory.getRungeKuttaEval(dx, dy);
+		Point2D next = s1.start;
+		if (s1.positive)
+			eval.initialise(x, y, 0, a, b, inc);
 		else
+			eval.initialise(x, y, 0, a, b, -inc);
+		while (eval.getT() < t0)
 		{
-			double x = (b2 * c1 - b1 * c2) / det;
-			double y = (a1 * c2 - a2 * c1) / det;
-			return new Point2D(x, y);
+			next = eval.next();
+			V = V.plus(Vp.scale(eval.getInc()));
+			Vp = getDerivsOfSol(next, a, b);
 		}
+		Point2D temp = line[0].subtract(line[1]);
+		SimpleMatrix fin = new SimpleMatrix(2, 1);
+		fin.set(0, 0, next.getX());
+		fin.set(1, 0, next.getY());
+		SimpleMatrix res = new SimpleMatrix(2,2);
+		res.set(0, 0, temp.getX() * V.get(0, 0)*temp.getX() + V.get(1, 0)*temp.getY());
+		res.set(0, 1, temp.getX() * V.get(0, 1) * temp.getX() + V.get(1,1)*temp.getY());
+		res.set(1, 0, temp.getY() * V.get(0, 0)*temp.getX() + V.get(1, 0)*temp.getY());
+		res.set(1, 1, temp.getY() * V.get(0, 1) * temp.getX() + V.get(1,1)*temp.getY());
+		return res;
 	}
+
+
 
 
 	public void renderSaddleCon(Point2D start, sepStart s1, sepStart s2, Point2D ln[], boolean add)
 	{
-		double aInc = (in.xMax - in.xMin) / in.c.getWidth();
-		double bInc = (in.yMax - in.yMin) / in.c.getHeight();
+		in.gc.setStroke(in.saddleConColor);
+		double aInc = 3 * (in.xMax - in.xMin) / in.c.getWidth();
+		double bInc = 3 * (in.yMax - in.yMin) / in.c.getHeight();
 		Point2D prev;
 		Point2D next;
 		Point2D temp;
 		boolean justThrew = false;
-		boolean isA = false;
+		boolean isA = true;
 		for (int i = 0; i < 2; i++)
 		{
 			try
@@ -370,107 +397,156 @@ public class OutputPlane extends CoordPlane
 				}
 			} catch (RootNotFound r)
 			{
-//				try
-//				{
-//					isA = !isA;
-//					prev = saddleConnection(s1, s2, isA, start.getX(), start.getY(), ln);
-//					if (add)
-//					{
-//						in.saddleCons.add(new SaddleCon(prev, s1, s2, ln));
-//						add = false;
-//					}
-//				} catch (RootNotFound r1)
-//				{
-//					return;
-//				}
+				try
+				{
+					isA = !isA;
+					prev = saddleConnection(s1, s2, isA, start.getX(), start.getY(), ln);
+					if (add)
+					{
+						in.saddleCons.add(new SaddleCon(prev, s1, s2, ln));
+						add = false;
+					}
+				} catch (RootNotFound r1)
+				{
+					return;
+				}
 			}
 
-//			while (in.inBounds(prev.getX(), prev.getY()))
-//			{
-//				if (isA) temp = new Point2D(prev.getX() + aInc, prev.getY());
-//				else temp = new Point2D(prev.getX(), prev.getY() + bInc);
-//				try
-//				{
-//					next = saddleConnection(s1, s2, isA, temp.getX(), temp.getY(), ln);
-//					System.out.println(next);
-//					in.drawLine(prev, next);
-//					prev = next;
-//					justThrew = false;
-//				} catch (RootNotFound r)
-//				{
-//					if (justThrew) break;
-//					isA = !isA;
-//					justThrew = true;
-//				}
-//			}
-//			aInc = -aInc;
-//			bInc = -bInc;
+			while (in.inBounds(prev.getX(), prev.getY()))
+			{
+				if (isA) temp = new Point2D(prev.getX(), prev.getY() + bInc);
+				else temp = new Point2D(prev.getX() + aInc, prev.getY());
+				try
+				{
+					next = saddleConnection(s1, s2, isA, temp.getX(), temp.getY(), ln);
+					System.out.println(next);
+					in.drawLine(prev, next);
+					prev = next;
+					justThrew = false;
+				} catch (RootNotFound r)
+				{
+					if (justThrew) break;
+					isA = !isA;
+					justThrew = true;
+				}
+			}
+			aInc = -aInc;
+			bInc = -bInc;
 		}
+		in.gc.setStroke(Color.BLACK);
+	}
 
+	private double minDist(sepStart sep, Point2D other, double a, double b)
+	{
+		Evaluator eval = null;
+		switch (evalType)
+		{
+			case Euler:
+				eval = EvaluatorFactory.getEulerEval(dx, dy);
+				break;
+			case MidEuler:
+				eval = EvaluatorFactory.getEulerMidEval(dx, dy);
+				break;
+			case RungeKutta:
+				eval = EvaluatorFactory.getRungeKuttaEval(dx, dy);
+		}
+		double in;
+		if(sep.positive) in = inc;
+		else in = -inc;
+		eval.initialise(sep.start.getX(), sep.start.getY(), 0, a, b, in);
+		Point2D prev = sep.start;
+		Point2D next = eval.next();
+		boolean turnedAround = false;
+		while (next.distance(other) < prev.distance(other) || !turnedAround)
+		{
+			prev = next;
+			next = eval.next();
+			if(!turnedAround && next.distance(other) < prev.distance(other))
+				turnedAround = true;
+		}
+		return prev.distance(other);
 	}
 
 	private Point2D saddleConnection(sepStart s1, sepStart s2, boolean isA, double at, double bt, Point2D ln[]) throws RootNotFound
 	{
-		System.out.println("connecting");
-		double inc = .0000001;
-		double tol = .000001;
-		double dist = sepIntersect(s1, at, bt, ln).distance(sepIntersect(s2, at, bt, ln));
-		double nextDist;
-		if (isA) nextDist = sepIntersect(s1, at, bt + inc, ln).distance(sepIntersect(s2, at, bt, ln));
-		else nextDist = sepIntersect(s1, at + inc, bt, ln).distance(sepIntersect(s2, at, bt, ln));
+		long time = System.nanoTime();
+		double inc = .1;
+		double tol = .0000001;
+		Point2D saddle1 = critical(s1.start).point;
+		Point2D saddle2 = critical(s2.start).point;
+		double dist1 = Double.MAX_VALUE;
+		double dist2;
+		double deriv;
 
-		double derivative = (nextDist - dist)/inc;
-		for(int i = 0; i < 15; i++)
+
+		for(int i = 0; i < 10; i++)
 		{
-			if(isA) bt = bt - (dist)/(derivative);
-			else at = at - (dist)/(derivative);
-			dist = sepIntersect(s1, at, bt, ln).distance(sepIntersect(s2, at, bt, ln));
-			if (isA) nextDist = sepIntersect(s1, at, bt + inc, ln).distance(sepIntersect(s2, at, bt, ln));
-			else nextDist = sepIntersect(s1, at + inc, bt, ln).distance(sepIntersect(s2, at, bt, ln));
-			derivative = (nextDist - dist)/inc;
-			//inc *= 2;
-			System.out.println("a: " + at);
-			System.out.println("dist:" + dist);
-			System.out.println("derivative: " + derivative);
+			dist1 = minDist(s1, saddle2, at, bt);
+			if(isA) dist2 = minDist(s1, saddle2, at + inc, bt);
+			else dist2 = minDist(s1, saddle2, at, bt + inc);
+			deriv = (dist2 - dist1)/inc;
+			if(deriv == 0.0) throw new RootNotFound();
+			if(isA) at = at - dist1/deriv;
+			else bt = bt - dist1/deriv;
+			inc = dist1/1000.;
+//			System.out.println("dist: " + dist1);
+//			System.out.println("deriv: " + deriv);
+//			System.out.println("a: " + at);
 		}
-		if(dist < tol)
+		inc = .000001;
+		while (dist1 > tol)
 		{
-			System.out.println("found one");
+			//System.out.println("dist: " + dist1);
+			if(isA) at += inc;
+			else bt += inc;
+			dist2 = minDist(s1, saddle2, at, bt);
+			if (dist2 >= dist1)
+			{
+				//System.out.println("flipping");
+				inc = -(inc * .5);
+				if(Math.abs(inc) <= .00000000000000000000000000001) throw new RootNotFound();
+			}
+			dist1 = dist2;
+		}
 			return new Point2D(at, bt);
-		}
-		//else throw new RootNotFound();
-		else return null;
+
+//		SimpleMatrix start = new SimpleMatrix(2, 1);
+//		start.setColumn(0, 0, at, bt);
+//		SimpleMatrix deriv1 = getDerivOfLine(s1, at, bt);
+//		SimpleMatrix deriv2 = getDerivOfLine(s2, at, bt);
+//		SimpleMatrix D = deriv1.plus(deriv2);
+//		Point2D isect1, isect2;
+//		isect1 = null;
+//		isect2 = null;
+//		sepIntersect(s1, at, bt, line, isect1);
+//		sepIntersect(s2, at, bt, line, isect2);
+//		//TODO fix null pointer exception here
+//		double dist = isect1.distance(isect2);
+//		SimpleMatrix prev = null;
+//
+//		for(int i = 0; i < 15; i++)
+//		{
+//			prev = start;
+//			start = start.minus(D.invert().mult(start));
+//			at = start.get(0,0);
+//			bt = start.get(1,0);
+//			deriv1 = getDerivOfLine(s1, at, bt);
+//			deriv2 = getDerivOfLine(s2, at, bt);
+//			D = deriv1.plus(deriv2);
+//
+//		}
+//		if(Math.abs(prev.minus(start).get(0, 0)) < tol && Math.abs(prev.minus(start).get(1,0)) < tol)
+//		{
+//			System.out.println("found one");
+//			return new Point2D(at, bt);
+//		}
+//		//else throw new RootNotFound();
+//		else return null;
 
 	}
 
-//	private Point2D saddleConnection(sepStart s1, sepStart s2, boolean isA, double at, double bt, Point2D ln[]) throws RootNotFound
-//	{
-//		double inc = .000000001;
-//		double tol = .001;
-//		double dist = sepIntersect(s1, at, bt, ln).distance(sepIntersect(s2, at, bt, ln));
-//		double distTemp;
-//		while (dist > tol)
-//		{
-//			System.out.println("dist: " + dist);
-////			System.out.println("inc: " + inc);
-////			System.out.println("a: " + at);
-//			if (isA) bt += inc;
-//			else at += inc;
-//			distTemp = sepIntersect(s1, at, bt, ln).distance(sepIntersect(s2, at, bt, ln));
-//			if (distTemp >= dist)
-//			{
-//				inc = -(inc * .9);
-//				if (Math.abs(inc) <= .000000000000000001) throw new RootNotFound();
-//			}
-//			//if(distTemp == dist) throw new RootNotFound();
-//
-//			dist = distTemp;
-//		}
-//		return new Point2D(at, bt);
-//
-//	}
 
-	private Point2D sepIntersect(sepStart s, double a, double b, Point2D[] ln) throws RootNotFound
+	private double sepIntersect(sepStart s, double a, double b, Point2D[] ln, Point2D res) throws RootNotFound
 	{
 		double x, y;
 		x = s.start.getX();
@@ -499,8 +575,11 @@ public class OutputPlane extends CoordPlane
 		while (eval.getT() < 100 + t)
 		{
 			next = eval.next();
-			if (orientation(prev, ln) == 0) return prev;
-			else if (Math.signum(orientation(prev, ln)) != Math.signum(orientation(next, ln)))
+			if (orientation(prev, ln) == 0)
+			{
+				res = prev;
+				return eval.getT();
+			} else if (Math.signum(orientation(prev, ln)) != Math.signum(orientation(next, ln)))
 			{
 				temp = prev.midpoint(next);
 				double dot = (temp.getX() - ln[0].getX()) * (ln[1].getX() - ln[0].getX()) +
@@ -510,7 +589,8 @@ public class OutputPlane extends CoordPlane
 							Math.signum(temp.getY() - ln[0].getY()) != Math.signum(temp.getY() - ln[1].getY()))//!Double.isNaN(temp.getX()) && !Double.isNaN(temp.getY()))
 					{
 						//System.out.println(temp);
-						return temp;
+						res = prev.midpoint(next);
+						return eval.getT();
 					}
 			}
 			prev = next;
@@ -989,6 +1069,26 @@ public class OutputPlane extends CoordPlane
 			this.t = t;
 			this.x = p.getX();
 			this.y = p.getY();
+		}
+	}
+	@Deprecated
+	private Point2D getIntersection(Point2D p1, Point2D p2, Point2D q1, Point2D q2) throws RootNotFound
+	{
+		double a1 = p2.getY() - p1.getY();
+		double b1 = p2.getX() - p1.getX();
+		double c1 = a1 * p1.getX() + b1 * p1.getY();
+
+		double a2 = q2.getY() - q1.getY();
+		double b2 = q2.getX() - q1.getX();
+		double c2 = a2 * q1.getX() + b2 * q1.getY();
+
+		double det = a1 * b2 - a2 * b1;
+		if (det == 0) throw new RootNotFound();
+		else
+		{
+			double x = (b2 * c1 - b1 * c2) / det;
+			double y = (a1 * c2 - a2 * c1) / det;
+			return new Point2D(x, y);
 		}
 	}
 
