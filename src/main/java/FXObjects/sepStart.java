@@ -1,15 +1,32 @@
 package FXObjects;
 
+import Evaluation.CriticalPoint;
 import javafx.geometry.Point2D;
+import org.ejml.simple.SimpleBase;
 
 public class sepStart
 {
-	public Point2D start;
+	public CriticalPoint saddle;
 	public boolean positive;
+	public int eigenvector;
 
-	public sepStart(Point2D s, boolean p)
+	public sepStart(CriticalPoint s, boolean pos, int eig)
 	{
-		start = s;
-		positive = p;
+		saddle = s;
+		positive = pos;
+		eigenvector = eig;
+	}
+
+	public Point2D getStart(double inc)
+	{
+		SimpleBase eig = saddle.matrix.getEigenVector(eigenvector);
+		if(positive)
+		{
+			return new Point2D(saddle.point.getX() + inc * eig.get(0), saddle.point.getY() + inc * eig.get(1));
+		} else
+		{
+			return new Point2D(saddle.point.getX() - inc * eig.get(0), saddle.point.getY() - inc * eig.get(1));
+		}
+
 	}
 }

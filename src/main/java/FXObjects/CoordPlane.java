@@ -17,6 +17,7 @@ public class CoordPlane extends Pane
 	protected GraphicsContext gc;
 	static public CoordPlane selected;
 	protected KeyCode right, left, up, down;
+	protected Rectangle zoomBox;
 
 
 	public CoordPlane (double side)
@@ -59,7 +60,7 @@ public class CoordPlane extends Pane
 			if(oldVal.doubleValue() != newVal.doubleValue())
 				drawAxes();
 		});*/
-		Rectangle zoomBox = new Rectangle(0,0,0,0);
+		zoomBox = new Rectangle(0,0,0,0);
 		zoomBox.setVisible(false);
 		zoomBox.setStroke(Color.BLACK);
 		zoomBox.setFill(Color.TRANSPARENT);
@@ -224,5 +225,13 @@ public class CoordPlane extends Pane
 	protected void drawLine(Point2D p1, Point2D p2)
 	{
 		drawLine(p1.getX(), p1.getY(), p2.getX(), p2.getY());
+	}
+	protected void drawLine(double x1, double y1, double x2, double y2, Canvas can)
+	{
+		can.getGraphicsContext2D().strokeLine(normToScrX(x1), normToScrY(y1), normToScrX(x2), normToScrY(y2));
+	}
+	protected void drawLine(Point2D p1, Point2D p2, Canvas can)
+	{
+		drawLine(p1.getX(), p1.getY(), p2.getX(), p2.getY(), can);
 	}
 }

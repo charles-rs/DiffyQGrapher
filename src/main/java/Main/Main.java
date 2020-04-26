@@ -333,7 +333,7 @@ public class Main extends Application
 		});
 		sdlConBif.setOnAction((e) ->
 		{
-			outPlane.clickMode = ClickModeType.DRAWSEG;
+			outPlane.clickMode = ClickModeType.SELECTSEP;
 		});
 		EventHandler<ActionEvent> handler = e ->
 		{

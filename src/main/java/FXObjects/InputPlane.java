@@ -5,6 +5,7 @@ import AST.Node;
 import Exceptions.EvaluationException;
 import Exceptions.RootNotFound;
 import javafx.geometry.Point2D;
+import javafx.scene.canvas.Canvas;
 import javafx.scene.control.TextField;
 import javafx.scene.input.KeyCode;
 import javafx.scene.input.MouseEvent;
@@ -27,17 +28,25 @@ public class InputPlane extends CoordPlane
 	List<double[]> saddleBifs;
 	List<double[]> hopfBifs;
 	List<SaddleCon> saddleCons;
+	Thread artist;
+	Canvas saddleCanvas;
+	boolean updateSaddleCons;
+
 
 	public InputPlane(double side, TextField aField, TextField bField, OutputPlane op)
 	{
 
 		super(side);
+		saddleCanvas = new Canvas(side, side);
+		getChildren().addAll(saddleCanvas);
+		updateSaddleCons = false;
 		this.op = op;
 		this.aField = aField;
 		this.bField = bField;
 		saddleBifs = new LinkedList<>();
 		hopfBifs = new LinkedList<>();
 		saddleCons = new LinkedList<>();
+		saddleCanvas.setVisible(true);
 		draw();
 		setOnKeyPressed((e) ->
 		{
@@ -82,6 +91,11 @@ public class InputPlane extends CoordPlane
 				if (b != 0.0)
 					bField.setText(Double.toString(b));
 			}
+		});
+		addEventFilter(MouseEvent.MOUSE_RELEASED, me ->
+		{
+			if(zoomBox.isVisible() && zoomBox.getWidth() > 0 && zoomBox.getHeight() > 0)
+				drawSaddleCons();
 		});
 
 	}
@@ -334,21 +348,33 @@ public class InputPlane extends CoordPlane
 		{
 			hopfBifHelp(hopfBif, false);
 		}
+
+
+	}
+	public void drawSaddleCons()
+	{
+		if(artist != null)
+			artist.interrupt();
+		saddleCanvas.getGraphicsContext2D().clearRect(0, 0, c.getWidth(), c.getHeight());
 		for(SaddleCon sad : saddleCons)
 		{
-			new Thread(() ->
+			artist = new Thread(() ->
 			{
 				synchronized (this)
 				{
-					op.renderSaddleCon(sad.pt, sad.s1, sad.s2, sad.line, false);
+					op.renderSaddleCon(sad.pt, sad.s1, sad.s2, false);
 				}
-			}).start();
+			});
+			artist.start();
 		}
 	}
 	public void clear()
 	{
 		saddleBifs.clear();
 		hopfBifs.clear();
+		saddleCons.clear();
+		saddleCanvas.getGraphicsContext2D().clearRect(0, 0, c.getWidth(), c.getHeight());
+		draw();
 	}
 
 
