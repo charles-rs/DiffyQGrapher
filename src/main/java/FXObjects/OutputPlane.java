@@ -70,7 +70,6 @@ public class OutputPlane extends CoordPlane
 	private Color lnColor = Color.CADETBLUE;
 	public InputPlane in;
 
-
 	public OutputPlane(double side, TextField tField)
 	{
 		super(side);
@@ -271,10 +270,13 @@ public class OutputPlane extends CoordPlane
 						{
 							new Thread(() ->
 							{
-								synchronized (in)
+								synchronized (selectedSeps)
 								{
-									renderSaddleCon(new Point2D(a, b), selectedSeps.get(0), selectedSeps.get(1), true);
-									selectedSeps.clear();
+									synchronized (in)
+									{
+										renderSaddleCon(new Point2D(a, b), selectedSeps.get(0), selectedSeps.get(1), true);
+										selectedSeps.clear();
+									}
 								}
 							}).start();
 
@@ -461,12 +463,23 @@ public class OutputPlane extends CoordPlane
 		double dist1 = Double.MAX_VALUE;
 		double dist2;
 		double deriv;
-
+		Point2D sad;
+		sepStart sep;
+		if(minDist(s1, saddle2, at, bt) < minDist(s2, saddle1, at, bt))
+		{
+			sep = s1;
+			sad = saddle2;
+		}
+		else
+		{
+			sep = s2;
+			sad = saddle1;
+		}
 		for(int i = 0; i < 10; i++)
 		{
-			dist1 = minDist(s1, saddle2, at, bt);
-			if(isA) dist2 = minDist(s1, saddle2, at + inc, bt);
-			else dist2 = minDist(s1, saddle2, at, bt + inc);
+			dist1 = minDist(sep, sad, at, bt);
+			if(isA) dist2 = minDist(sep, sad, at + inc, bt);
+			else dist2 = minDist(sep, sad, at, bt + inc);
 			deriv = (dist2 - dist1)/inc;
 			if(deriv == 0.0)
 			{
@@ -478,19 +491,39 @@ public class OutputPlane extends CoordPlane
 			inc = dist1/1000.;
 			s1.saddle = critical(s1.saddle.point, at, bt);
 			s2.saddle = critical(s2.saddle.point, at, bt);
-			saddle1 = s1.saddle.point;
-			saddle2 = s2.saddle.point;
+			if(minDist(s1, saddle2, at, bt) > minDist(s2, saddle1, at, bt))
+			{
+				sep = s1;
+				sad = saddle2;
+			}
+			else
+			{
+				sep = s2;
+				sad = saddle1;
+			}
 			//System.out.println(i + "dist: " + dist1);
 //			System.out.println("deriv: " + deriv);
 //			System.out.println("a: " + at);
 		}
 		inc = .000001;
-		while (dist1 > tol)
+		while (dist1 < tol)
 		{
-			//System.out.println("dist: " + dist1);
+			System.out.println("dist: " + dist1);
 			if(isA) at += inc;
 			else bt += inc;
-			dist2 = minDist(s1, saddle2, at, bt);
+			s1.saddle = critical(s1.saddle.point, at, bt);
+			s2.saddle = critical(s2.saddle.point, at, bt);
+			if(minDist(s1, saddle2, at, bt) > minDist(s2, saddle1, at, bt))
+			{
+				sep = s1;
+				sad = saddle2;
+			}
+			else
+			{
+				sep = s2;
+				sad = saddle1;
+			}
+			dist2 = minDist(sep, sad, at, bt);
 			if(dist2 - dist1 == 0 && dist1 > 2 * tol)
 			{
 				System.out.println("throwing");
@@ -508,6 +541,7 @@ public class OutputPlane extends CoordPlane
 			}
 			dist1 = dist2;
 		}
+		System.out.println(new Point2D(at, bt));
 			return new Point2D(at, bt);
 
 //		SimpleMatrix start = new SimpleMatrix(2, 1);
@@ -972,27 +1006,51 @@ public class OutputPlane extends CoordPlane
 
 	private void drawSep(CriticalPoint c)
 	{
-		double tol = .00000001;
+		double tol = 2 * (xMax - xMin)/this.c.getWidth();
 		try
 		{
+			Evaluator tester = EvaluatorFactory.getEulerEval(dx, dy);
 			if (c.type == CritPointTypes.SADDLE)
 			{
-				if (c.matrix.getEigenvalue(0).getReal() > 0) gc.setStroke(stblSeparatrixColor);
-				else gc.setStroke(unstblSeparatrixColor);
+				boolean temp;
+				char sn;
 				initCond point1 = new initCond(c.point.getX() + tol * c.matrix.getEigenVector(0).get(0),
 						c.point.getY() + tol * c.matrix.getEigenVector(0).get(1), t);
 				initCond point3 = new initCond(c.point.getX() - tol * c.matrix.getEigenVector(0).get(0),
 						c.point.getY() - tol * c.matrix.getEigenVector(0).get(1), t);
-				drawGraphBack(point1, false, '+');
-				drawGraphBack(point3, false, '+');
-				if (c.matrix.getEigenvalue(1).getReal() > 0) gc.setStroke(stblSeparatrixColor);
-				else gc.setStroke(unstblSeparatrixColor);
+				tester.initialise(point1.x, point1.y, 0, a, b, inc);
+				Point2D initl = new Point2D(point1.x, point1.y);
+//				temp = tester.next().subtract(initl).angle(initl) < .1;
+				temp = c.matrix.getEigenvalue(0).getReal() > 0;
+				if (!temp)
+				{
+					gc.setStroke(stblSeparatrixColor);
+					sn = '-';
+				}
+				else
+				{
+					gc.setStroke(unstblSeparatrixColor);
+					sn = '+';
+				}
+				drawGraphBack(point1, false, sn);
+				drawGraphBack(point3, false, sn);
+
+				if (temp)
+				{
+					gc.setStroke(stblSeparatrixColor);
+					sn = '-';
+				}
+				else
+				{
+					gc.setStroke(unstblSeparatrixColor);
+					sn = '+';
+				}
 				initCond point2 = new initCond(c.point.getX() + tol * c.matrix.getEigenVector(1).get(0),
 						c.point.getY() + tol * c.matrix.getEigenVector(1).get(1), t);
 				initCond point4 = new initCond(c.point.getX() - tol * c.matrix.getEigenVector(1).get(0),
 						c.point.getY() - tol * c.matrix.getEigenVector(1).get(1), t);
-				drawGraphBack(point2, false, '-');
-				drawGraphBack(point4, false, '-');
+				drawGraphBack(point2, false, sn);
+				drawGraphBack(point4, false, sn);
 			}
 		} catch (NullPointerException ignored)
 		{
@@ -1026,17 +1084,17 @@ public class OutputPlane extends CoordPlane
 		}
 		drawSelectedCritPoints();
 		gc.setLineWidth(2);
-		double inc = (xMax - xMin)/c.getWidth();
+		double inc = 2 * (xMax - xMin)/c.getWidth();
 		for (sepStart s : selectedSeps)
 		{
-			if (s.saddle.matrix.getEigenvalue(s.eigenvector).getReal() > 0)
+			if (s.saddle.matrix.getEigenvalue(s.eigenvector).getReal() < 0)
 			{
 				gc.setStroke(stblSeparatrixColor);
-				drawGraphBack(new initCond(s.getStart(inc).getX(), s.getStart(inc).getY(), 0), false, '+');
+				drawGraphBack(new initCond(s.getStart(inc).getX(), s.getStart(inc).getY(), 0), false, '-');
 			} else
 			{
 				gc.setStroke(unstblSeparatrixColor);
-				drawGraphBack(new initCond(s.getStart(inc).getX(), s.getStart(inc).getY(), 0), false, '-');
+				drawGraphBack(new initCond(s.getStart(inc).getX(), s.getStart(inc).getY(), 0), false, '+');
 			}
 		}
 		gc.setLineWidth(1);
