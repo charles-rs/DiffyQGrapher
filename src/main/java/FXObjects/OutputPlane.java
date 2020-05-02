@@ -420,6 +420,7 @@ public class OutputPlane extends CoordPlane
 			bInc = -bInc;
 		}
 		in.gc.setStroke(Color.BLACK);
+		System.out.println("got here");
 	}
 
 	private double minDist(sepStart sep, Point2D other, double a, double b)
@@ -475,6 +476,7 @@ public class OutputPlane extends CoordPlane
 			sep = s2;
 			sad = saddle1;
 		}
+		System.out.println(s1.positive + "       " + s2.positive);
 		for(int i = 0; i < 10; i++)
 		{
 			dist1 = minDist(sep, sad, at, bt);
@@ -491,19 +493,21 @@ public class OutputPlane extends CoordPlane
 			inc = dist1/1000.;
 			s1.saddle = critical(s1.saddle.point, at, bt);
 			s2.saddle = critical(s2.saddle.point, at, bt);
-			if(minDist(s1, saddle2, at, bt) > minDist(s2, saddle1, at, bt))
-			{
-				sep = s1;
-				sad = saddle2;
-			}
-			else
-			{
-				sep = s2;
-				sad = saddle1;
-			}
-			//System.out.println(i + "dist: " + dist1);
-//			System.out.println("deriv: " + deriv);
-//			System.out.println("a: " + at);
+			System.out.println(s1.positive + "       " + s2.positive);
+//			if(minDist(s1, saddle2, at, bt) > minDist(s2, saddle1, at, bt))
+//			{
+//				sep = s1;
+//				sad = saddle2;
+//			}
+//			else
+//			{
+//				sep = s2;
+//				sad = saddle1;
+//			}
+//
+			System.out.println(i + "dist: " + dist1);
+			System.out.println("deriv: " + deriv);
+			System.out.println("a: " + at);
 		}
 		inc = .000001;
 		while (dist1 < tol)
