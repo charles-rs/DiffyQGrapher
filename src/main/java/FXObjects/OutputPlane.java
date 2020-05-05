@@ -423,8 +423,9 @@ public class OutputPlane extends CoordPlane
 		System.out.println("got here");
 	}
 
-	private double minDist(sepStart sep, Point2D other, double a, double b)
+	private double minDist(sepStart sep, Point2D other, double a, double b) throws RootNotFound
 	{
+//		System.out.println(sep.getStart(.01));
 		Evaluator eval = null;
 		switch (evalType)
 		{
@@ -450,6 +451,11 @@ public class OutputPlane extends CoordPlane
 			next = eval.next();
 			if(!turnedAround && next.distance(other) < prev.distance(other))
 				turnedAround = true;
+			if(!inBounds(next))
+			{
+				System.out.println("off the screen");
+				throw new RootNotFound();
+			}
 		}
 		return prev.distance(other);
 	}
@@ -476,7 +482,9 @@ public class OutputPlane extends CoordPlane
 			sep = s2;
 			sad = saddle1;
 		}
-		System.out.println(s1.positive + "       " + s2.positive);
+//		System.out.println(s1.positive + "       " + s2.positive);
+		System.out.println("start1: " + s1.getStart(.01));
+		System.out.println("start2: " + s2.getStart(.01));
 		for(int i = 0; i < 10; i++)
 		{
 			dist1 = minDist(sep, sad, at, bt);
@@ -493,26 +501,26 @@ public class OutputPlane extends CoordPlane
 			inc = dist1/1000.;
 			s1.saddle = critical(s1.saddle.point, at, bt);
 			s2.saddle = critical(s2.saddle.point, at, bt);
-			System.out.println(s1.positive + "       " + s2.positive);
-//			if(minDist(s1, saddle2, at, bt) > minDist(s2, saddle1, at, bt))
-//			{
-//				sep = s1;
-//				sad = saddle2;
-//			}
-//			else
-//			{
-//				sep = s2;
-//				sad = saddle1;
-//			}
+//			System.out.println(s1.positive + "       " + s2.positive);
+			if(minDist(s1, saddle2, at, bt) > minDist(s2, saddle1, at, bt))
+			{
+				sep = s1;
+				sad = saddle2;
+			}
+			else
+			{
+				sep = s2;
+				sad = saddle1;
+			}
 //
-			System.out.println(i + "dist: " + dist1);
-			System.out.println("deriv: " + deriv);
-			System.out.println("a: " + at);
+//			System.out.println(i + "dist: " + dist1);
+//			System.out.println("deriv: " + deriv);
+//			System.out.println("a: " + at);
 		}
 		inc = .000001;
 		while (dist1 < tol)
 		{
-			System.out.println("dist: " + dist1);
+//			System.out.println("dist: " + dist1);
 			if(isA) at += inc;
 			else bt += inc;
 			s1.saddle = critical(s1.saddle.point, at, bt);
@@ -545,7 +553,7 @@ public class OutputPlane extends CoordPlane
 			}
 			dist1 = dist2;
 		}
-		System.out.println(new Point2D(at, bt));
+//		System.out.println(new Point2D(at, bt));
 			return new Point2D(at, bt);
 
 //		SimpleMatrix start = new SimpleMatrix(2, 1);
