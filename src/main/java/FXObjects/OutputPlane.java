@@ -12,11 +12,8 @@ import javafx.application.Platform;
 import javafx.geometry.Insets;
 import javafx.geometry.Point2D;
 import javafx.scene.Node;
-import javafx.scene.canvas.Canvas;
-import javafx.scene.canvas.GraphicsContext;
 import javafx.scene.control.Label;
 import javafx.scene.control.TextField;
-import javafx.scene.image.Image;
 import javafx.scene.input.KeyCode;
 import javafx.scene.input.MouseEvent;
 import javafx.scene.layout.Border;
@@ -27,15 +24,9 @@ import javafx.scene.paint.Color;
 import javafx.scene.text.Text;
 import javafx.scene.transform.Affine;
 import javafx.scene.transform.Rotate;
-import org.ejml.data.FMatrixRMaj;
-import org.ejml.dense.row.misc.RrefGaussJordanRowPivot_DDRM;
-import org.ejml.dense.row.misc.RrefGaussJordanRowPivot_FDRM;
-import org.ejml.interfaces.linsol.ReducedRowEchelonForm;
 import org.ejml.simple.SimpleMatrix;
 
 
-import javax.imageio.stream.ImageOutputStream;
-import java.awt.image.BufferedImage;
 import java.util.ArrayList;
 import java.util.LinkedList;
 import java.util.List;
@@ -258,13 +249,13 @@ public class OutputPlane extends CoordPlane
 						double min = Math.min(Math.min(d1, d2), Math.min(d3, d4));
 						boolean firstPos = p.matrix.getEigenvalue(0).getReal() > 0;
 						if (d1 == min)
-							selectedSeps.add(new sepStart(p, true, 0));
+							selectedSeps.add(new sepStart(p, true, firstPos));
 						else if (d2 == min)
-							selectedSeps.add(new sepStart(p, false, 0));
+							selectedSeps.add(new sepStart(p, false, firstPos));
 						else if (d3 == min)
-							selectedSeps.add(new sepStart(p, true, 1));
+							selectedSeps.add(new sepStart(p, true, !firstPos));
 						else
-							selectedSeps.add(new sepStart(p, false, 1));
+							selectedSeps.add(new sepStart(p, false, !firstPos));
 						draw();
 						if (selectedSeps.size() == 2)
 						{
@@ -364,8 +355,8 @@ public class OutputPlane extends CoordPlane
 	public void renderSaddleCon(Point2D start, sepStart s1, sepStart s2, boolean add)
 	{
 		in.saddleCanvas.getGraphicsContext2D().setStroke(in.saddleConColor);
-		double aInc = 3 * (in.xMax - in.xMin) / in.c.getWidth();
-		double bInc = 3 * (in.yMax - in.yMin) / in.c.getHeight();
+		double aInc = (in.xMax - in.xMin) / in.c.getWidth();
+		double bInc = (in.yMax - in.yMin) / in.c.getHeight();
 		Point2D prev;
 		Point2D next;
 		Point2D temp;
@@ -439,7 +430,7 @@ public class OutputPlane extends CoordPlane
 				eval = EvaluatorFactory.getRungeKuttaEval(dx, dy);
 		}
 		double in;
-		if(sep.positive) in = inc;
+		if(sep.posDir()) in = inc;
 		else in = -inc;
 		eval.initialise(sep.getStart((xMax - xMin)/c.getWidth()).getX(), sep.getStart((xMax - xMin)/c.getWidth()).getY(), 0, a, b, in);
 		Point2D prev = sep.getStart((xMax - xMin)/c.getWidth());
@@ -464,20 +455,31 @@ public class OutputPlane extends CoordPlane
 	}
 	private void assertSaddle(sepStart s1, sepStart s2) throws RootNotFound
 	{
-		System.out.println("eigen1: " + s1.saddle.matrix.getEigenvalue(0).getReal());
-		System.out.println("eigen2: " + s1.saddle.matrix.getEigenvalue(1).getReal());
-		if(s1.saddle.type != CritPointTypes.SADDLE || s2.saddle.type != CritPointTypes.SADDLE)
+		if(s1.saddle.type != CritPointTypes.SADDLE)
 		{
-			System.out.println("not a saddle");
+			System.out.println("not a saddle at " + s1.saddle.point);
 			throw new RootNotFound();
 		}
+		if(s2.saddle.type != CritPointTypes.SADDLE)
+		{
+			System.out.println("not a saddle at " + s2.saddle.point);
+			throw new RootNotFound();
+		}
+		if(s1.getStart(.01).getX() < 0)
+			System.out.println("bad bad bad");
 	}
 
 	private Point2D saddleConnection(sepStart s1, sepStart s2, boolean isA, double at, double bt) throws RootNotFound
 	{
 		long time = System.nanoTime();
-		double inc = .1;
-		double tol = .00000001;
+		double inc;
+		if(isA)
+			inc = (in.xMax - in.xMin)/10000;
+		else inc = (in.yMax - in.yMin)/10000;
+		double tol;
+		if(isA)
+			tol = (in.xMax - in.xMin)/(2 * in.c.getWidth());
+		else tol = (in.yMax - in.yMin)/(2 * in.c.getHeight());
 		Point2D saddle1 = s1.saddle.point;
 		Point2D saddle2 = s2.saddle.point;
 		assertSaddle(s1, s2);
@@ -486,7 +488,7 @@ public class OutputPlane extends CoordPlane
 		double deriv;
 		Point2D sad;
 		sepStart sep;
-		if(minDist(s1, saddle2, at, bt) < minDist(s2, saddle1, at, bt))
+		if(minDist(s1, saddle2, at, bt) > minDist(s2, saddle1, at, bt))
 		{
 			sep = s1;
 			sad = saddle2;
@@ -499,7 +501,7 @@ public class OutputPlane extends CoordPlane
 //		System.out.println(s1.positive + "       " + s2.positive);
 //		System.out.println("start1: " + s1.getStart(.01));
 //		System.out.println("start2: " + s2.getStart(.01));
-		for(int i = 0; i < 10; i++)
+		for(int i = 0; i < 5; i++)
 		{
 //			System.out.println("A: " + at);
 			dist1 = minDist(sep, sad, at, bt);
@@ -516,7 +518,15 @@ public class OutputPlane extends CoordPlane
 			inc = dist1/1000.;
 			s1.saddle = critical(s1.saddle.point, at, bt);
 			s2.saddle = critical(s2.saddle.point, at, bt);
-			assertSaddle(s1, s2);
+			try
+			{
+				assertSaddle(s1, s2);
+			} catch (RootNotFound r)
+			{
+				System.out.println("a: " + at);
+				System.out.println("b: " + bt);
+				throw new RootNotFound();
+			}
 //			System.out.println(s1.positive + "       " + s2.positive);
 			if(minDist(s1, saddle2, at, bt) > minDist(s2, saddle1, at, bt))
 			{
@@ -533,7 +543,9 @@ public class OutputPlane extends CoordPlane
 //			System.out.println("deriv: " + deriv);
 //			System.out.println("a: " + at);
 		}
-		inc = .000001;
+		if(isA)
+			inc = (in.xMax - in.xMin)/1000.;//.000001;
+		else inc = (in.yMax - in.yMin)/1000.;
 		while (dist1 < tol)
 		{
 //			System.out.println("A': " + at);
@@ -542,7 +554,14 @@ public class OutputPlane extends CoordPlane
 			else bt += inc;
 			s1.saddle = critical(s1.saddle.point, at, bt);
 			s2.saddle = critical(s2.saddle.point, at, bt);
-			assertSaddle(s1, s2);
+			try
+			{
+				assertSaddle(s1, s2);
+			} catch (RootNotFound r)
+			{
+				System.out.println("doesn't fail");
+				throw new RootNotFound();
+			}
 			if(minDist(s1, saddle2, at, bt) > minDist(s2, saddle1, at, bt))
 			{
 				sep = s1;
@@ -632,7 +651,7 @@ public class OutputPlane extends CoordPlane
 		Point2D next;
 		prev = new Point2D(x, y);
 		Point2D temp;
-		if (s.positive)
+		if (s.posDir())
 			eval.initialise(x, y, t, a, b, inc);
 		else
 			eval.initialise(x, y, t, a, b, -inc);
@@ -1117,7 +1136,7 @@ public class OutputPlane extends CoordPlane
 		double inc = 2 * (xMax - xMin)/c.getWidth();
 		for (sepStart s : selectedSeps)
 		{
-			if (s.saddle.matrix.getEigenvalue(s.eigenvector).getReal() < 0)
+			if (!s.posEig())
 			{
 				gc.setStroke(stblSeparatrixColor);
 				drawGraphBack(new initCond(s.getStart(inc).getX(), s.getStart(inc).getY(), 0), false, '-');

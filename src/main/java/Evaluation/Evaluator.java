@@ -58,8 +58,8 @@ public abstract class Evaluator
 				SimpleMatrix deriv = new SimpleMatrix(2, 2);
 				deriv.setRow(0, 0, d2xdx.eval(sol.getX(), sol.getY(), a, b, t), d2xdy.eval(sol.getX(), sol.getY(), a, b, t));
 				deriv.setRow(1, 0, d2ydx.eval(sol.getX(), sol.getY(), a, b, t), d2ydy.eval(sol.getX(), sol.getY(), a, b, t));
-				@SuppressWarnings("rawtypes")
-				SimpleEVD evd = deriv.eig();
+
+				SimpleEVD<SimpleMatrix> evd = deriv.eig();
 
 				if(Math.abs(evd.getEigenvalue(0).getImaginary()) < TOLERANCE &&
 						Math.abs(evd.getEigenvalue(1).getImaginary()) < TOLERANCE)
