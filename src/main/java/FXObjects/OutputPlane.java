@@ -181,7 +181,7 @@ public class OutputPlane extends CoordPlane
 			case FINDCRITICAL:
 				try
 				{
-					CriticalPoint root = EvaluatorFactory.getEulerEval(dx, dy).findCritical(pt, a, b, t);
+					CriticalPoint root = EvaluatorFactory.getBestEvaluator(dx, dy).findCritical(pt, a, b, t);
 					criticalPoints.add(root);
 					drawGraphs();
 				} catch (RootNotFound r)
@@ -364,6 +364,8 @@ public class OutputPlane extends CoordPlane
 		boolean isA = true;
 		for (int i = 0; i < 2; i++)
 		{
+//			System.out.println("AINC: " + aInc);
+//			System.out.println("BINC: " + bInc);
 			try
 			{
 				prev = saddleConnection(s1, s2, isA, start.getX(), start.getY());
@@ -417,18 +419,7 @@ public class OutputPlane extends CoordPlane
 	private double minDist(sepStart sep, Point2D other, double a, double b) throws RootNotFound
 	{
 //		System.out.println(sep.getStart(.01));
-		Evaluator eval = null;
-		switch (evalType)
-		{
-			case Euler:
-				eval = EvaluatorFactory.getEulerEval(dx, dy);
-				break;
-			case MidEuler:
-				eval = EvaluatorFactory.getEulerMidEval(dx, dy);
-				break;
-			case RungeKutta:
-				eval = EvaluatorFactory.getRungeKuttaEval(dx, dy);
-		}
+		Evaluator eval = EvaluatorFactory.getEvaluator(evalType, dx, dy);
 		double in;
 		if(sep.posDir()) in = inc;
 		else in = -inc;
@@ -447,7 +438,7 @@ public class OutputPlane extends CoordPlane
 				System.out.println("a: " + a);
 				System.out.println("b: " + b);
 				System.out.println("Start: " + sep.getStart(.01));
-				System.out.println("off the screen");
+				System.out.println("off the screen at " + next);
 				throw new RootNotFound();
 			}
 		}
@@ -473,9 +464,17 @@ public class OutputPlane extends CoordPlane
 	{
 		long time = System.nanoTime();
 		double inc;
+		double old;
 		if(isA)
-			inc = (in.xMax - in.xMin)/10000;
-		else inc = (in.yMax - in.yMin)/10000;
+		{
+			old = at;
+			inc = (in.xMax - in.xMin) / 10000;
+		}
+		else
+		{
+			old = bt;
+			inc = (in.yMax - in.yMin)/10000;
+		}
 		double tol;
 		if(isA)
 			tol = (in.xMax - in.xMin)/(2 * in.c.getWidth());
@@ -501,7 +500,7 @@ public class OutputPlane extends CoordPlane
 //		System.out.println(s1.positive + "       " + s2.positive);
 //		System.out.println("start1: " + s1.getStart(.01));
 //		System.out.println("start2: " + s2.getStart(.01));
-		for(int i = 0; i < 5; i++)
+		for(int i = 0; i < 1; i++)
 		{
 //			System.out.println("A: " + at);
 			dist1 = minDist(sep, sad, at, bt);
@@ -544,10 +543,11 @@ public class OutputPlane extends CoordPlane
 //			System.out.println("a: " + at);
 		}
 		if(isA)
-			inc = (in.xMax - in.xMin)/1000.;//.000001;
-		else inc = (in.yMax - in.yMin)/1000.;
-		while (dist1 < tol)
+			inc = (in.xMax - in.xMin)/10000.;//.000001;
+		else inc = (in.yMax - in.yMin)/10000.;
+		while (dist1 > tol)
 		{
+			System.out.println("loopty loop: " + dist1);
 //			System.out.println("A': " + at);
 //			System.out.println("dist: " + dist1);
 			if(isA) at += inc;
@@ -578,6 +578,7 @@ public class OutputPlane extends CoordPlane
 				System.out.println("throwing");
 				throw new RootNotFound();
 			}
+
 			if (dist2 > dist1)
 			{
 				//System.out.println("flipping");
@@ -588,10 +589,30 @@ public class OutputPlane extends CoordPlane
 //					throw new RootNotFound();
 //				}
 			}
+			//if we aren't converging fast enough double the increment
+			else if(dist1 - dist2 < .001 * dist1)
+			{
+				System.out.println("what the fuck.");
+				inc *= 1.5;
+			}
 			dist1 = dist2;
 		}
 //		System.out.println(new Point2D(at, bt));
-			return new Point2D(at, bt);
+		double aInc = (in.xMax - in.xMin) / in.c.getWidth();
+		double bInc = (in.yMax - in.yMin) / in.c.getHeight();
+		if(isA)
+		{
+			if(Math.abs((at - old)/bInc) > 2.)
+			{
+				System.out.println((at - old)/bInc);
+//				throw new RootNotFound();
+			}
+		} else if (Math.abs((bt - old)/aInc) > 2.)
+		{
+			System.out.println((bt - old) / aInc);
+//			throw new RootNotFound();
+		}
+		return new Point2D(at, bt);
 
 //		SimpleMatrix start = new SimpleMatrix(2, 1);
 //		start.setColumn(0, 0, at, bt);
@@ -634,19 +655,7 @@ public class OutputPlane extends CoordPlane
 		double x, y;
 		x = s.getStart((xMax - xMin)/c.getWidth()).getX();
 		y = s.getStart((yMax - yMin)/c.getHeight()).getY();
-		Evaluator eval;
-		switch (evalType)
-		{
-			case Euler:
-				eval = EvaluatorFactory.getEulerEval(dx, dy);
-				break;
-			case MidEuler:
-				eval = EvaluatorFactory.getEulerMidEval(dx, dy);
-				break;
-			case RungeKutta:
-			default:
-				eval = EvaluatorFactory.getRungeKuttaEval(dx, dy);
-		}
+		Evaluator eval = EvaluatorFactory.getEvaluator(evalType, dx, dy);
 		Point2D prev;
 		Point2D next;
 		prev = new Point2D(x, y);
@@ -704,11 +713,11 @@ public class OutputPlane extends CoordPlane
 
 	private CriticalPoint critical(Point2D start) throws RootNotFound
 	{
-		return EvaluatorFactory.getEulerEval(dx, dy).findCritical(start, a, b, t);
+		return EvaluatorFactory.getBestEvaluator(dx, dy).findCritical(start, a, b, t);
 	}
 	private CriticalPoint critical(Point2D start, double a, double b) throws RootNotFound
 	{
-		return EvaluatorFactory.getEulerEval(dx, dy).findCritical(start, a, b, 0);
+		return EvaluatorFactory.getBestEvaluator(dx, dy).findCritical(start, a, b, 0);
 	}
 
 	private void updateCritical()
@@ -788,19 +797,7 @@ public class OutputPlane extends CoordPlane
 		x = init.x;
 		y = init.y;
 		t = init.t;
-		Evaluator eval;
-		switch (evalType)
-		{
-			case Euler:
-				eval = EvaluatorFactory.getEulerEval(dx, dy);
-				break;
-			case MidEuler:
-				eval = EvaluatorFactory.getEulerMidEval(dx, dy);
-				break;
-			case RungeKutta:
-			default:
-				eval = EvaluatorFactory.getRungeKuttaEval(dx, dy);
-		}
+		Evaluator eval = EvaluatorFactory.getEvaluator(evalType, dx, dy);
 		Point2D initialDir = eval.evaluate(x, y, a, b, t, inc);
 		if (arrow) drawArrow(x, y, initialDir.getX(), initialDir.getY());
 		Point2D prev;
@@ -1058,7 +1055,6 @@ public class OutputPlane extends CoordPlane
 		double tol = 2 * (xMax - xMin)/this.c.getWidth();
 		try
 		{
-			Evaluator tester = EvaluatorFactory.getEulerEval(dx, dy);
 			if (c.type == CritPointTypes.SADDLE)
 			{
 				boolean temp;
@@ -1067,7 +1063,6 @@ public class OutputPlane extends CoordPlane
 						c.point.getY() + tol * c.matrix.getEigenVector(0).get(1), t);
 				initCond point3 = new initCond(c.point.getX() - tol * c.matrix.getEigenVector(0).get(0),
 						c.point.getY() - tol * c.matrix.getEigenVector(0).get(1), t);
-				tester.initialise(point1.x, point1.y, 0, a, b, inc);
 				Point2D initl = new Point2D(point1.x, point1.y);
 //				temp = tester.next().subtract(initl).angle(initl) < .1;
 				temp = c.matrix.getEigenvalue(0).getReal() > 0;

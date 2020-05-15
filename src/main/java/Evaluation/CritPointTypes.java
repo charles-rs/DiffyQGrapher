@@ -1,5 +1,8 @@
 package Evaluation;
 
+/**
+ * The types of critical points
+ */
 public enum CritPointTypes
 {
 	SPIRALSOURCE("Spiral Source"),
@@ -10,7 +13,7 @@ public enum CritPointTypes
 	NODESOURCE("Node Source");
 
 
-	private String stringRep;
+	private final String stringRep;
 	CritPointTypes(String s)
 	{
 		stringRep = s;

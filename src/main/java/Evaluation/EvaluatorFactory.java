@@ -1,18 +1,41 @@
 package Evaluation;
+/**
+ * Factory that produces evaluators
+ */
 
 import AST.Derivative;
 
 public class EvaluatorFactory
 {
-	public static Evaluator getEulerEval(Derivative dx, Derivative dy)
+	/**
+	 * gets a new evaluator
+	 * @param ty the type of the desired evaluator
+	 * @param dx the x derivative
+	 * @param dy the y derivative
+	 * @return the new evaluator
+	 */
+	public static Evaluator getEvaluator(EvalType ty, Derivative dx, Derivative dy)
 	{
-		return new EulerEvaluator(dx, dy);
+		switch (ty)
+		{
+			case Euler:
+				return new EulerEvaluator(dx, dy);
+			case MidEuler:
+				return new MidEulerEvaluator(dx, dy);
+			case RungeKutta:
+				return new RungeKuttaEvaluator(dx, dy);
+			default:
+				throw new Error();
+		}
 	}
-	public static Evaluator getEulerMidEval(Derivative dx, Derivative dy)
-	{
-		return new MidEulerEvaluator(dx, dy);
-	}
-	public static Evaluator getRungeKuttaEval(Derivative dx, Derivative dy)
+
+	/**
+	 * gets the best evaluator available
+	 * @param dx the x derivative
+	 * @param dy the y derivative
+	 * @return the new evaluator
+	 */
+	public static Evaluator getBestEvaluator(Derivative dx, Derivative dy)
 	{
 		return new RungeKuttaEvaluator(dx, dy);
 	}

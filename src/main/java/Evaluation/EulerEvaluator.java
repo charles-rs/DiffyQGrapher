@@ -1,4 +1,7 @@
 package Evaluation;
+/**
+ * Evaluator that uses Euler's method
+ */
 
 import AST.Derivative;
 import Exceptions.EvaluationException;

@@ -1,4 +1,7 @@
 package Evaluation;
+/**
+ * Evaluator using the Runge-Kutta method
+ */
 
 import AST.Derivative;
 import Exceptions.EvaluationException;

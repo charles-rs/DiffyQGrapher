@@ -1,4 +1,7 @@
 package Evaluation;
+/**
+ * Evaluator using the midpoint Euler method
+ */
 
 import AST.Derivative;
 import Exceptions.EvaluationException;
