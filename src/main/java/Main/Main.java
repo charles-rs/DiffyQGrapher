@@ -175,6 +175,7 @@ public class Main extends Application
 		anchor.getChildren().addAll(mainH);
 
 
+
 		aField.textProperty().addListener((obs, s, t1) ->
 		{
 			try

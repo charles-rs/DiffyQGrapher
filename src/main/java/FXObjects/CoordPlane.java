@@ -43,6 +43,7 @@ public class CoordPlane extends Pane
 		getChildren().add(c);
 		c.widthProperty().bind(this.widthProperty());
 		c.heightProperty().bind(this.heightProperty());
+
 		/*
 		this.widthProperty().addListener((obs, oldVal, newVal) ->
 		{

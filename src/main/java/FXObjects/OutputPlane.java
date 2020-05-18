@@ -429,6 +429,7 @@ public class OutputPlane extends CoordPlane
 		boolean turnedAround = false;
 		while (next.distance(other) < prev.distance(other) || !turnedAround)
 		{
+
 			prev = next;
 			next = eval.next();
 			if(!turnedAround && next.distance(other) < prev.distance(other))
@@ -441,6 +442,7 @@ public class OutputPlane extends CoordPlane
 				System.out.println("off the screen at " + next);
 				throw new RootNotFound();
 			}
+
 		}
 		return prev.distance(other);
 	}
@@ -456,8 +458,8 @@ public class OutputPlane extends CoordPlane
 			System.out.println("not a saddle at " + s2.saddle.point);
 			throw new RootNotFound();
 		}
-		if(s1.getStart(.01).getX() < 0)
-			System.out.println("bad bad bad");
+//		if(s1.getStart(.01).getX() < 0)
+//			System.out.println("bad bad bad");
 	}
 
 	private Point2D saddleConnection(sepStart s1, sepStart s2, boolean isA, double at, double bt) throws RootNotFound
@@ -482,7 +484,7 @@ public class OutputPlane extends CoordPlane
 		Point2D saddle1 = s1.saddle.point;
 		Point2D saddle2 = s2.saddle.point;
 		assertSaddle(s1, s2);
-		double dist1 = Double.MAX_VALUE;
+		double dist1;
 		double dist2;
 		double deriv;
 		Point2D sad;
@@ -500,54 +502,55 @@ public class OutputPlane extends CoordPlane
 //		System.out.println(s1.positive + "       " + s2.positive);
 //		System.out.println("start1: " + s1.getStart(.01));
 //		System.out.println("start2: " + s2.getStart(.01));
-		for(int i = 0; i < 1; i++)
-		{
-//			System.out.println("A: " + at);
-			dist1 = minDist(sep, sad, at, bt);
-			if(isA) dist2 = minDist(sep, sad, at + inc, bt);
-			else dist2 = minDist(sep, sad, at, bt + inc);
-			deriv = (dist2 - dist1)/inc;
-			if(deriv == 0.0)
-			{
-				System.out.println("throwing1");
-				throw new RootNotFound();
-			}
-			if(isA) at = at - dist1/deriv;
-			else bt = bt - dist1/deriv;
-			inc = dist1/1000.;
-			s1.saddle = critical(s1.saddle.point, at, bt);
-			s2.saddle = critical(s2.saddle.point, at, bt);
-			try
-			{
-				assertSaddle(s1, s2);
-			} catch (RootNotFound r)
-			{
-				System.out.println("a: " + at);
-				System.out.println("b: " + bt);
-				throw new RootNotFound();
-			}
-//			System.out.println(s1.positive + "       " + s2.positive);
-			if(minDist(s1, saddle2, at, bt) > minDist(s2, saddle1, at, bt))
-			{
-				sep = s1;
-				sad = saddle2;
-			}
-			else
-			{
-				sep = s2;
-				sad = saddle1;
-			}
-//
-//			System.out.println(i + "dist: " + dist1);
-//			System.out.println("deriv: " + deriv);
-//			System.out.println("a: " + at);
-		}
+//		for(int i = 0; i < 1; i++)
+//		{
+////			System.out.println("A: " + at);
+//			dist1 = minDist(sep, sad, at, bt);
+//			if(isA) dist2 = minDist(sep, sad, at + inc, bt);
+//			else dist2 = minDist(sep, sad, at, bt + inc);
+//			deriv = (dist2 - dist1)/inc;
+//			if(deriv == 0.0)
+//			{
+//				System.out.println("throwing1");
+//				throw new RootNotFound();
+//			}
+//			if(isA) at = at - dist1/deriv;
+//			else bt = bt - dist1/deriv;
+//			inc = dist1/1000.;
+//			s1.saddle = critical(s1.saddle.point, at, bt);
+//			s2.saddle = critical(s2.saddle.point, at, bt);
+//			try
+//			{
+//				assertSaddle(s1, s2);
+//			} catch (RootNotFound r)
+//			{
+//				System.out.println("a: " + at);
+//				System.out.println("b: " + bt);
+//				throw new RootNotFound();
+//			}
+////			System.out.println(s1.positive + "       " + s2.positive);
+//			if(minDist(s1, saddle2, at, bt) > minDist(s2, saddle1, at, bt))
+//			{
+//				sep = s1;
+//				sad = saddle2;
+//			}
+//			else
+//			{
+//				sep = s2;
+//				sad = saddle1;
+//			}
+////
+////			System.out.println(i + "dist: " + dist1);
+////			System.out.println("deriv: " + deriv);
+////			System.out.println("a: " + at);
+//		}
 		if(isA)
 			inc = (in.xMax - in.xMin)/10000.;//.000001;
 		else inc = (in.yMax - in.yMin)/10000.;
+		dist1 = minDist(sep, sad, at, bt);
 		while (dist1 > tol)
 		{
-			System.out.println("loopty loop: " + dist1);
+//			System.out.println("loopty loop: " + dist1);
 //			System.out.println("A': " + at);
 //			System.out.println("dist: " + dist1);
 			if(isA) at += inc;
@@ -589,11 +592,11 @@ public class OutputPlane extends CoordPlane
 //					throw new RootNotFound();
 //				}
 			}
-			//if we aren't converging fast enough double the increment
+			//if we aren't converging fast enough increase the increment
 			else if(dist1 - dist2 < .001 * dist1)
 			{
-				System.out.println("what the fuck.");
-				inc *= 1.5;
+//				System.out.println("what the fuck.");
+//				inc *= 1.1;
 			}
 			dist1 = dist2;
 		}
@@ -733,6 +736,14 @@ public class OutputPlane extends CoordPlane
 			}
 		}
 		criticalPoints = temp;
+		temp = new LinkedList<>();
+		for (Point2D c : selectedCritPoints)
+		{
+			try
+			{
+				temp.add(critical(c));
+			} catch (RootNotFound ignored) {}
+		}
 	}
 
 	private void labelCritical(CriticalPoint p)
