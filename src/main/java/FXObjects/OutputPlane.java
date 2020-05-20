@@ -416,7 +416,7 @@ public class OutputPlane extends CoordPlane
 		in.gc.setStroke(Color.BLACK);
 		Platform.runLater(this::draw);
 	}
-	private double minDist(sepStart sep, Point2D other, double a, double b) throws RootNotFound
+	private double minDist(final sepStart sep, final Point2D other, final double a, final double b, boolean firstTry) throws RootNotFound
 	{
 //		System.out.println(sep.getStart(.01));
 		Evaluator eval = EvaluatorFactory.getEvaluator(evalType, dx, dy);
@@ -426,9 +426,11 @@ public class OutputPlane extends CoordPlane
 		eval.initialise(sep.getStart((xMax - xMin)/c.getWidth()).getX(), sep.getStart((xMax - xMin)/c.getWidth()).getY(), 0, a, b, in);
 		Point2D prev = sep.getStart((xMax - xMin)/c.getWidth());
 		Point2D next = eval.next();
-		boolean turnedAround = false;
+		boolean turnedAround;
+		turnedAround = !sep.saddle.point.equals(other);
 		while (next.distance(other) < prev.distance(other) || !turnedAround)
 		{
+//			System.out.println(next.distance(other));
 
 			prev = next;
 			next = eval.next();
@@ -436,17 +438,27 @@ public class OutputPlane extends CoordPlane
 				turnedAround = true;
 			if(!inBounds(next))
 			{
+				if(firstTry)
+				{
+					//return minDist(sepStart.flip(sep), other, a, b, false);
+				}
+				System.out.println("____________________________");
 				System.out.println("a: " + a);
 				System.out.println("b: " + b);
 				System.out.println("Start: " + sep.getStart(.01));
+				System.out.println("Goal: " + other);
+				System.out.println("Reversed?: " + turnedAround);
 				System.out.println("off the screen at " + next);
+				System.out.println("____________________________");
 				throw new RootNotFound();
 			}
 
 		}
+		System.out.println("mindistprnt: \nfound: " + prev + "\nother: " + other + "\nstart: " + sep.saddle.point +
+				"\na: " + a + "\nb: " + b + "\n-----------------------");
 		return prev.distance(other);
 	}
-	private void assertSaddle(sepStart s1, sepStart s2) throws RootNotFound
+	private void assertSaddle(final sepStart s1, final sepStart s2) throws RootNotFound
 	{
 		if(s1.saddle.type != CritPointTypes.SADDLE)
 		{
@@ -486,10 +498,9 @@ public class OutputPlane extends CoordPlane
 		assertSaddle(s1, s2);
 		double dist1;
 		double dist2;
-		double deriv;
 		Point2D sad;
 		sepStart sep;
-		if(minDist(s1, saddle2, at, bt) > minDist(s2, saddle1, at, bt))
+		if(minDist(s1, saddle2, at, bt, true) > minDist(s2, saddle1, at, bt, true))
 		{
 			sep = s1;
 			sad = saddle2;
@@ -547,16 +558,17 @@ public class OutputPlane extends CoordPlane
 		if(isA)
 			inc = (in.xMax - in.xMin)/10000.;//.000001;
 		else inc = (in.yMax - in.yMin)/10000.;
-		dist1 = minDist(sep, sad, at, bt);
+		dist1 = minDist(sep, sad, at, bt, true);
 		while (dist1 > tol)
 		{
-//			System.out.println("loopty loop: " + dist1);
-//			System.out.println("A': " + at);
-//			System.out.println("dist: " + dist1);
+			System.out.println("A': " + at);
+			System.out.println("dist: " + dist1);
 			if(isA) at += inc;
 			else bt += inc;
 			s1.saddle = critical(s1.saddle.point, at, bt);
 			s2.saddle = critical(s2.saddle.point, at, bt);
+			saddle1 = s1.saddle.point;
+			saddle2 = s2.saddle.point;
 			try
 			{
 				assertSaddle(s1, s2);
@@ -565,7 +577,7 @@ public class OutputPlane extends CoordPlane
 				System.out.println("doesn't fail");
 				throw new RootNotFound();
 			}
-			if(minDist(s1, saddle2, at, bt) > minDist(s2, saddle1, at, bt))
+			if(minDist(s1, saddle2, at, bt, true) > minDist(s2, saddle1, at, bt, true))
 			{
 				sep = s1;
 				sad = saddle2;
@@ -575,10 +587,13 @@ public class OutputPlane extends CoordPlane
 				sep = s2;
 				sad = saddle1;
 			}
-			dist2 = minDist(sep, sad, at, bt);
+			dist2 = minDist(sep, sad, at, bt, true);
 			if(dist2 - dist1 == 0 && dist1 > 2 * tol)
 			{
-				System.out.println("throwing");
+				System.out.println("throwing. Distance: " + dist1 +
+						"\na: " + at +
+						"\ninc: " + inc +
+						"\ntol: " + tol);
 				throw new RootNotFound();
 			}
 

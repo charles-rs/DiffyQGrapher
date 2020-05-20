@@ -69,4 +69,8 @@ public class sepStart
 		}
 
 	}
+	public static sepStart flip(final sepStart other)
+	{
+		return new sepStart(other.saddle, !other.posDir(), other.posEig());
+	}
 }
