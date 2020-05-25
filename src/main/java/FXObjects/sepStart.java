@@ -22,10 +22,10 @@ public class sepStart
 	{
 		saddle = s;
 
-//		if(saddle.matrix.getEigenVector(0).get(0) < 0)
-//			saddle.matrix.getEigenVector(0).set(saddle.matrix.getEigenVector(0).negative());
-//		if(saddle.matrix.getEigenVector(1).get(0) < 0)
-//			saddle.matrix.getEigenVector(1).set(saddle.matrix.getEigenVector(1).negative());
+		if(saddle.matrix.getEigenVector(0).get(0) < 0)
+			saddle.matrix.getEigenVector(0).set(saddle.matrix.getEigenVector(0).negative());
+		if(saddle.matrix.getEigenVector(1).get(0) < 0)
+			saddle.matrix.getEigenVector(1).set(saddle.matrix.getEigenVector(1).negative());
 		state = 0;
 		if(posEig) state = 1;
 		if(posDir) state |= 2;

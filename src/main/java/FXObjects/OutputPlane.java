@@ -27,6 +27,10 @@ import javafx.scene.transform.Rotate;
 import org.ejml.simple.SimpleMatrix;
 
 
+import java.io.File;
+import java.io.FileNotFoundException;
+import java.io.FileOutputStream;
+import java.io.PrintWriter;
 import java.util.ArrayList;
 import java.util.LinkedList;
 import java.util.List;
@@ -259,6 +263,24 @@ public class OutputPlane extends CoordPlane
 						draw();
 						if (selectedSeps.size() == 2)
 						{
+							//
+							try
+							{
+								PrintWriter f = new PrintWriter(new File("output.text"));
+								synchronized (selectedSeps)
+								{
+									for (sepStart s :selectedSeps)
+									{
+										f.println("Sepstart: ");
+										f.println("is positive direction: " + s.posDir());
+										f.println("Saddle pt: " + s.saddle.point);
+										f.println("Start pt: " + s.getStart(.01));
+									}
+								}
+								f.close();
+							} catch (FileNotFoundException ignored) {}
+
+							//
 							new Thread(() ->
 							{
 								synchronized (selectedSeps)
@@ -426,8 +448,8 @@ public class OutputPlane extends CoordPlane
 		eval.initialise(sep.getStart((xMax - xMin)/c.getWidth()).getX(), sep.getStart((xMax - xMin)/c.getWidth()).getY(), 0, a, b, in);
 		Point2D prev = sep.getStart((xMax - xMin)/c.getWidth());
 		Point2D next = eval.next();
-		boolean turnedAround;
-		turnedAround = !sep.saddle.point.equals(other);
+		boolean turnedAround = false;
+//		turnedAround = !sep.saddle.point.equals(other);
 		while (next.distance(other) < prev.distance(other) || !turnedAround)
 		{
 //			System.out.println(next.distance(other));
@@ -440,6 +462,7 @@ public class OutputPlane extends CoordPlane
 			{
 				if(firstTry)
 				{
+					System.out.println("flipping");
 					//return minDist(sepStart.flip(sep), other, a, b, false);
 				}
 				System.out.println("____________________________");
@@ -562,6 +585,7 @@ public class OutputPlane extends CoordPlane
 		while (dist1 > tol)
 		{
 			System.out.println("A': " + at);
+			System.out.println("B': " + bt);
 			System.out.println("dist: " + dist1);
 			if(isA) at += inc;
 			else bt += inc;
