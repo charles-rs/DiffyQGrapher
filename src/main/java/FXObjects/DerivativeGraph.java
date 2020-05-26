@@ -80,6 +80,12 @@ public class DerivativeGraph extends CoordPlane
 	}
 
 	@Override
+	protected void updateForZoom()
+	{
+
+	}
+
+	@Override
 	public void draw()
 	{
 		super.draw();

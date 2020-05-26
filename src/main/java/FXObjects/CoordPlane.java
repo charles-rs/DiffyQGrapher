@@ -1,5 +1,6 @@
 package FXObjects;
 
+import javafx.application.Platform;
 import javafx.geometry.Point2D;
 import javafx.scene.canvas.Canvas;
 import javafx.scene.canvas.GraphicsContext;
@@ -10,7 +11,7 @@ import javafx.scene.paint.Color;
 import javafx.scene.shape.Rectangle;
 
 
-public class CoordPlane extends Pane
+public abstract class CoordPlane extends Pane
 {
 	protected Canvas c;
 	protected double xMin, xMax, yMin, yMax;
@@ -112,6 +113,7 @@ public class CoordPlane extends Pane
 						yMin = yMinTemp;
 						xMax = xMaxTemp;
 						yMax = yMaxTemp;
+						updateForZoom();
 						draw();
 					}
 					mouseEvent.consume();
@@ -131,6 +133,7 @@ public class CoordPlane extends Pane
 
 	}
 
+	protected abstract void updateForZoom();
 	protected void selectMe(MouseEvent e)
 	{
 			requestFocus();
@@ -198,10 +201,7 @@ public class CoordPlane extends Pane
 		return x <= xMax && x >= xMin && y <= yMax && y >= yMin;
 	}
 
-	public void handleMouseClick(MouseEvent e)
-	{
-		throw new UnsupportedOperationException();
-	}
+	public abstract void handleMouseClick(MouseEvent e);
 
 	protected double scrToNormX(double x)
 	{
@@ -221,7 +221,10 @@ public class CoordPlane extends Pane
 	}
 	protected void drawLine(double x1, double y1, double x2, double y2)
 	{
-		gc.strokeLine(normToScrX(x1), normToScrY(y1), normToScrX(x2), normToScrY(y2));
+		Platform.runLater(() ->
+		{
+			gc.strokeLine(normToScrX(x1), normToScrY(y1), normToScrX(x2), normToScrY(y2));
+		});
 	}
 	protected void drawLine(Point2D p1, Point2D p2)
 	{

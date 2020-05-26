@@ -136,7 +136,11 @@ public class OutputPlane extends CoordPlane
 	{
 		return t;
 	}
-
+	@Override
+	protected void updateForZoom()
+	{
+		inc = ((xMax - xMin)/c.getWidth() + (yMax - yMin)/c.getHeight())/2;
+	}
 
 	public void clearObjects()
 	{
@@ -445,22 +449,25 @@ public class OutputPlane extends CoordPlane
 		double in;
 		if(sep.posDir()) in = inc;
 		else in = -inc;
-		eval.initialise(sep.getStart((xMax - xMin)/c.getWidth()).getX(), sep.getStart((xMax - xMin)/c.getWidth()).getY(), 0, a, b, in);
-		Point2D prev = sep.getStart((xMax - xMin)/c.getWidth());
+		//eval.initialise(sep.getStart((xMax - xMin)/c.getWidth()).getX(), sep.getStart((xMax - xMin)/c.getWidth()).getY(), 0, a, b, in);
+		//Point2D prev = sep.getStart((xMax - xMin)/c.getWidth());
+		eval.initialise(sep.getStart(.01).getX(), sep.getStart(.01).getY(), 0, a, b, in);
+		Point2D prev = sep.getStart(.01);
 		Point2D next = eval.next();
 		boolean turnedAround = false;
 //		turnedAround = !sep.saddle.point.equals(other);
+
 		while (next.distance(other) < prev.distance(other) || !turnedAround)
 		{
-//			System.out.println(next.distance(other));
+			//			System.out.println(next.distance(other));
 
 			prev = next;
 			next = eval.next();
-			if(!turnedAround && next.distance(other) < prev.distance(other))
+			if (!turnedAround && next.distance(other) < prev.distance(other))
 				turnedAround = true;
-			if(!inBounds(next))
+			if (!inBounds(next))
 			{
-				if(firstTry)
+				if (firstTry)
 				{
 					System.out.println("flipping");
 					//return minDist(sepStart.flip(sep), other, a, b, false);
@@ -584,8 +591,8 @@ public class OutputPlane extends CoordPlane
 		dist1 = minDist(sep, sad, at, bt, true);
 		while (dist1 > tol)
 		{
-			System.out.println("A': " + at);
-			System.out.println("B': " + bt);
+//			System.out.println("A': " + at);
+//			System.out.println("B': " + bt);
 			System.out.println("dist: " + dist1);
 			if(isA) at += inc;
 			else bt += inc;
@@ -623,7 +630,7 @@ public class OutputPlane extends CoordPlane
 
 			if (dist2 > dist1)
 			{
-				//System.out.println("flipping");
+				System.out.println("flippity do");
 				inc = -(inc * .5);
 //				if(Math.abs(inc) <= .000000000000000001)
 //				{
