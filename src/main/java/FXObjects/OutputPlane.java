@@ -223,10 +223,10 @@ public class OutputPlane extends CoordPlane
 				{
 				}
 				break;
-			case SELECTSOURCE:
+			case SELECTSOURCEORSINK:
 				try
 				{
-					Point2D p = getSource(pt);
+					Point2D p = getSourceOrSink(pt);
 					fireEvent(new SourceSelected(p));
 					selectedCritPoints.add(p);
 					drawSelectedCritPoints();
@@ -404,8 +404,10 @@ public class OutputPlane extends CoordPlane
 			{
 				try
 				{
+					System.out.println("got here!");
 					isA = !isA;
 					prev = saddleConnection(s1, s2, isA, start.getX(), start.getY());
+					System.out.println("but not here....");
 					if (add)
 					{
 						in.saddleCons.add(new SaddleCon(prev, s1, s2));
@@ -431,7 +433,11 @@ public class OutputPlane extends CoordPlane
 					justThrew = false;
 				} catch (RootNotFound r)
 				{
-					if (justThrew) break;
+					if (justThrew)
+					{
+						System.out.println("breaking");
+						break;
+					}
 					isA = !isA;
 					justThrew = true;
 				}
@@ -447,12 +453,12 @@ public class OutputPlane extends CoordPlane
 //		System.out.println(sep.getStart(.01));
 		Evaluator eval = EvaluatorFactory.getEvaluator(evalType, dx, dy);
 		double in;
-		if(sep.posDir()) in = inc;
+		if(sep.posEig()) in = inc;
 		else in = -inc;
-		//eval.initialise(sep.getStart((xMax - xMin)/c.getWidth()).getX(), sep.getStart((xMax - xMin)/c.getWidth()).getY(), 0, a, b, in);
-		//Point2D prev = sep.getStart((xMax - xMin)/c.getWidth());
-		eval.initialise(sep.getStart(.01).getX(), sep.getStart(.01).getY(), 0, a, b, in);
-		Point2D prev = sep.getStart(.01);
+		eval.initialise(sep.getStart((xMax - xMin)/c.getWidth()).getX(), sep.getStart((xMax - xMin)/c.getWidth()).getY(), 0, a, b, in);
+		Point2D prev = sep.getStart((xMax - xMin)/c.getWidth());
+//		eval.initialise(sep.getStart(.01).getX(), sep.getStart(.01).getY(), 0, a, b, in);
+//		Point2D prev = sep.getStart(.01);
 		Point2D next = eval.next();
 		boolean turnedAround = false;
 //		turnedAround = !sep.saddle.point.equals(other);
@@ -460,17 +466,19 @@ public class OutputPlane extends CoordPlane
 		while (next.distance(other) < prev.distance(other) || !turnedAround)
 		{
 			//			System.out.println(next.distance(other));
-
+//			System.out.println(prev);
 			prev = next;
 			next = eval.next();
-			if (!turnedAround && next.distance(other) < prev.distance(other))
+			if (!turnedAround && next.distance(other) <= prev.distance(other))
+			{
 				turnedAround = true;
-			if (!inBounds(next))
+			}
+			if (!inBounds(prev))
 			{
 				if (firstTry)
 				{
-					System.out.println("flipping");
-					//return minDist(sepStart.flip(sep), other, a, b, false);
+//					System.out.println("flipping");
+					return minDist(sepStart.flip(sep), other, a, b, false);
 				}
 				System.out.println("____________________________");
 				System.out.println("a: " + a);
@@ -480,12 +488,13 @@ public class OutputPlane extends CoordPlane
 				System.out.println("Reversed?: " + turnedAround);
 				System.out.println("off the screen at " + next);
 				System.out.println("____________________________");
+//				return 0;
 				throw new RootNotFound();
 			}
 
 		}
-		System.out.println("mindistprnt: \nfound: " + prev + "\nother: " + other + "\nstart: " + sep.saddle.point +
-				"\na: " + a + "\nb: " + b + "\n-----------------------");
+//		System.out.println("mindistprnt: \nfound: " + prev + "\nother: " + other + "\nstart: " + sep.saddle.point +
+//				"\na: " + a + "\nb: " + b + "\n-----------------------");
 		return prev.distance(other);
 	}
 	private void assertSaddle(final sepStart s1, final sepStart s2) throws RootNotFound
@@ -504,8 +513,10 @@ public class OutputPlane extends CoordPlane
 //			System.out.println("bad bad bad");
 	}
 
-	private Point2D saddleConnection(sepStart s1, sepStart s2, boolean isA, double at, double bt) throws RootNotFound
+	private Point2D saddleConnection(final sepStart s1init, final sepStart s2init, boolean isA, double at, double bt) throws RootNotFound
 	{
+		sepStart s1 = s1init.clone();
+		sepStart s2 = s2init.clone();
 		long time = System.nanoTime();
 		double inc;
 		double old;
@@ -593,11 +604,11 @@ public class OutputPlane extends CoordPlane
 		{
 //			System.out.println("A': " + at);
 //			System.out.println("B': " + bt);
-			System.out.println("dist: " + dist1);
+//			System.out.println("dist: " + dist1);
 			if(isA) at += inc;
 			else bt += inc;
-			s1.saddle = critical(s1.saddle.point, at, bt);
-			s2.saddle = critical(s2.saddle.point, at, bt);
+			s1 = s1.updateSaddle(critical(s1.saddle.point, at, bt));
+			s2 = s2.updateSaddle(critical(s2.saddle.point, at, bt));
 			saddle1 = s1.saddle.point;
 			saddle2 = s2.saddle.point;
 			try
@@ -622,7 +633,9 @@ public class OutputPlane extends CoordPlane
 			if(dist2 - dist1 == 0 && dist1 > 2 * tol)
 			{
 				System.out.println("throwing. Distance: " + dist1 +
+						"\nb: " + bt +
 						"\na: " + at +
+						"\nisA: " + isA +
 						"\ninc: " + inc +
 						"\ntol: " + tol);
 				throw new RootNotFound();
@@ -630,7 +643,7 @@ public class OutputPlane extends CoordPlane
 
 			if (dist2 > dist1)
 			{
-				System.out.println("flippity do");
+//				System.out.println("flippity do");
 				inc = -(inc * .5);
 //				if(Math.abs(inc) <= .000000000000000001)
 //				{
@@ -661,6 +674,7 @@ public class OutputPlane extends CoordPlane
 			System.out.println((bt - old) / aInc);
 //			throw new RootNotFound();
 		}
+		System.out.println("isA? " + isA);
 		return new Point2D(at, bt);
 
 //		SimpleMatrix start = new SimpleMatrix(2, 1);
@@ -745,10 +759,11 @@ public class OutputPlane extends CoordPlane
 				(p.getY() - ln[0].getY()) * (ln[1].getX() - ln[0].getX());
 	}
 
-	private Point2D getSource(Point2D start) throws RootNotFound
+	private Point2D getSourceOrSink(Point2D start) throws RootNotFound
 	{
 		CriticalPoint temp = critical(start);
-		if (temp.type != CritPointTypes.NODESOURCE && temp.type != CritPointTypes.SPIRALSOURCE)
+		if (temp.type != CritPointTypes.NODESOURCE && temp.type != CritPointTypes.SPIRALSOURCE &&
+				temp.type != CritPointTypes.NODESINK && temp.type != CritPointTypes.SPIRALSINK)
 			throw new RootNotFound();
 		else return temp.point;
 	}

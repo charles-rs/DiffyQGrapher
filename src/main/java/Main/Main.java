@@ -330,7 +330,7 @@ public class Main extends Application
 		});
 		hopfBif.setOnAction((e) ->
 		{
-			outPlane.clickMode = ClickModeType.SELECTSOURCE;
+			outPlane.clickMode = ClickModeType.SELECTSOURCEORSINK;
 		});
 		sdlConBif.setOnAction((e) ->
 		{

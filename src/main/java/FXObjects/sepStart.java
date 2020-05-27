@@ -13,23 +13,30 @@ import javafx.geometry.Point2D;
 import org.ejml.simple.SimpleBase;
 import org.ejml.simple.SimpleMatrix;
 
-public class sepStart
+public class sepStart implements Cloneable
 {
-	public CriticalPoint saddle;
-	private int state;
+	public final CriticalPoint saddle;
+	private final int state;
 
+	private sepStart(CriticalPoint s, int st)
+	{
+		this.saddle = s;
+		this.state = st;
+	}
 	public sepStart(CriticalPoint s, boolean posDir, boolean posEig)
 	{
+		int state1;
 		saddle = s;
 
 		if(saddle.matrix.getEigenVector(0).get(0) < 0)
 			saddle.matrix.getEigenVector(0).set(saddle.matrix.getEigenVector(0).negative());
 		if(saddle.matrix.getEigenVector(1).get(0) < 0)
 			saddle.matrix.getEigenVector(1).set(saddle.matrix.getEigenVector(1).negative());
-		state = 0;
-		if(posEig) state = 1;
-		if(posDir) state |= 2;
+		state1 = 0;
+		if(posEig) state1 = 1;
+		if(posDir) state1 |= 2;
 
+		state = state1;
 	}
 
 	public boolean posDir()
@@ -72,5 +79,13 @@ public class sepStart
 	public static sepStart flip(final sepStart other)
 	{
 		return new sepStart(other.saddle, !other.posDir(), other.posEig());
+	}
+	public sepStart updateSaddle(CriticalPoint sad)
+	{
+		return new sepStart(sad, this.posDir(), this.posEig());
+	}
+	public sepStart clone()
+	{
+		return new sepStart(this.saddle, this.state);
 	}
 }
