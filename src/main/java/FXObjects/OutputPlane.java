@@ -378,47 +378,47 @@ public class OutputPlane extends CoordPlane
 
 
 
-	public void renderSaddleCon(Point2D start, sepStart s1, sepStart s2, boolean add)
+	public void renderSaddleCon(Point2D start, final sepStart s1, final sepStart s2, boolean add)
 	{
 		in.saddleCanvas.getGraphicsContext2D().setStroke(in.saddleConColor);
-		double aInc = (in.xMax - in.xMin) / in.c.getWidth();
-		double bInc = (in.yMax - in.yMin) / in.c.getHeight();
+		double aInc = 1D * (in.xMax - in.xMin) / in.c.getWidth();
+		double bInc = 1D * (in.yMax - in.yMin) / in.c.getHeight();
 		Point2D prev;
 		Point2D next;
 		Point2D temp;
+		Point2D st;
 		boolean justThrew = false;
-		boolean isA = true;
-		for (int i = 0; i < 2; i++)
+		boolean isA = false;
+		try
+		{
+			st = saddleConnection(s1, s2, isA, start.getX(), start.getY());
+			if (add)
+			{
+				in.saddleCons.add(new SaddleCon(st, s1, s2));
+				add = false;
+			}
+		} catch (RootNotFound r)
+		{
+			try
+			{
+				isA = !isA;
+				st = saddleConnection(s1, s2, isA, start.getX(), start.getY());
+				if (add)
+				{
+					in.saddleCons.add(new SaddleCon(st, s1, s2));
+					add = false;
+				}
+			} catch (RootNotFound r1)
+			{
+				return;
+			}
+		}
+		for (int i = 0; i < 3; i++)
 		{
 //			System.out.println("AINC: " + aInc);
 //			System.out.println("BINC: " + bInc);
-			try
-			{
-				prev = saddleConnection(s1, s2, isA, start.getX(), start.getY());
-				if (add)
-				{
-					in.saddleCons.add(new SaddleCon(prev, s1, s2));
-					add = false;
-				}
-			} catch (RootNotFound r)
-			{
-				try
-				{
-					System.out.println("got here!");
-					isA = !isA;
-					prev = saddleConnection(s1, s2, isA, start.getX(), start.getY());
-					System.out.println("but not here....");
-					if (add)
-					{
-						in.saddleCons.add(new SaddleCon(prev, s1, s2));
-						add = false;
-					}
-				} catch (RootNotFound r1)
-				{
-					return;
-				}
-			}
 
+			prev = st;
 			while (in.inBounds(prev.getX(), prev.getY()))
 			{
 				if (isA) temp = new Point2D(prev.getX(), prev.getY() + bInc);
@@ -430,6 +430,7 @@ public class OutputPlane extends CoordPlane
 					in.drawLine(prev, next, in.saddleCanvas);
 					prev = next;
 					System.out.println(prev);
+					System.out.println(i);
 					justThrew = false;
 				} catch (RootNotFound r)
 				{
@@ -450,6 +451,8 @@ public class OutputPlane extends CoordPlane
 	}
 	private double minDist(final sepStart sep, final Point2D other, final double a, final double b, boolean firstTry) throws RootNotFound
 	{
+		boolean shortcut = false;
+		double min = Double.MAX_VALUE;
 //		System.out.println(sep.getStart(.01));
 		Evaluator eval = EvaluatorFactory.getEvaluator(evalType, dx, dy);
 		double in;
@@ -457,45 +460,53 @@ public class OutputPlane extends CoordPlane
 		else in = -inc;
 		eval.initialise(sep.getStart((xMax - xMin)/c.getWidth()).getX(), sep.getStart((xMax - xMin)/c.getWidth()).getY(), 0, a, b, in);
 		Point2D prev = sep.getStart((xMax - xMin)/c.getWidth());
-//		eval.initialise(sep.getStart(.01).getX(), sep.getStart(.01).getY(), 0, a, b, in);
-//		Point2D prev = sep.getStart(.01);
 		Point2D next = eval.next();
-		boolean turnedAround = false;
-//		turnedAround = !sep.saddle.point.equals(other);
-
-		while (next.distance(other) < prev.distance(other) || !turnedAround)
+		boolean approaching = false;
+//		approaching = !sep.saddle.point.equals(other);
+		while(inBounds(prev) && eval.getT() < 25)
+//		while (next.distance(other) < prev.distance(other) || !approaching)
 		{
-			//			System.out.println(next.distance(other));
 //			System.out.println(prev);
 			prev = next;
 			next = eval.next();
-			if (!turnedAround && next.distance(other) <= prev.distance(other))
+			if(prev.equals(next)) break;
+			if (!approaching && next.distance(other) <= prev.distance(other))
 			{
-				turnedAround = true;
+				approaching = true;
+			} else if(approaching && next.distance(other) >= prev.distance(other))
+			{
+				if(shortcut) break;
+				approaching = false;
 			}
-			if (!inBounds(prev))
+			if(approaching)
 			{
-				if (firstTry)
-				{
-//					System.out.println("flipping");
-					return minDist(sepStart.flip(sep), other, a, b, false);
-				}
-				System.out.println("____________________________");
-				System.out.println("a: " + a);
-				System.out.println("b: " + b);
-				System.out.println("Start: " + sep.getStart(.01));
-				System.out.println("Goal: " + other);
-				System.out.println("Reversed?: " + turnedAround);
-				System.out.println("off the screen at " + next);
-				System.out.println("____________________________");
-//				return 0;
-				throw new RootNotFound();
+				double d = next.distance(other);
+				if(d < min) min = d;
 			}
 
+
+		}
+		if (min == Double.MAX_VALUE)
+		{
+			if (firstTry)
+			{
+//					System.out.println("flipping");
+				return minDist(sepStart.flip(sep), other, a, b, false);
+			}
+			System.out.println("____________________________");
+			System.out.println("a: " + a);
+			System.out.println("b: " + b);
+			System.out.println("Start: " + sep.getStart(.01));
+			System.out.println("Goal: " + other);
+			System.out.println("Reversed?: " + approaching);
+			System.out.println("off the screen at " + next);
+			System.out.println("____________________________");
+//				return 0;
+			throw new RootNotFound();
 		}
 //		System.out.println("mindistprnt: \nfound: " + prev + "\nother: " + other + "\nstart: " + sep.saddle.point +
 //				"\na: " + a + "\nb: " + b + "\n-----------------------");
-		return prev.distance(other);
+		return min;
 	}
 	private void assertSaddle(final sepStart s1, final sepStart s2) throws RootNotFound
 	{
@@ -674,7 +685,7 @@ public class OutputPlane extends CoordPlane
 			System.out.println((bt - old) / aInc);
 //			throw new RootNotFound();
 		}
-		System.out.println("isA? " + isA);
+//		System.out.println("isA? " + isA);
 		return new Point2D(at, bt);
 
 //		SimpleMatrix start = new SimpleMatrix(2, 1);
