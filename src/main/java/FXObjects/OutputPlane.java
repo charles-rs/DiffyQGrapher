@@ -29,6 +29,7 @@ import org.ejml.simple.SimpleMatrix;
 
 import java.io.File;
 import java.io.FileNotFoundException;
+import java.io.FileOutputStream;
 import java.io.PrintWriter;
 import java.util.ArrayList;
 import java.util.LinkedList;
@@ -283,7 +284,7 @@ public class OutputPlane extends CoordPlane
 								f.close();
 							} catch (FileNotFoundException ignored) {}
 
-							//
+
 							new Thread(() ->
 							{
 								synchronized (selectedSeps)
@@ -412,7 +413,7 @@ public class OutputPlane extends CoordPlane
 				return;
 			}
 		}
-		for (int i = 0; i < 3; i++)
+		for (int i = 0; i < 2; i++)
 		{
 //			System.out.println("AINC: " + aInc);
 //			System.out.println("BINC: " + bInc);
@@ -444,28 +445,32 @@ public class OutputPlane extends CoordPlane
 			}
 			aInc = -aInc;
 			bInc = -bInc;
+			in.saddleCanvas.getGraphicsContext2D().setStroke(Color.TURQUOISE);
 		}
 		in.gc.setStroke(Color.BLACK);
 		Platform.runLater(this::draw);
 	}
-	private double minDist(final sepStart sep, final Point2D other, final double a, final double b, boolean firstTry) throws RootNotFound
+	private double minDist(final sepStart sep, final Point2D other, final double at, final double bt, boolean firstTry) throws RootNotFound
 	{
-		boolean shortcut = false;
+		boolean shortcut = true;
 		double min = Double.MAX_VALUE;
 //		System.out.println(sep.getStart(.01));
 		Evaluator eval = EvaluatorFactory.getEvaluator(evalType, dx, dy);
 		double in;
 		if(sep.posEig()) in = inc;
 		else in = -inc;
-		eval.initialise(sep.getStart((xMax - xMin)/c.getWidth()).getX(), sep.getStart((xMax - xMin)/c.getWidth()).getY(), 0, a, b, in);
-		Point2D prev = sep.getStart((xMax - xMin)/c.getWidth());
+		double factor = 1D;
+		eval.initialise(sep.getStart(factor * (xMax - xMin)/c.getWidth()), 0, at, bt, in);
+		Point2D prev = sep.getStart(factor * (xMax - xMin)/c.getWidth());
 		Point2D next = eval.next();
 		boolean approaching = false;
 //		approaching = !sep.saddle.point.equals(other);
+		LinkedList<Point2D> record = new LinkedList<>();
 		while(inBounds(prev) && eval.getT() < 25)
 //		while (next.distance(other) < prev.distance(other) || !approaching)
 		{
 //			System.out.println(prev);
+			record.add(prev);
 			prev = next;
 			next = eval.next();
 			if(prev.equals(next)) break;
@@ -487,20 +492,31 @@ public class OutputPlane extends CoordPlane
 		}
 		if (min == Double.MAX_VALUE)
 		{
-			if (firstTry)
-			{
-//					System.out.println("flipping");
-				return minDist(sepStart.flip(sep), other, a, b, false);
-			}
+
 			System.out.println("____________________________");
-			System.out.println("a: " + a);
-			System.out.println("b: " + b);
-			System.out.println("Start: " + sep.getStart(.01));
+			System.out.println("a: " + at);
+			System.out.println("b: " + bt);
+			System.out.println("Start: " + sep.getStart(factor * (xMax - xMin)/c.getWidth()));
 			System.out.println("Goal: " + other);
-			System.out.println("Reversed?: " + approaching);
+			System.out.println("approaching?: " + approaching);
+			System.out.println("first try? " + firstTry);
 			System.out.println("off the screen at " + next);
 			System.out.println("____________________________");
 //				return 0;
+			if (firstTry)
+			{
+				try
+				{
+					PrintWriter out = new PrintWriter("output.text");
+					out.println(sep.saddle.point);
+					out.println(in);
+					out.println();
+					for(Point2D pt : record) out.println(pt);
+					out.close();
+				} catch (FileNotFoundException ignored) {}
+//					System.out.println("flipping");
+				return minDist(sepStart.flip(sep), other, at, bt, false);
+			}
 			throw new RootNotFound();
 		}
 //		System.out.println("mindistprnt: \nfound: " + prev + "\nother: " + other + "\nstart: " + sep.saddle.point +
@@ -519,8 +535,6 @@ public class OutputPlane extends CoordPlane
 			System.out.println("not a saddle at " + s2.saddle.point);
 			throw new RootNotFound();
 		}
-//		if(s1.getStart(.01).getX() < 0)
-//			System.out.println("bad bad bad");
 	}
 
 	private Point2D saddleConnection(final sepStart s1init, final sepStart s2init, boolean isA, double at, double bt) throws RootNotFound

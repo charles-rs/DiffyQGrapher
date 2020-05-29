@@ -15,23 +15,59 @@ import org.ejml.simple.SimpleMatrix;
 import java.util.LinkedList;
 import java.util.List;
 
+/**
+ * Class to represent the input parameter plane.
+ */
 public class InputPlane extends CoordPlane
 {
+	/**
+	 * a and b are the parameters, initialised to (0,0)
+	 */
 	private double a = 0;
 	private double b = 0;
+	/**
+	 * carries a pointer to the outputplane for communication purposes
+	 */
 	private final OutputPlane op;
+	/**
+	 * text fields that display and let the user edit the parameters
+	 */
 	private final TextField aField, bField;
+	/**
+	 * colors of various bifurcations so that they are easily differentiable by the user
+	 */
 	private Color saddleBifColor = Color.BLUE;
 	private Color hopfBifColor = Color.ORANGE;
 	Color saddleConColor = Color.PURPLE;
+	/**
+	 * Lists to store all of the bifurcations
+	 */
 	List<double[]> saddleBifs;
 	List<double[]> hopfBifs;
 	List<SaddleCon> saddleCons;
+	/**
+	 * a separate thread that deals with drawing difficult bifurcations so as not to lock up the program
+	 */
 	Thread artist;
+	/**
+	 * canvas that is overlayed on the normal one for drawing saddle connection bifurcations.
+	 * These are difficult bifurcations to draw, so we want to avoid redrawing them except when absolutely necessary
+	 */
 	Canvas saddleCanvas;
 	boolean updateSaddleCons;
 
 
+	/**
+	 * Constructs an input plane.
+	 * Events:
+	 * left right up down keys move the selected point in the parameter space
+	 * clicking selects a point
+	 * typing in the text fields updates the values
+	 * @param side The side length of the window
+	 * @param aField pointer to the text field for a
+	 * @param bField pointer to the text field for b
+	 * @param op pointer to the output plane
+	 */
 	public InputPlane(double side, TextField aField, TextField bField, OutputPlane op)
 	{
 
@@ -110,6 +146,9 @@ public class InputPlane extends CoordPlane
 		}
 	}
 
+	/**
+	 * draws the point
+	 */
 	private void drawPoint()
 	{
 		gc.setFill(Color.RED);
@@ -117,22 +156,38 @@ public class InputPlane extends CoordPlane
 		gc.setFill(Color.BLACK);
 	}
 
+	/**
+	 * updates the text fields to show the parameters
+	 */
 	private void showValues()
 	{
 		aField.setText(Double.toString(a));
 		bField.setText(Double.toString(b));
 	}
 
+	/**
+	 * gets a
+	 * @return the a parameter
+	 */
 	public double getA()
 	{
 		return a;
 	}
 
+	/**
+	 * gets b
+	 * @return the b parameter
+	 */
 	public double getB()
 	{
 		return b;
 	}
 
+	/**
+	 * Helper method for saddle node bifurcations. Uses newton's method to find them
+	 * @param start the starting point
+	 * @param add whether or not to add this one to the list of saddle node bifurcations
+	 */
 	private void saddleBifHelp(double start [], boolean add)
 	{
 		gc.setStroke(saddleBifColor);
@@ -174,8 +229,10 @@ public class InputPlane extends CoordPlane
 		{
 			first = second;
 			if (isA)
-				second = bifHelp(first[0], first[1], first[2] + xInc, first[3], dx, dy, det, derivative, 'a');
-			else second = bifHelp(first[0], first[1], first[2], first[3] + yInc, dx, dy, det, derivative, 'b');
+				second = bifHelp(first[0], first[1], first[2] + xInc, first[3], dx, dy,
+						det, derivative, 'a');
+			else second = bifHelp(first[0], first[1], first[2], first[3] + yInc, dx, dy,
+					det, derivative, 'b');
 			gc.strokeLine(normToScrX(first[2]), normToScrY(first[3]), normToScrX(second[2]), normToScrY(second[3]));
 		}
 		first = start;
@@ -191,8 +248,10 @@ public class InputPlane extends CoordPlane
 		{
 			first = second;
 			if (isA)
-				second = bifHelp(first[0], first[1], first[2] - xInc, first[3], dx, dy, det, derivative, 'a');
-			else second = bifHelp(first[0], first[1], first[2], first[3] - yInc, dx, dy, det, derivative, 'b');
+				second = bifHelp(first[0], first[1], first[2] - xInc, first[3], dx, dy,
+						det, derivative, 'a');
+			else second = bifHelp(first[0], first[1], first[2], first[3] - yInc, dx, dy,
+					det, derivative, 'b');
 			if(second == null) break;
 			gc.strokeLine(normToScrX(first[2]), normToScrY(first[3]), normToScrX(second[2]), normToScrY(second[3]));
 		}
@@ -200,15 +259,29 @@ public class InputPlane extends CoordPlane
 		gc.setStroke(Color.BLACK);
 	}
 
+	/**
+	 * adds and draws a saddle node bifurcation
+	 * @param start the starting point for calculation
+	 */
 	public void saddleBif(Point2D start)
 	{
 		saddleBifHelp(new double[]{start.getX(), start.getY(), a, b}, true);
 	}
 
+	/**
+	 * adds and draws a hopf bifurcation
+	 * @param start the starting point for calculation
+	 */
 	public void hopfBif(Point2D start)
 	{
 		hopfBifHelp(new double[]{start.getX(), start.getY(), a, b}, true);
 	}
+
+	/**
+	 * helper method for hopf bifurcations. uses newton's method to calculate
+	 * @param start the starting point
+	 * @param add whether or not to add it to the list of hopf bifurcations
+	 */
 	private void hopfBifHelp(double start [], boolean add)
 	{
 		gc.setStroke(hopfBifColor);
@@ -280,7 +353,23 @@ public class InputPlane extends CoordPlane
 		gc.setStroke(Color.BLACK);
 	}
 
-
+	/**
+	 * Helper method for saddle node and hopf bifurcations, as they are a similar calculation.
+	 * Essentially calculates one (1) point of bifurcation starting at the given input using Newton's method
+	 * This is possible since saddle node and hopf bifurcations are solutions to three equations in 4 variables,
+	 * so their solutions are probably a curve of dimension one, meaning we can use newton's method by fixing one of
+	 * the variables.
+	 * @param x the starting x
+	 * @param y the starting y
+	 * @param aTemp the a value to calculate for
+	 * @param bTemp the b value to calculate for
+	 * @param n1 the first equation
+	 * @param n2 the second equation
+	 * @param n3 the third equation
+	 * @param derivative The jacobian of the system
+	 * @param cons marks which variable is held constant
+	 * @return the value for the non constant variable, given the constant one
+	 */
 	private double bifHelp(double x, double y, double aTemp, double bTemp, Node n1, Node n2, Node n3, Node derivative[][], char cons)[]
 	{
 		double t = op.getT();
@@ -356,6 +445,12 @@ public class InputPlane extends CoordPlane
 
 
 	}
+
+	/**
+	 * draws all the saddle cons in the current list
+	 * @implNote uses the artist thread, interrupts it if it is already busy, as whenever we draw saddle cons,
+	 * we throw away whatever old saddle cons were being drawn
+	 */
 	public void drawSaddleCons()
 	{
 		if(artist != null)
@@ -373,6 +468,10 @@ public class InputPlane extends CoordPlane
 			artist.start();
 		}
 	}
+
+	/**
+	 * clears the bifurcation lists, and redraws the pane
+	 */
 	public void clear()
 	{
 		saddleBifs.clear();

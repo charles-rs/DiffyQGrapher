@@ -70,6 +70,19 @@ public abstract class Evaluator
 	}
 
 	/**
+	 * Initialises the evaluator with a point object
+	 * @param p the starting point
+	 * @param t the t val
+	 * @param a the a param
+	 * @param b the b param
+	 * @param inc the increment to be used
+	 */
+	public void initialise(Point2D p, double t, double a, double b, double inc)
+	{
+		initialise(p.getX(), p.getY(), t, a, b, inc);
+	}
+
+	/**
 	 * gets the current time of the evaluator
 	 * @return the current t
 	 */

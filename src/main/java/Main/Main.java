@@ -22,6 +22,9 @@ import javafx.stage.Stage;
 
 import java.io.StringReader;
 
+/**
+ * absolute fucking mess.
+ */
 
 public class Main extends Application
 {
