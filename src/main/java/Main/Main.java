@@ -3,7 +3,7 @@ package Main;
 import AST.Derivative;
 import Evaluation.EvalType;
 import Events.SaddleSelected;
-import Events.SourceSelected;
+import Events.SourceOrSinkSelected;
 import Exceptions.SyntaxError;
 import FXObjects.ClickModeType;
 import FXObjects.DerivativeGraph;
@@ -13,7 +13,6 @@ import Parser.Tokenizer;
 import javafx.application.Application;
 import javafx.event.ActionEvent;
 import javafx.event.EventHandler;
-import javafx.event.EventType;
 import javafx.geometry.Pos;
 import javafx.scene.Scene;
 import javafx.scene.control.*;
@@ -344,10 +343,10 @@ public class Main extends Application
 					inPlane.saddleBif(((SaddleSelected) e).pt);
 				outPlane.clickMode = ClickModeType.DRAWPATH;
 			}
-			if(e instanceof SourceSelected)
+			if(e instanceof SourceOrSinkSelected)
 			{
-				if(((SourceSelected) e).pt != null)
-					inPlane.hopfBif(((SourceSelected) e).pt);
+				if(((SourceOrSinkSelected) e).pt != null)
+					inPlane.hopfBif(((SourceOrSinkSelected) e).pt);
 				outPlane.clickMode = ClickModeType.DRAWPATH;
 			}
 		};

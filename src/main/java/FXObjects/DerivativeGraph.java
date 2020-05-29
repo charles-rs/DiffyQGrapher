@@ -2,19 +2,33 @@ package FXObjects;
 
 import AST.Derivative;
 import Exceptions.EvaluationException;
-import javafx.beans.property.StringProperty;
-import javafx.geometry.Point2D;
-import javafx.scene.control.TextArea;
 import javafx.scene.control.TextField;
 import javafx.scene.input.KeyCode;
 import javafx.scene.input.MouseEvent;
 
+/**
+ * class to represent graphs of individual derivatives.
+ */
 
 public class DerivativeGraph extends CoordPlane
 {
-	private Derivative derivative;
-	private double inc, a, b, x, y, t;
-	private char var;
+	/**
+	 * the derivative to graph
+	 */
+	private final Derivative derivative;
+	/**
+	 * inc: the increment to draw with
+	 * a, b, x, y, t: the current input variables.
+	 */
+	private final double inc, a, b;
+	private double x, y, t;
+	/**
+	 * the variable we are graphing with respect to
+	 */
+	private final char var;
+	/**
+	 * the text fields for input
+	 */
 	private TextField xInput, yInput, tInput;
 	public DerivativeGraph(double side, Derivative d, char var, double a, double b, double x, double y, double t,
 						   TextField xInput, TextField yInput, TextField tInput)
@@ -31,6 +45,7 @@ public class DerivativeGraph extends CoordPlane
 		this.xInput = xInput;
 		this.yInput = yInput;
 		this.tInput = tInput;
+		//TODO: make these grey out better, currently hard to tell they aren't editable and feels like a bug
 		switch (var)
 		{
 			case 'x':
@@ -76,15 +91,14 @@ public class DerivativeGraph extends CoordPlane
 				draw();
 			}
 		});
-
 	}
 
 	@Override
-	protected void updateForZoom()
-	{
+	protected void updateForZoom(){}
 
-	}
-
+	/**
+	 * draws by moving along the axis and calculating a value. Linearly interpolates in segments of size inc
+	 */
 	@Override
 	public void draw()
 	{
@@ -101,7 +115,8 @@ public class DerivativeGraph extends CoordPlane
 					next = derivative.eval(increment, y, a, b, t);
 					while(increment <= xMax)
 					{
-						gc.strokeLine(normToScrX(increment - inc), normToScrY(temp), normToScrX(increment), normToScrY(next));
+						gc.strokeLine(normToScrX(increment - inc), normToScrY(temp),
+								normToScrX(increment), normToScrY(next));
 						temp = next;
 						increment += inc;
 						next = derivative.eval(increment, y, a, b, t);
@@ -113,7 +128,8 @@ public class DerivativeGraph extends CoordPlane
 					next = derivative.eval(x, increment, a, b, t);
 					while(increment <= xMax)
 					{
-						gc.strokeLine(normToScrX(increment - inc), normToScrY(temp), normToScrX(increment), normToScrY(next));
+						gc.strokeLine(normToScrX(increment - inc), normToScrY(temp),
+								normToScrX(increment), normToScrY(next));
 						temp = next;
 						increment += inc;
 						next = derivative.eval(x, increment, a, b, t);
@@ -125,17 +141,15 @@ public class DerivativeGraph extends CoordPlane
 					next = derivative.eval(x, y, a, b, increment);
 					while(increment <= xMax)
 					{
-						gc.strokeLine(normToScrX(increment - inc), normToScrY(temp), normToScrX(increment), normToScrY(next));
+						gc.strokeLine(normToScrX(increment - inc), normToScrY(temp),
+								normToScrX(increment), normToScrY(next));
 						temp = next;
 						increment += inc;
 						next = derivative.eval(x, y, a, b, increment);
 					}
 					break;
 			}
-		} catch (EvaluationException e)
-		{
-
-		}
+		} catch (EvaluationException ignored){}
 	}
 
 	@Override

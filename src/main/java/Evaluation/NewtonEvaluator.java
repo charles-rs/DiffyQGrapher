@@ -1,7 +1,4 @@
 package Evaluation;
-/**
- * Class that does Newtons method in two variables
- */
 
 import AST.Node;
 import Exceptions.EvaluationException;
@@ -9,7 +6,9 @@ import Exceptions.RootNotFound;
 import javafx.geometry.Point2D;
 import org.ejml.data.SingularMatrixException;
 import org.ejml.simple.SimpleMatrix;
-
+/**
+ * Class that does Newtons method in two variables
+ */
 public class NewtonEvaluator
 {
 	/**

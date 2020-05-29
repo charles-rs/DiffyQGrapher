@@ -1,5 +1,9 @@
 package AST;
 
+/**
+ * enum for every supported type of function
+ * Every function has a string representation for pretty printing ease.
+ */
 
 public enum Functions
 {
@@ -44,7 +48,8 @@ public enum Functions
 	IDEN("");
 	String stringRep;
 
-	private Functions(String st)
+
+	Functions(String st)
 	{
 		stringRep = st;
 	}

@@ -2,16 +2,35 @@ package AST;
 
 import Exceptions.EvaluationException;
 
+/**
+ * Class to represent any operation with the function precedence.
+ * type holds what kind of function it is.
+ * v is the node that the function is applied
+ * base is null in all cases except for exponentiation, when it is the base that is raised to the v
+ */
 public class Function extends Node
 {
-	private Functions type;
-	private Node v, base;
+	private final Functions type;
+	private final Node v, base;
+
+	/**
+	 * Constructs a function of type t that is applied to val
+	 * @param t the type of the function. Cannot be Functions.POW
+	 * @param val the value to apply it to
+	 */
 	public Function(Functions t, Node val)
 	{
+		assert(t != Functions.POW);
 		v = val;
 		type = t;
 		base = null;
 	}
+
+	/**
+	 * Constructs an exponentiation with base b and exponent expt.
+	 * @param b the base
+	 * @param expt the exponent
+	 */
 	public Function(Node b, Node expt)
 	{
 		base = b;
@@ -19,6 +38,7 @@ public class Function extends Node
 		type = Functions.POW;
 	}
 
+	@Override
 	public StringBuilder prettyPrint(StringBuilder sb)
 	{
 		if (type == Functions.POW)
@@ -118,7 +138,7 @@ public class Function extends Node
 	@Override
 	public Node differentiate(char c)
 	{
-		Node diff = null;
+		Node diff;
 		Node inner = v.clone();
 		switch (type)
 		{
@@ -256,14 +276,29 @@ public class Function extends Node
 		} else return false;
 	}
 
+	/**
+	 * Inverse function of Math.sinh(x)
+	 * @param x value to take hyperbolic arcsin of
+	 * @return the hyperbolic arcsin of x
+	 */
 	private double asinh(double x)
 	{
 		return Math.log(x + Math.sqrt(x * x + 1));
 	}
+	/**
+	 * Inverse function of Math.cosh(x)
+	 * @param x value to take hyperbolic arccos of
+	 * @return the hyperbolic arccos of x
+	 */
 	private double acosh(double x)
 	{
 		return Math.log(x + Math.sqrt(x * x - 1));
 	}
+	/**
+	 * Inverse function of Math.tanh(x)
+	 * @param x value to take hyperbolic arctan of
+	 * @return the hyperbolic arctan of x
+	 */
 	private double atanh(double x)
 	{
 		return 0.5 * Math.log( (x + 1.0) / (x - 1.0));

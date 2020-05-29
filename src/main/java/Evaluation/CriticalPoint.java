@@ -1,12 +1,12 @@
 package Evaluation;
-/**
- * Class to represent critical points. Keeps track of where they are
- */
+
 
 import javafx.geometry.Point2D;
 import org.ejml.simple.SimpleEVD;
 import org.ejml.simple.SimpleMatrix;
-
+/**
+ * Class to represent critical points. Keeps track of where they are
+ */
 public class CriticalPoint
 {
 	public Point2D point;

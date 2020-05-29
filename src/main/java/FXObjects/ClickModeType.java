@@ -1,5 +1,8 @@
 package FXObjects;
 
+/**
+ * Various modes for the output plane
+ */
 public enum ClickModeType
 {
 	DRAWPATH,

@@ -2,15 +2,32 @@ package AST;
 
 import Exceptions.EvaluationException;
 
+/**
+ * Class to represent values in the AST.
+ * Could be a number or one of the 5 variables a, b, x, y, t
+ * type is the type of the value
+ * val is the numerical value if it is a number, null otherwise.
+ */
 public class Value extends Node
 {
 	ValueTypes type;
 	Double val;
+
+	/**
+	 * Constructs a new value of the given type
+	 * @param v the type of value to construct. May not be ValueTypes.NUMBER
+	 */
 	public Value(ValueTypes v)
 	{
+		assert (v != ValueTypes.NUMBER);
 		type = v;
 		val = null;
 	}
+
+	/**
+	 * Constructs a numerical value with value b
+	 * @param b
+	 */
 	public Value(Double b)
 	{
 		type = ValueTypes.NUMBER;

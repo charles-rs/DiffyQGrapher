@@ -2,11 +2,14 @@ package AST;
 
 import Exceptions.EvaluationException;
 
+/**
+ * Class to represent terms: two nodes operated on by a multiplicative operator, either '*' or '/'
+ */
 public class Term extends Node
 {
-	private Node a;
-	private Node b;
-	private char op;
+	private final Node a;
+	private final Node b;
+	private final char op;
 
 	public Term(Node a, Node b, char op)
 	{
@@ -55,6 +58,10 @@ public class Term extends Node
 		return new Term(a.clone(), b.clone(), op);
 	}
 
+	/**
+	 * Does one left rotation of the current term. This is for left associativity.
+	 * @return the current node rotated left once if possible, otherwise unchanged
+	 */
 	private Node rotateBack()
 	{
 		if(b instanceof Term)
@@ -63,6 +70,11 @@ public class Term extends Node
 		}
 		else return this;
 	}
+
+	/**
+	 * Fully moves the associativity of the node and all it's children to the left
+	 * @return the new left associative node.
+	 */
 	public Node rotate()
 	{
 		Node temp = this;

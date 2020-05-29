@@ -1,12 +1,11 @@
 package Evaluation;
-/**
- * Evaluator that uses Euler's method
- */
 
 import AST.Derivative;
 import Exceptions.EvaluationException;
 import javafx.geometry.Point2D;
-
+/**
+ * Evaluator that uses Euler's method
+ */
 public class EulerEvaluator extends Evaluator
 {
 	public EulerEvaluator(Derivative dx, Derivative dy)

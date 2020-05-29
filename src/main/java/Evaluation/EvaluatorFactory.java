@@ -1,10 +1,10 @@
 package Evaluation;
-/**
- * Factory that produces evaluators
- */
 
 import AST.Derivative;
 
+/**
+ * Factory that produces evaluators
+ */
 public class EvaluatorFactory
 {
 	/**

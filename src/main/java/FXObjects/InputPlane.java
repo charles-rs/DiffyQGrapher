@@ -3,7 +3,6 @@ package FXObjects;
 import AST.Maths;
 import AST.Node;
 import Exceptions.EvaluationException;
-import Exceptions.RootNotFound;
 import javafx.geometry.Point2D;
 import javafx.scene.canvas.Canvas;
 import javafx.scene.control.TextField;
@@ -20,8 +19,8 @@ public class InputPlane extends CoordPlane
 {
 	private double a = 0;
 	private double b = 0;
-	private OutputPlane op;
-	private TextField aField, bField;
+	private final OutputPlane op;
+	private final TextField aField, bField;
 	private Color saddleBifColor = Color.BLUE;
 	private Color hopfBifColor = Color.ORANGE;
 	Color saddleConColor = Color.PURPLE;

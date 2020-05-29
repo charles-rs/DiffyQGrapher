@@ -4,16 +4,23 @@ package AST;
 import Exceptions.EvaluationException;
 
 /**
- * invariant: sig is either x or y (for now)
+ * A class to represent the left hand side of a derivative, for example "dx/dt"
+ * (really there isn't any information here beyond one character)
+ * invariant: sig is either x or y
  */
 public class Deriv extends Node
 {
-	private char sig;
+	private final char sig;
 
 	public Deriv(char c)
 	{
 		sig = c;
 	}
+
+	/**
+	 * Gets the character that represents the upper differential of this derivative
+	 * @return the char (x or y)
+	 */
 	public char getSig()
 	{
 		return sig;

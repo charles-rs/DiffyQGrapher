@@ -5,7 +5,7 @@ import AST.Maths;
 import AST.Value;
 import Evaluation.*;
 import Events.SaddleSelected;
-import Events.SourceSelected;
+import Events.SourceOrSinkSelected;
 import Exceptions.EvaluationException;
 import Exceptions.RootNotFound;
 import javafx.application.Platform;
@@ -29,7 +29,6 @@ import org.ejml.simple.SimpleMatrix;
 
 import java.io.File;
 import java.io.FileNotFoundException;
-import java.io.FileOutputStream;
 import java.io.PrintWriter;
 import java.util.ArrayList;
 import java.util.LinkedList;
@@ -227,7 +226,7 @@ public class OutputPlane extends CoordPlane
 				try
 				{
 					Point2D p = getSourceOrSink(pt);
-					fireEvent(new SourceSelected(p));
+					fireEvent(new SourceOrSinkSelected(p));
 					selectedCritPoints.add(p);
 					drawSelectedCritPoints();
 				} catch (RootNotFound ignored)
@@ -1096,10 +1095,6 @@ public class OutputPlane extends CoordPlane
 		}
 	}
 
-	private boolean inBounds(Point2D p)
-	{
-		return inBounds(p.getX(), p.getY());
-	}
 
 	private void drawArrow(double x, double y, double dx, double dy)
 	{

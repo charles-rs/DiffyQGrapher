@@ -1,12 +1,11 @@
 package Evaluation;
-/**
- * Evaluator using the Runge-Kutta method
- */
 
 import AST.Derivative;
 import Exceptions.EvaluationException;
 import javafx.geometry.Point2D;
-
+/**
+ * Evaluator using the Runge-Kutta method
+ */
 public class RungeKuttaEvaluator extends Evaluator
 {
 	protected RungeKuttaEvaluator(Derivative dx, Derivative dy)

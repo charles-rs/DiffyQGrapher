@@ -1,12 +1,11 @@
 package Evaluation;
-/**
- * Evaluator using the midpoint Euler method
- */
 
 import AST.Derivative;
 import Exceptions.EvaluationException;
 import javafx.geometry.Point2D;
-
+/**
+ * Evaluator using the midpoint Euler method
+ */
 public class MidEulerEvaluator extends Evaluator
 {
 	protected MidEulerEvaluator(Derivative dx, Derivative dy)

@@ -1,7 +1,4 @@
 package Evaluation;
-/**
-  The abstract class of evaluators
- */
 
 import AST.Derivative;
 import AST.Node;
@@ -10,7 +7,9 @@ import Exceptions.RootNotFound;
 import javafx.geometry.Point2D;
 import org.ejml.simple.SimpleEVD;
 import org.ejml.simple.SimpleMatrix;
-
+/**
+ The abstract class of evaluators
+ */
 
 public abstract class Evaluator
 {

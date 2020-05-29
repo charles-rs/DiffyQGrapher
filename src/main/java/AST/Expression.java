@@ -2,10 +2,14 @@ package AST;
 
 import Exceptions.EvaluationException;
 
+/**
+ * Class to represent one addition operation.
+ * Contains an operator and two children.
+ */
 public class Expression extends Node
 {
-	Node a, b;
-	char op;
+	private final Node a, b;
+	private final char op;
 
 	public Expression(Node one, Node two, char c)
 	{
