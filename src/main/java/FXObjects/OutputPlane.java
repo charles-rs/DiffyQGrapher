@@ -42,7 +42,7 @@ public class OutputPlane extends CoordPlane
 	private final List<initCond> initials;
 	private final List<initCond> isoclines;
 	private List<CriticalPoint> criticalPoints;
-	private final List<Point2D> selectedCritPoints;
+	private List<Point2D> selectedCritPoints;
 	private final List<Point2D> horizIsos;
 	private final List<Point2D> vertIsos;
 	private final List<Node> needsReset;
@@ -383,10 +383,13 @@ public class OutputPlane extends CoordPlane
 		in.saddleCanvas.getGraphicsContext2D().setStroke(in.saddleConColor);
 		double aInc = 1D * (in.xMax - in.xMin) / in.c.getWidth();
 		double bInc = 1D * (in.yMax - in.yMin) / in.c.getHeight();
+		// This is a variable that helps us guess better for the next value (using euler's method)
+		double otherInc = 0D;
 		Point2D prev;
 		Point2D next;
 		Point2D temp;
 		Point2D st;
+		Point2D diff;
 		boolean justThrew = false;
 		boolean isA = false;
 		try
@@ -421,16 +424,45 @@ public class OutputPlane extends CoordPlane
 			prev = st;
 			while (in.inBounds(prev.getX(), prev.getY()))
 			{
-				if (isA) temp = new Point2D(prev.getX(), prev.getY() + bInc);
-				else temp = new Point2D(prev.getX() + aInc, prev.getY());
+				if (isA) temp = new Point2D(prev.getX() + otherInc, prev.getY() + bInc);
+				else temp = new Point2D(prev.getX() + aInc, prev.getY() + otherInc);
 				try
 				{
 					next = saddleConnection(s1, s2, isA, temp.getX(), temp.getY());
 					//System.out.println(next);
 					in.drawLine(prev, next, in.saddleCanvas);
+					diff = next.subtract(prev);
+//					if(isA)
+//					{
+//						if(diff.getX() == 0D || diff.getY()/diff.getX() > .5)
+//							isA = false;
+//					} else
+//					{
+//						if(diff.getY() == 0D || diff.getX()/diff.getY() > .5)
+//							isA = true;
+//					}
+					if(isA)
+					{
+						if(diff.getX() < .1 * inc)
+						{
+							isA = false;
+							otherInc = 0;
+						}
+						else
+							otherInc = aInc * (diff.getY()/diff.getX());
+					} else
+					{
+						if(diff.getY() < .1 * inc)
+						{
+							isA = true;
+							otherInc = 0;
+						}
+						else
+							otherInc = bInc * (diff.getX()/diff.getY());
+					}
 					prev = next;
 					System.out.println(prev);
-					System.out.println(i);
+					System.out.println(isA);
 					justThrew = false;
 				} catch (RootNotFound r)
 				{
@@ -445,7 +477,7 @@ public class OutputPlane extends CoordPlane
 			}
 			aInc = -aInc;
 			bInc = -bInc;
-			in.saddleCanvas.getGraphicsContext2D().setStroke(Color.TURQUOISE);
+//			in.saddleCanvas.getGraphicsContext2D().setStroke(Color.TURQUOISE);
 		}
 		in.gc.setStroke(Color.BLACK);
 		Platform.runLater(this::draw);
@@ -455,17 +487,31 @@ public class OutputPlane extends CoordPlane
 		boolean shortcut = true;
 		double min = Double.MAX_VALUE;
 //		System.out.println(sep.getStart(.01));
-		Evaluator eval = EvaluatorFactory.getEvaluator(evalType, dx, dy);
-		double in;
-		if(sep.posEig()) in = inc;
-		else in = -inc;
+		Evaluator eval1 = EvaluatorFactory.getEvaluator(evalType, dx, dy);
+		Evaluator eval2 = EvaluatorFactory.getEvaluator(evalType, dx, dy);
+		Evaluator eval;
+//		double in;
+//		if(sep.posEig()) in = inc;
+//		else in = -inc;
 		double factor = 1D;
-		eval.initialise(sep.getStart(factor * (xMax - xMin)/c.getWidth()), 0, at, bt, in);
-		Point2D prev = sep.getStart(factor * (xMax - xMin)/c.getWidth());
+		eval1.initialise(sep.getStart(Math.abs(inc)), 0, at, bt, inc);
+		eval2.initialise(sep.getStart(Math.abs(inc)), 0, at, bt, -inc);
+		Point2D prev = sep.getStart(Math.abs(inc));
+		Point2D next1 = eval1.next();
+		Point2D next2 = eval2.next();
+		if(next1.distance(sep.saddle.point) < next2.distance(sep.saddle.point))
+		{
+			eval = eval2;
+		} else
+		{
+			eval = eval1;
+		}
 		Point2D next = eval.next();
 		boolean approaching = false;
 //		approaching = !sep.saddle.point.equals(other);
 		LinkedList<Point2D> record = new LinkedList<>();
+//		if(!firstTry)
+//			eval.initialise(sep.getStart(factor * (xMax - xMin)/c.getWidth()), 0, at, bt, -in);
 		while(inBounds(prev) && eval.getT() < 25)
 //		while (next.distance(other) < prev.distance(other) || !approaching)
 		{
@@ -505,6 +551,7 @@ public class OutputPlane extends CoordPlane
 //				return 0;
 			if (firstTry)
 			{
+				
 				try
 				{
 					PrintWriter out = new PrintWriter("output.text");
@@ -515,7 +562,9 @@ public class OutputPlane extends CoordPlane
 					out.close();
 				} catch (FileNotFoundException ignored) {}
 //					System.out.println("flipping");
+
 				return minDist(sepStart.flip(sep), other, at, bt, false);
+//				return minDist(sep, other, at, bt, false);
 			}
 			throw new RootNotFound();
 		}
@@ -556,8 +605,8 @@ public class OutputPlane extends CoordPlane
 		}
 		double tol;
 		if(isA)
-			tol = (in.xMax - in.xMin)/(2 * in.c.getWidth());
-		else tol = (in.yMax - in.yMin)/(2 * in.c.getHeight());
+			tol = (in.xMax - in.xMin)/(1 * in.c.getWidth());
+		else tol = (in.yMax - in.yMin)/(1 * in.c.getHeight());
 		Point2D saddle1 = s1.saddle.point;
 		Point2D saddle2 = s2.saddle.point;
 		assertSaddle(s1, s2);
@@ -575,51 +624,6 @@ public class OutputPlane extends CoordPlane
 			sep = s2;
 			sad = saddle1;
 		}
-//		System.out.println(s1.positive + "       " + s2.positive);
-//		System.out.println("start1: " + s1.getStart(.01));
-//		System.out.println("start2: " + s2.getStart(.01));
-//		for(int i = 0; i < 1; i++)
-//		{
-////			System.out.println("A: " + at);
-//			dist1 = minDist(sep, sad, at, bt);
-//			if(isA) dist2 = minDist(sep, sad, at + inc, bt);
-//			else dist2 = minDist(sep, sad, at, bt + inc);
-//			deriv = (dist2 - dist1)/inc;
-//			if(deriv == 0.0)
-//			{
-//				System.out.println("throwing1");
-//				throw new RootNotFound();
-//			}
-//			if(isA) at = at - dist1/deriv;
-//			else bt = bt - dist1/deriv;
-//			inc = dist1/1000.;
-//			s1.saddle = critical(s1.saddle.point, at, bt);
-//			s2.saddle = critical(s2.saddle.point, at, bt);
-//			try
-//			{
-//				assertSaddle(s1, s2);
-//			} catch (RootNotFound r)
-//			{
-//				System.out.println("a: " + at);
-//				System.out.println("b: " + bt);
-//				throw new RootNotFound();
-//			}
-////			System.out.println(s1.positive + "       " + s2.positive);
-//			if(minDist(s1, saddle2, at, bt) > minDist(s2, saddle1, at, bt))
-//			{
-//				sep = s1;
-//				sad = saddle2;
-//			}
-//			else
-//			{
-//				sep = s2;
-//				sad = saddle1;
-//			}
-////
-////			System.out.println(i + "dist: " + dist1);
-////			System.out.println("deriv: " + deriv);
-////			System.out.println("a: " + at);
-//		}
 		if(isA)
 			inc = (in.xMax - in.xMin)/10000.;//.000001;
 		else inc = (in.yMax - in.yMin)/10000.;
@@ -682,6 +686,9 @@ public class OutputPlane extends CoordPlane
 //				inc *= 1.1;
 			}
 			dist1 = dist2;
+			if(at < 2 * in.xMin - in.xMax || at > 2 * in.xMax - in.xMin ||
+			bt < 2 * in.yMin - in.yMax || bt > 2 * in.yMax - in.yMin)
+				throw new RootNotFound();
 		}
 //		System.out.println(new Point2D(at, bt));
 		double aInc = (in.xMax - in.xMin) / in.c.getWidth();
@@ -821,14 +828,15 @@ public class OutputPlane extends CoordPlane
 			}
 		}
 		criticalPoints = temp;
-		temp = new LinkedList<>();
+		List<Point2D> temp1 = new LinkedList<>();
 		for (Point2D c : selectedCritPoints)
 		{
 			try
 			{
-				temp.add(critical(c));
+				temp1.add(critical(c).point);
 			} catch (RootNotFound ignored) {}
 		}
+		selectedCritPoints = temp1;
 	}
 
 	private void labelCritical(CriticalPoint p)
@@ -1130,6 +1138,7 @@ public class OutputPlane extends CoordPlane
 		draw();
 	}
 
+	@Override
 	public void clear()
 	{
 		initials.clear();

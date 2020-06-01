@@ -367,4 +367,9 @@ public abstract class CoordPlane extends Pane
 	{
 		drawLine(p1.getX(), p1.getY(), p2.getX(), p2.getY(), can);
 	}
+
+	/**
+	 * Clears the coordinate plane and redraws
+	 */
+	public abstract void clear();
 }

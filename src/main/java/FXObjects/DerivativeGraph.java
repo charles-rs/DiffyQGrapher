@@ -155,4 +155,8 @@ public class DerivativeGraph extends CoordPlane
 	@Override
 	public void handleMouseClick(MouseEvent e)
 	{}
+
+	@Override
+	public void clear()
+	{}
 }

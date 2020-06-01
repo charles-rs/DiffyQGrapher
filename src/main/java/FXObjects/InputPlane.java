@@ -469,9 +469,7 @@ public class InputPlane extends CoordPlane
 		}
 	}
 
-	/**
-	 * clears the bifurcation lists, and redraws the pane
-	 */
+	@Override
 	public void clear()
 	{
 		saddleBifs.clear();

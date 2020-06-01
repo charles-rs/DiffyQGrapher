@@ -125,9 +125,10 @@ public class Main extends Application
 		InputPlane inPlane = new InputPlane(300, aField, bField, outPlane);
 		outPlane.in = inPlane;
 		HBox buttonBox = new HBox();
-		Button clearOut = new Button("Clear");
-		clearOut.setOnAction(actionEvent ->
+		Button btnClear = new Button("Clear");
+		btnClear.setOnAction(actionEvent ->
 		{
+			inPlane.clear();
 			outPlane.clear();
 		});
 		Button resetZoom = new Button("Reset Zoom");
@@ -142,7 +143,7 @@ public class Main extends Application
 			outPlane.draw();
 			inPlane.clear();
 		});
-		buttonBox.getChildren().addAll(clearOut, resetZoom, update);
+		buttonBox.getChildren().addAll(btnClear, resetZoom, update);
 		buttonBox.setAlignment(Pos.CENTER);
 		buttonBox.setSpacing(10);
 
