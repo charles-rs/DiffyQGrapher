@@ -34,6 +34,7 @@ import java.io.PrintWriter;
 import java.util.ArrayList;
 import java.util.LinkedList;
 import java.util.List;
+import java.util.concurrent.ThreadPoolExecutor;
 
 
 public class OutputPlane extends CoordPlane
@@ -64,10 +65,12 @@ public class OutputPlane extends CoordPlane
 	private Color criticalColor = Color.RED;
 	private Color lnColor = Color.CADETBLUE;
 	public InputPlane in;
+	private Thread artist [];
 
 	public OutputPlane(double side, TextField tField)
 	{
 		super(side);
+		artist = new Thread [16];
 		evalType = EvalType.RungeKutta;
 		initials = new LinkedList<>();
 		criticalPoints = new LinkedList<>();
@@ -390,7 +393,12 @@ public class OutputPlane extends CoordPlane
 		Point2D temp;
 		Point2D st;
 		Point2D diff;
+		//This variable helps deal with switching isA. On the first rootNotFound switch it, but if that doesn't fix it
+		//just go ahead and fail.
 		boolean justThrew = false;
+		//This one lets us skip a point, if for whatever reason we can't find a connection at one increment, skip over
+		//a single point, but not more than once
+		boolean justFailed = true;
 		boolean isA = false;
 		try
 		{
@@ -429,37 +437,38 @@ public class OutputPlane extends CoordPlane
 				try
 				{
 					next = saddleConnection(s1, s2, isA, temp.getX(), temp.getY());
-					//System.out.println(next);
+					System.out.println(i);
 					in.drawLine(prev, next, in.saddleCanvas);
 					diff = next.subtract(prev);
-//					if(isA)
-//					{
-//						if(diff.getX() == 0D || diff.getY()/diff.getX() > .5)
-//							isA = false;
-//					} else
-//					{
-//						if(diff.getY() == 0D || diff.getX()/diff.getY() > .5)
-//							isA = true;
-//					}
 					if(isA)
 					{
-						if(diff.getX() < .1 * inc)
-						{
+						if(diff.getX() == 0D || diff.getY()/diff.getX() > .5)
 							isA = false;
-							otherInc = 0;
-						}
-						else
-							otherInc = aInc * (diff.getY()/diff.getX());
 					} else
 					{
-						if(diff.getY() < .1 * inc)
-						{
+						if(diff.getY() == 0D || diff.getX()/diff.getY() > .5)
 							isA = true;
-							otherInc = 0;
-						}
-						else
-							otherInc = bInc * (diff.getX()/diff.getY());
 					}
+
+//					if(isA)
+//					{
+//						if(diff.getX() < .1 * inc)
+//						{
+//							isA = false;
+//							otherInc = 0;
+//						}
+//						else
+//							otherInc = aInc * (diff.getY()/diff.getX());
+//					} else
+//					{
+//						if(diff.getY() < .1 * inc)
+//						{
+//							isA = true;
+//							otherInc = 0;
+//						}
+//						else
+//							otherInc = bInc * (diff.getX()/diff.getY());
+//					}
 					prev = next;
 					System.out.println(prev);
 					System.out.println(isA);
@@ -468,11 +477,20 @@ public class OutputPlane extends CoordPlane
 				{
 					if (justThrew)
 					{
-						System.out.println("breaking");
-						break;
+//						if(justFailed)
+						{
+							System.out.println("breaking");
+							break;
+//						} else
+//						{
+//							justFailed = true;
+						}
 					}
-					isA = !isA;
-					justThrew = true;
+					else
+					{
+						isA = !isA;
+						justThrew = true;
+					}
 				}
 			}
 			aInc = -aInc;
@@ -913,7 +931,10 @@ public class OutputPlane extends CoordPlane
 			{
 				next = eval.next();
 				if (inBounds(prev) || inBounds(next))
-					gc.strokeLine(normToScrX(prev.getX()), normToScrY(prev.getY()), normToScrX(next.getX()), normToScrY(next.getY()));
+					synchronized (gc)
+					{
+						gc.strokeLine(normToScrX(prev.getX()), normToScrY(prev.getY()), normToScrX(next.getX()), normToScrY(next.getY()));
+					}
 				prev = next;
 			}
 		eval.initialise(x, y, t, a, b, -inc);
@@ -923,9 +944,13 @@ public class OutputPlane extends CoordPlane
 			{
 				next = eval.next();
 				if (inBounds(prev) || inBounds(next))
-					gc.strokeLine(normToScrX(prev.getX()), normToScrY(prev.getY()), normToScrX(next.getX()), normToScrY(next.getY()));
+					synchronized (gc)
+					{
+						gc.strokeLine(normToScrX(prev.getX()), normToScrY(prev.getY()), normToScrX(next.getX()), normToScrY(next.getY()));
+					}
 				prev = next;
 			}
+
 	}
 
 	private void drawIsoclines()
@@ -1271,6 +1296,13 @@ public class OutputPlane extends CoordPlane
 			this.t = t;
 			this.x = p.getX();
 			this.y = p.getY();
+		}
+	}
+	private static class Artist extends Thread
+	{
+		public Artist()
+		{
+
 		}
 	}
 	@Deprecated
