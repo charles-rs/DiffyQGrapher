@@ -475,6 +475,13 @@ public class OutputPlane extends CoordPlane
 					justThrew = false;
 				} catch (RootNotFound r)
 				{
+					System.out.println("off the scrn? " + r.offTheScreen);
+					if(r.offTheScreen)
+					{
+						System.out.println("did the thing");
+						break;
+					}
+					if(prev.distance(st) < Math.min(aInc, bInc)) break;
 					if (justThrew)
 					{
 //						if(justFailed)
@@ -584,7 +591,7 @@ public class OutputPlane extends CoordPlane
 				return minDist(sepStart.flip(sep), other, at, bt, false);
 //				return minDist(sep, other, at, bt, false);
 			}
-			throw new RootNotFound();
+			throw new RootNotFound(true);
 		}
 //		System.out.println("mindistprnt: \nfound: " + prev + "\nother: " + other + "\nstart: " + sep.saddle.point +
 //				"\na: " + a + "\nb: " + b + "\n-----------------------");
@@ -706,7 +713,7 @@ public class OutputPlane extends CoordPlane
 			dist1 = dist2;
 			if(at < 2 * in.xMin - in.xMax || at > 2 * in.xMax - in.xMin ||
 			bt < 2 * in.yMin - in.yMax || bt > 2 * in.yMax - in.yMin)
-				throw new RootNotFound();
+				throw new RootNotFound(true);
 		}
 //		System.out.println(new Point2D(at, bt));
 		double aInc = (in.xMax - in.xMin) / in.c.getWidth();
