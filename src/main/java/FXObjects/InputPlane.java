@@ -12,6 +12,7 @@ import javafx.scene.paint.Color;
 import org.ejml.data.SingularMatrixException;
 import org.ejml.simple.SimpleMatrix;
 
+import java.util.ArrayList;
 import java.util.LinkedList;
 import java.util.List;
 
@@ -45,6 +46,7 @@ public class InputPlane extends CoordPlane
 	List<double[]> saddleBifs;
 	List<double[]> hopfBifs;
 	List<SaddleCon> saddleCons;
+	List<Point2D> degenSaddleCons;
 	/**
 	 * a separate thread that deals with drawing difficult bifurcations so as not to lock up the program
 	 */
@@ -81,6 +83,7 @@ public class InputPlane extends CoordPlane
 		saddleBifs = new LinkedList<>();
 		hopfBifs = new LinkedList<>();
 		saddleCons = new LinkedList<>();
+		degenSaddleCons = new LinkedList<>();
 		saddleCanvas.setVisible(true);
 		draw();
 		setOnKeyPressed((e) ->
@@ -442,6 +445,7 @@ public class InputPlane extends CoordPlane
 		{
 			hopfBifHelp(hopfBif, false);
 		}
+		drawDegenSaddleCons();
 
 
 	}
@@ -453,6 +457,7 @@ public class InputPlane extends CoordPlane
 	 */
 	public void drawSaddleCons()
 	{
+		degenSaddleCons.clear();
 		if(artist != null)
 			artist.interrupt();
 		saddleCanvas.getGraphicsContext2D().clearRect(0, 0, c.getWidth(), c.getHeight());
@@ -467,6 +472,22 @@ public class InputPlane extends CoordPlane
 			});
 			artist.start();
 		}
+		drawDegenSaddleCons();
+	}
+
+	/**
+	 * draws all of the points where a degenerate saddle connection occurs
+	 */
+//	dx/dt = b x + y + a (x^2 + x y) + x^3
+//	dy/dt = y^2 - x
+	public void drawDegenSaddleCons()
+	{
+		gc.setStroke(saddleConColor);
+		for(Point2D p : degenSaddleCons)
+		{
+			gc.strokeOval(normToScrX(p.getX()) - 3, normToScrY(p.getY()) - 3, 6, 6);
+		}
+		gc.setStroke(Color.BLACK);
 	}
 
 	@Override

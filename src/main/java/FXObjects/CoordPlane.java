@@ -301,6 +301,16 @@ public abstract class CoordPlane extends Pane
 	}
 
 	/**
+	 * converts a screen (pixel) point to the current mathematical coordinates
+	 * @param other the point to convert
+	 * @return the converted point
+	 */
+	protected Point2D scrToNorm(Point2D other)
+	{
+		return new Point2D(scrToNormX(other.getX()), scrToNormY(other.getY()));
+	}
+
+	/**
 	 * converts a mathematical coordinate to the screen (pixel) coordinates.
 	 * @param x the x value to convert.
 	 * @return the x value in screen (pixel) coordinates
@@ -319,6 +329,15 @@ public abstract class CoordPlane extends Pane
 		return (y / (yMin - yMax) - (yMax / (yMin - yMax))) * c.getHeight();
 	}
 
+	/**
+	 * converts a mathematical point to the screen (pixel) coordinate point
+	 * @param other the point to convert
+	 * @return the converted point
+	 */
+	protected Point2D normToScr(Point2D other)
+	{
+		return new Point2D(normToScrX(other.getX()), normToScrY(other.getY()));
+	}
 	/**
 	 * draws a line from (x1, y1) to (x2, y2), with the inputs in mathematical coordinates
 	 * @param x1 the x coord of the first point

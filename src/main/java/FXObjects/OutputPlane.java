@@ -288,7 +288,7 @@ public class OutputPlane extends CoordPlane
 							} catch (FileNotFoundException ignored) {}
 
 
-							new Thread(() ->
+							in.artist = new Thread(() ->
 							{
 								synchronized (selectedSeps)
 								{
@@ -298,7 +298,8 @@ public class OutputPlane extends CoordPlane
 										selectedSeps.clear();
 									}
 								}
-							}).start();
+							});
+							in.artist.start();
 
 							selectedCritPoints.clear();
 							clickMode = ClickModeType.DRAWPATH;
@@ -383,72 +384,78 @@ public class OutputPlane extends CoordPlane
 
 	public void renderSaddleCon(Point2D start, final sepStart s1, final sepStart s2, boolean add)
 	{
-		in.saddleCanvas.getGraphicsContext2D().setStroke(in.saddleConColor);
-		double aInc = 1D * (in.xMax - in.xMin) / in.c.getWidth();
-		double bInc = 1D * (in.yMax - in.yMin) / in.c.getHeight();
-		// This is a variable that helps us guess better for the next value (using euler's method)
-		double otherInc = 0D;
-		Point2D prev;
-		Point2D next;
-		Point2D temp;
-		Point2D st;
-		Point2D diff;
-		//This variable helps deal with switching isA. On the first rootNotFound switch it, but if that doesn't fix it
-		//just go ahead and fail.
-		boolean justThrew = false;
-		//This one lets us skip a point, if for whatever reason we can't find a connection at one increment, skip over
-		//a single point, but not more than once
-		boolean justFailed = true;
-		boolean isA = false;
 		try
 		{
-			st = saddleConnection(s1, s2, isA, start.getX(), start.getY());
-			if (add)
-			{
-				in.saddleCons.add(new SaddleCon(st, s1, s2));
-				add = false;
-			}
-		} catch (RootNotFound r)
-		{
+			PrintWriter out = new PrintWriter("output.text");
+
+			in.saddleCanvas.getGraphicsContext2D().setStroke(in.saddleConColor);
+			double aInc = 1D * (in.xMax - in.xMin) / in.c.getWidth();
+			double bInc = 1D * (in.yMax - in.yMin) / in.c.getHeight();
+			AST.Node tr = Maths.add(dx.differentiate('x'), dy.differentiate('y')).collapse();
+			// This is a variable that helps us guess better for the next value (using euler's method)
+			double otherInc = 0D;
+			Point2D prev;
+			Point2D next;
+			Point2D temp;
+			Point2D st;
+			Point2D diff;
+			//This variable helps deal with switching isA. On the first rootNotFound switch it, but if that doesn't fix it
+			//just go ahead and fail.
+			boolean justThrew = false;
+			//This one lets us skip a point, if for whatever reason we can't find a connection at one increment, skip over
+			//a single point, but not more than once
+			boolean justFailed = true;
+			boolean isA = false;
 			try
 			{
-				isA = !isA;
 				st = saddleConnection(s1, s2, isA, start.getX(), start.getY());
 				if (add)
 				{
 					in.saddleCons.add(new SaddleCon(st, s1, s2));
 					add = false;
 				}
-			} catch (RootNotFound r1)
+			} catch (RootNotFound r)
 			{
-				return;
+				try
+				{
+					isA = !isA;
+					st = saddleConnection(s1, s2, isA, start.getX(), start.getY());
+					if (add)
+					{
+						in.saddleCons.add(new SaddleCon(st, s1, s2));
+						add = false;
+					}
+				} catch (RootNotFound r1)
+				{
+					return;
+				}
 			}
-		}
-		for (int i = 0; i < 2; i++)
-		{
+			for (int i = 0; i < 2; i++)
+			{
 //			System.out.println("AINC: " + aInc);
 //			System.out.println("BINC: " + bInc);
 
-			prev = st;
-			while (in.inBounds(prev.getX(), prev.getY()))
-			{
-				if (isA) temp = new Point2D(prev.getX() + otherInc, prev.getY() + bInc);
-				else temp = new Point2D(prev.getX() + aInc, prev.getY() + otherInc);
-				try
+				prev = st;
+				while (in.inBounds(prev.getX(), prev.getY()))
 				{
-					next = saddleConnection(s1, s2, isA, temp.getX(), temp.getY());
-					System.out.println(i);
-					in.drawLine(prev, next, in.saddleCanvas);
-					diff = next.subtract(prev);
-					if(isA)
+
+					if (isA) temp = new Point2D(prev.getX() + otherInc, prev.getY() + bInc);
+					else temp = new Point2D(prev.getX() + aInc, prev.getY() + otherInc);
+					try
 					{
-						if(diff.getX() == 0D || diff.getY()/diff.getX() > .5)
-							isA = false;
-					} else
-					{
-						if(diff.getY() == 0D || diff.getX()/diff.getY() > .5)
-							isA = true;
-					}
+						next = saddleConnection(s1, s2, isA, temp.getX(), temp.getY());
+						System.out.println(i);
+						in.drawLine(prev, next, in.saddleCanvas);
+						diff = next.subtract(prev);
+//					if(isA)
+//					{
+//						if(diff.getX() == 0D || diff.getY()/diff.getX() > .5)
+//							isA = false;
+//					} else
+//					{
+//						if(diff.getY() == 0D || diff.getX()/diff.getY() > .5)
+//							isA = true;
+//					}
 
 //					if(isA)
 //					{
@@ -469,43 +476,67 @@ public class OutputPlane extends CoordPlane
 //						else
 //							otherInc = bInc * (diff.getX()/diff.getY());
 //					}
-					prev = next;
-					System.out.println(prev);
-					System.out.println(isA);
-					justThrew = false;
-				} catch (RootNotFound r)
-				{
-					System.out.println("off the scrn? " + r.offTheScreen);
-					if(r.offTheScreen)
-					{
-						System.out.println("did the thing");
-						break;
-					}
-					if(prev.distance(st) < Math.min(aInc, bInc)) break;
-					if (justThrew)
-					{
-//						if(justFailed)
+						if (s1.saddle.point.distance(s2.saddle.point) < .000001 * ((xMax - xMin) + (yMax - yMin))/2)
 						{
-							System.out.println("breaking");
+							System.out.println("they are the same");
+							try
+							{
+								double prevEval = tr.eval(s1.saddle.point.getX(), s1.saddle.point.getY(), prev.getX(), prev.getY(), 0);
+								out.println("Point: " + prev);
+								out.println("Trace: " + prevEval + "\n");
+								double nextEval = tr.eval(s1.saddle.point.getX(), s1.saddle.point.getY(), next.getX(), next.getY(), 0);
+								if (prevEval == 0D || prevEval == -0D) in.degenSaddleCons.add(prev);
+								else if (nextEval == 0D || nextEval == -0D) in.degenSaddleCons.add(next);
+								else if (Math.signum(prevEval) != Math.signum(nextEval))
+								{
+									double factor = Math.abs(prevEval) / (Math.abs(nextEval) + Math.abs(prevEval));
+									in.degenSaddleCons.add(prev.add(next.subtract(prev).multiply(factor)));
+									System.out.println("DEGEN DEGEN DEGEN");
+								}
+
+							} catch (EvaluationException ignored)
+							{
+							}
+						}
+						prev = next;
+						System.out.println(prev);
+						System.out.println(isA);
+						justThrew = false;
+					} catch (RootNotFound r)
+					{
+						System.out.println("off the scrn? " + r.offTheScreen);
+						if (r.offTheScreen)
+						{
+							System.out.println("did the thing");
 							break;
+						}
+						if (prev.distance(st) < Math.min(aInc, bInc)) break;
+						if (justThrew)
+						{
+//						if(justFailed)
+							{
+								System.out.println("breaking");
+								break;
 //						} else
 //						{
 //							justFailed = true;
+							}
+						} else
+						{
+							isA = !isA;
+							justThrew = true;
 						}
 					}
-					else
-					{
-						isA = !isA;
-						justThrew = true;
-					}
 				}
-			}
-			aInc = -aInc;
-			bInc = -bInc;
+				aInc = -aInc;
+				bInc = -bInc;
 //			in.saddleCanvas.getGraphicsContext2D().setStroke(Color.TURQUOISE);
-		}
-		in.gc.setStroke(Color.BLACK);
-		Platform.runLater(this::draw);
+			}
+			in.gc.setStroke(Color.BLACK);
+			in.drawDegenSaddleCons();
+			Platform.runLater(this::draw);
+			out.close();
+		} catch (FileNotFoundException ignored) {}
 	}
 	private double minDist(final sepStart sep, final Point2D other, final double at, final double bt, boolean firstTry) throws RootNotFound
 	{
@@ -524,12 +555,24 @@ public class OutputPlane extends CoordPlane
 		Point2D prev = sep.getStart(Math.abs(inc));
 		Point2D next1 = eval1.next();
 		Point2D next2 = eval2.next();
-		if(next1.distance(sep.saddle.point) < next2.distance(sep.saddle.point))
+		if(!sep.saddle.point.equals(other))
 		{
-			eval = eval2;
+			if (next1.distance(sep.saddle.point) < next2.distance(sep.saddle.point))
+			{
+				eval = eval2;
+			} else
+			{
+				eval = eval1;
+			}
 		} else
 		{
-			eval = eval1;
+			if(sep.posEig())
+			{
+				eval = eval1;
+			} else
+			{
+				eval = eval2;
+			}
 		}
 		Point2D next = eval.next();
 		boolean approaching = false;
@@ -655,6 +698,7 @@ public class OutputPlane extends CoordPlane
 		dist1 = minDist(sep, sad, at, bt, true);
 		while (dist1 > tol)
 		{
+			if(System.nanoTime() - time > 2e9) throw new RootNotFound();
 //			System.out.println("A': " + at);
 //			System.out.println("B': " + bt);
 //			System.out.println("dist: " + dist1);

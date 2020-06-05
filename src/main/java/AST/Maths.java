@@ -26,7 +26,7 @@ public class Maths
 	 */
 	public static Node mult(Node a, Node b)
 	{
-		return new Term(a, b, '/');
+		return new Term(a, b, '*');
 	}
 
 	/**
