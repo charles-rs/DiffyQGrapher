@@ -9,11 +9,15 @@ import Events.SourceOrSinkSelected;
 import Exceptions.EvaluationException;
 import Exceptions.RootNotFound;
 import javafx.application.Platform;
+import javafx.embed.swing.SwingFXUtils;
 import javafx.geometry.Insets;
 import javafx.geometry.Point2D;
 import javafx.scene.Node;
 import javafx.scene.control.Label;
 import javafx.scene.control.TextField;
+import javafx.scene.image.PixelFormat;
+import javafx.scene.image.PixelReader;
+import javafx.scene.image.WritablePixelFormat;
 import javafx.scene.input.KeyCode;
 import javafx.scene.input.MouseEvent;
 import javafx.scene.layout.Border;
@@ -27,10 +31,10 @@ import javafx.scene.transform.Rotate;
 import org.ejml.simple.SimpleMatrix;
 
 
-import java.io.File;
-import java.io.FileNotFoundException;
-import java.io.FileOutputStream;
-import java.io.PrintWriter;
+import javax.imageio.ImageIO;
+import java.awt.*;
+import java.io.*;
+import java.nio.IntBuffer;
 import java.util.ArrayList;
 import java.util.LinkedList;
 import java.util.List;
@@ -389,6 +393,7 @@ public class OutputPlane extends CoordPlane
 			PrintWriter out = new PrintWriter("output.text");
 
 			in.saddleCanvas.getGraphicsContext2D().setStroke(in.saddleConColor);
+
 			double aInc = 1D * (in.xMax - in.xMin) / in.c.getWidth();
 			double bInc = 1D * (in.yMax - in.yMin) / in.c.getHeight();
 			AST.Node tr = Maths.add(dx.differentiate('x'), dy.differentiate('y')).collapse();
@@ -436,7 +441,7 @@ public class OutputPlane extends CoordPlane
 //			System.out.println("BINC: " + bInc);
 
 				prev = st;
-				while (in.inBounds(prev.getX(), prev.getY()))
+				while (in.inBounds(prev.getX(), prev.getY()) && !Thread.interrupted())
 				{
 
 					if (isA) temp = new Point2D(prev.getX() + otherInc, prev.getY() + bInc);
@@ -444,8 +449,25 @@ public class OutputPlane extends CoordPlane
 					try
 					{
 						next = saddleConnection(s1, s2, isA, temp.getX(), temp.getY());
-						System.out.println(i);
+//						System.out.println(i);
+//						if(next.subtract(prev).getY()/next.subtract(prev).getX() < .5)
+//						{
+//							for(int ix = (int) Math.round(prev.getX()); ix < Math.round(next.getX()); ix++)
+//							{
+//
+//							}
+//						} else
+//						{
+//
+//						}
 						in.drawLine(prev, next, in.saddleCanvas);
+//
+//						sg.drawLine(
+//								(int) normToScrX(prev.getX()),
+//								(int) normToScrY(prev.getY()),
+//								(int) normToScrX(next.getX()),
+//								(int) normToScrY(next.getY()));
+//						in.saddleImageView.setImage(SwingFXUtils.toFXImage(in.saddleImageBuf, null));
 						diff = next.subtract(prev);
 //					if(isA)
 //					{
@@ -534,6 +556,7 @@ public class OutputPlane extends CoordPlane
 			}
 			in.gc.setStroke(Color.BLACK);
 			in.drawDegenSaddleCons();
+
 			Platform.runLater(this::draw);
 			out.close();
 		} catch (FileNotFoundException ignored) {}
@@ -698,6 +721,7 @@ public class OutputPlane extends CoordPlane
 		dist1 = minDist(sep, sad, at, bt, true);
 		while (dist1 > tol)
 		{
+			if(Thread.interrupted()) throw new RootNotFound();
 			if(System.nanoTime() - time > 2e9) throw new RootNotFound();
 //			System.out.println("A': " + at);
 //			System.out.println("B': " + bt);
@@ -1322,14 +1346,6 @@ public class OutputPlane extends CoordPlane
 		gc.setStroke(Color.BLACK);
 	}
 
-	public void resetZoom()
-	{
-		xMin = -5;
-		xMax = 5;
-		yMin = -5;
-		yMax = 5;
-		draw();
-	}
 
 	private static class initCond
 	{

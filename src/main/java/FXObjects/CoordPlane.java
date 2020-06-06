@@ -26,6 +26,11 @@ public abstract class CoordPlane extends Pane
 	 * the variables holding the current limits of the axes
 	 */
 	protected double xMin, xMax, yMin, yMax;
+
+	/**
+	 * stores the initial bounds for resetting
+	 */
+	private double initZoom [];
 	/**
 	 * this is just and alias for c.getGraphicsContext2D() since we use it a lot
 	 */
@@ -63,6 +68,7 @@ public abstract class CoordPlane extends Pane
 		yMin = -5;
 		xMax = 5;
 		yMax = 5;
+		initZoom = new double [] {-5D, 5D, -5D, 5D};
 
 		right = KeyCode.RIGHT;
 		left = KeyCode.LEFT;
@@ -168,6 +174,16 @@ public abstract class CoordPlane extends Pane
 		setVisible(true);
 		c.setVisible(true);
 
+	}
+
+	public void resetZoom()
+	{
+		xMin = initZoom [0];
+		xMax = initZoom [1];
+		yMin = initZoom [2];
+		yMax = initZoom [3];
+		updateForZoom();
+		draw();
 	}
 
 	/**

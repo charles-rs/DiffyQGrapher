@@ -3,15 +3,19 @@ package FXObjects;
 import AST.Maths;
 import AST.Node;
 import Exceptions.EvaluationException;
+import javafx.embed.swing.SwingFXUtils;
 import javafx.geometry.Point2D;
 import javafx.scene.canvas.Canvas;
 import javafx.scene.control.TextField;
+import javafx.scene.image.ImageView;
 import javafx.scene.input.KeyCode;
 import javafx.scene.input.MouseEvent;
 import javafx.scene.paint.Color;
 import org.ejml.data.SingularMatrixException;
 import org.ejml.simple.SimpleMatrix;
 
+import java.awt.*;
+import java.awt.image.BufferedImage;
 import java.util.ArrayList;
 import java.util.LinkedList;
 import java.util.List;
@@ -138,6 +142,10 @@ public class InputPlane extends CoordPlane
 
 	}
 
+	public void interrupt()
+	{
+		artist.interrupt();
+	}
 	@Override
 	public void handleMouseClick(MouseEvent e)
 	{
@@ -446,7 +454,6 @@ public class InputPlane extends CoordPlane
 			hopfBifHelp(hopfBif, false);
 		}
 		drawDegenSaddleCons();
-
 
 	}
 

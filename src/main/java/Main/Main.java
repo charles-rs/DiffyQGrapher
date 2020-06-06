@@ -124,11 +124,10 @@ public class Main extends Application
 		OutputPlane outPlane = new OutputPlane(600, tField);
 		InputPlane inPlane = new InputPlane(300, aField, bField, outPlane);
 		outPlane.in = inPlane;
-		HBox buttonBox = new HBox();
-		Button btnClear = new Button("Clear");
-		btnClear.setOnAction(actionEvent ->
+		HBox outPButtonBox = new HBox();
+		Button btnClearOut = new Button("Clear");
+		btnClearOut.setOnAction(actionEvent ->
 		{
-			inPlane.clear();
 			outPlane.clear();
 		});
 		Button resetZoom = new Button("Reset Zoom");
@@ -143,9 +142,28 @@ public class Main extends Application
 			outPlane.draw();
 			inPlane.clear();
 		});
-		buttonBox.getChildren().addAll(btnClear, resetZoom, update);
-		buttonBox.setAlignment(Pos.CENTER);
-		buttonBox.setSpacing(10);
+		outPButtonBox.getChildren().addAll(btnClearOut, resetZoom, update);
+		outPButtonBox.setAlignment(Pos.CENTER);
+		outPButtonBox.setSpacing(10);
+		HBox inPButtonBox = new HBox();
+		Button btnClearIn = new Button("Clear");
+		btnClearIn.setOnAction((actionEvent) ->
+		{
+			inPlane.clear();
+		});
+		Button btnInterruptSadCon = new Button("Interrupt");
+		btnInterruptSadCon.setOnAction((actionEvent ->
+		{
+			inPlane.interrupt();
+		}));
+		Button btnResetInZoom = new Button("Reset Zoom");
+		btnResetInZoom.setOnAction(actionEvent ->
+		{
+			inPlane.resetZoom();
+		});
+		inPButtonBox.getChildren().addAll(btnClearIn, btnInterruptSadCon, btnResetInZoom);
+		inPButtonBox.setAlignment(Pos.CENTER);
+		inPButtonBox.setSpacing(10);
 
 
 		aBox = new HBox();
@@ -158,14 +176,14 @@ public class Main extends Application
 
 		leftBox.getChildren().add(inputArea);
 		leftBox.getChildren().addAll(aBox, bBox, tBox);
-		leftBox.getChildren().add(inP);
+		leftBox.getChildren().addAll(inP, inPButtonBox);
 		inP.getChildren().add(inPlane);
 		mainH.getChildren().add(leftBox);
 		//mainH.getChildren().add(r);
 		VBox rightBox = new VBox();
 		rightBox.setSpacing(10);
 		rightBox.setAlignment(Pos.TOP_CENTER);
-		rightBox.getChildren().addAll(outP, buttonBox);
+		rightBox.getChildren().addAll(outP, outPButtonBox);
 		mainH.getChildren().add(rightBox);
 		outP.getChildren().add(outPlane);
 
