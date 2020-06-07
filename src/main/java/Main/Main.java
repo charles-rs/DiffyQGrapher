@@ -33,6 +33,7 @@ public class Main extends Application
 	HBox mainH;
 	VBox leftBox;
 	Tokenizer tokyBoi;
+	OutputPlane outPlane;
 	@Override
 	public void start(Stage primaryStage) throws Exception
 	{
@@ -97,7 +98,8 @@ public class Main extends Application
 		MenuItem saddleBif = new MenuItem("Saddle Node Bifurcation");
 		MenuItem hopfBif = new MenuItem("Hopf Bifurcation");
 		MenuItem sdlConBif = new MenuItem("Saddle Connection Bifurcation");
-		bifurcation.getItems().addAll(saddleBif, hopfBif, sdlConBif);
+		MenuItem setSaddleBounds = new MenuItem("Set Saddle Connection Bounds");
+		bifurcation.getItems().addAll(saddleBif, hopfBif, sdlConBif, setSaddleBounds);
 		////////////////////////////////////////////////////////
 		bar.getMenus().addAll(file, options, view, draw, bifurcation, help);
 
@@ -121,7 +123,7 @@ public class Main extends Application
 		Pane inP, outP;
 		inP = new Pane();
 		outP = new Pane();
-		OutputPlane outPlane = new OutputPlane(600, tField);
+		outPlane = new OutputPlane(600, tField);
 		InputPlane inPlane = new InputPlane(300, aField, bField, outPlane);
 		outPlane.in = inPlane;
 		HBox outPButtonBox = new HBox();
@@ -214,7 +216,7 @@ public class Main extends Application
 
 		inputArea.textProperty().addListener((obs, old, newVal) ->
 		{
-			if(newVal.length() > 0 && newVal.charAt(newVal.length() - 1) == '\n')
+			if(newVal.length() > 0)
 			{
 				tokyBoi = new Tokenizer(new StringReader(inputArea.getText()));
 				while(tokyBoi.hasNext())
@@ -357,6 +359,8 @@ public class Main extends Application
 		{
 			outPlane.clickMode = ClickModeType.SELECTSEP;
 		});
+		setSaddleBounds.setOnAction(e ->
+				getSaddleBoundsAndSet());
 		EventHandler<ActionEvent> handler = e ->
 		{
 			if(e instanceof SaddleSelected)
@@ -418,6 +422,72 @@ public class Main extends Application
 		newWindow.setScene(newScene);
 		newWindow.show();
 		graph.draw();
+	}
+
+	/**
+	 * Opens a new window to get new bounds for saddle connections from the user.
+	 * If there are number errors, ignores them and leaves that value unchanged.
+	 */
+	private void getSaddleBoundsAndSet()
+	{
+		Stage newWindow = new Stage();
+		newWindow.setTitle("Set Saddle Connection Bounds");
+		VBox mainV = new VBox();
+		HBox xMinBox = new HBox();
+		HBox xMaxBox = new HBox();
+		HBox yMinBox = new HBox();
+		HBox yMaxBox = new HBox();
+		xMinBox.setSpacing(8);
+		xMaxBox.setSpacing(8);
+		yMinBox.setSpacing(8);
+		yMaxBox.setSpacing(8);
+		mainV.setSpacing(8);
+		mainV.getChildren().addAll(
+				xMinBox, new Separator(),
+				xMaxBox, new Separator(),
+				yMinBox, new Separator(),
+				yMaxBox);
+		Label xMinLbl = new Label ("X Min:");
+		Label xMaxLbl = new Label ("X Max:");
+		Label yMinLbl = new Label ("Y Min:");
+		Label yMaxLbl = new Label ("Y Max:");
+		TextField xMinField = new TextField();
+		TextField xMaxField = new TextField();
+		TextField yMinField = new TextField();
+		TextField yMaxField = new TextField();
+		xMinField.setText(String.valueOf(outPlane.dSaddleXMin));
+		xMaxField.setText(String.valueOf(outPlane.dSaddleXMax));
+		yMinField.setText(String.valueOf(outPlane.dSaddleYMin));
+		yMaxField.setText(String.valueOf(outPlane.dSaddleYMax));
+
+		xMinBox.getChildren().addAll(xMinLbl, xMinField);
+		xMaxBox.getChildren().addAll(xMaxLbl, xMaxField);
+		yMinBox.getChildren().addAll(yMinLbl, yMinField);
+		yMaxBox.getChildren().addAll(yMaxLbl, yMaxField);
+
+		Scene newScene = new Scene(mainV);
+		newWindow.setScene(newScene);
+		newWindow.setOnCloseRequest((e) ->
+		{
+			try
+			{
+				outPlane.dSaddleXMax = Double.parseDouble(xMaxField.getText());
+			} catch (NumberFormatException ignored) {}
+			try
+			{
+				outPlane.dSaddleXMin = Double.parseDouble(xMinField.getText());
+			} catch (NumberFormatException ignored) {}
+			try
+			{
+				outPlane.dSaddleYMax = Double.parseDouble(yMaxField.getText());
+			} catch (NumberFormatException ignored) {}
+			try
+			{
+				outPlane.dSaddleYMin = Double.parseDouble(yMinField.getText());
+			} catch (NumberFormatException ignored) {}
+		});
+		newWindow.show();
+
 
 	}
 }

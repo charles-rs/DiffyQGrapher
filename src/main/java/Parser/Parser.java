@@ -60,7 +60,11 @@ public class Parser
 			op = '-';
 		}
 		else return temp;
-		if(t.peek().getType() != TokenType.RPAREN && t.peek().getType() != TokenType.NL && t.peek().getType() != TokenType.EOF)
+		if(t.peek().getType() != TokenType.RPAREN &&
+				t.peek().getType() != TokenType.NL &&
+				t.peek().getType() != TokenType.EOF &&
+				t.peek().getType() != TokenType.DX &&
+				t.peek().getType() != TokenType.DY)
 			return new Expression(temp, parseExpressionBack(t), op);
 		else return temp;
 	}

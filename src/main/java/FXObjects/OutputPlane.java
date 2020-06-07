@@ -43,6 +43,11 @@ import java.util.concurrent.ThreadPoolExecutor;
 
 public class OutputPlane extends CoordPlane
 {
+	/**
+	 * Bounds for calculating saddle connections
+	 */
+	public double dSaddleXMin, dSaddleXMax, dSaddleYMin, dSaddleYMax;
+
 	private double t = 0;
 	private final List<initCond> initials;
 	private final List<initCond> isoclines;
@@ -74,6 +79,12 @@ public class OutputPlane extends CoordPlane
 	public OutputPlane(double side, TextField tField)
 	{
 		super(side);
+
+		dSaddleXMax = this.xMax;
+		dSaddleXMin = this.xMin;
+		dSaddleYMax = this.yMax;
+		dSaddleYMin = this.yMin;
+
 		artist = new Thread [16];
 		evalType = EvalType.RungeKutta;
 		initials = new LinkedList<>();
@@ -561,9 +572,47 @@ public class OutputPlane extends CoordPlane
 			out.close();
 		} catch (FileNotFoundException ignored) {}
 	}
+
+	/**
+	 * Sets the bounds for calculating saddle connections
+	 * @param xmn the new x min
+	 * @param xmx the new x max
+	 * @param ymn the new y min
+	 * @param ymx the new y max
+	 */
+	public void setSaddleBounds(double xmn, double xmx, double ymn, double ymx)
+	{
+		this.dSaddleYMax = ymx;
+		this.dSaddleYMin = ymn;
+		this.dSaddleXMin = xmn;
+		this.dSaddleXMax = xmx;
+	}
+
+	/**
+	 * whether or not the point (x,y) is in bounds for saddle connection purposes
+	 * @param x the x coord
+	 * @param y the y coord
+	 * @return whether or not (x, y) is in bounds
+	 */
+	private boolean inBoundsSaddle(double x, double y)
+	{
+		return x <= dSaddleXMax && x >= dSaddleXMin && y <= dSaddleYMax && y >= dSaddleYMin;
+	}
+
+	/**
+	 * whether or not the point p is in bounds for saddle connection purposes
+	 * @param p the piont in question
+	 * @return whether or not it's in bounds
+	 */
+	private boolean inBoundsSaddle(Point2D p)
+	{
+		if(p != null)
+			return inBoundsSaddle(p.getX(), p.getY());
+		return false;
+	}
 	private double minDist(final sepStart sep, final Point2D other, final double at, final double bt, boolean firstTry) throws RootNotFound
 	{
-		boolean shortcut = true;
+		boolean shortcut = false;
 		double min = Double.MAX_VALUE;
 //		System.out.println(sep.getStart(.01));
 		Evaluator eval1 = EvaluatorFactory.getEvaluator(evalType, dx, dy);
@@ -600,14 +649,14 @@ public class OutputPlane extends CoordPlane
 		Point2D next = eval.next();
 		boolean approaching = false;
 //		approaching = !sep.saddle.point.equals(other);
-		LinkedList<Point2D> record = new LinkedList<>();
+//		LinkedList<Point2D> record = new LinkedList<>();
 //		if(!firstTry)
 //			eval.initialise(sep.getStart(factor * (xMax - xMin)/c.getWidth()), 0, at, bt, -in);
-		while(inBounds(prev) && eval.getT() < 25)
+		while(inBoundsSaddle(prev) && eval.getT() < 5 && !Thread.interrupted())
 //		while (next.distance(other) < prev.distance(other) || !approaching)
 		{
 //			System.out.println(prev);
-			record.add(prev);
+//			record.add(prev);
 			prev = next;
 			next = eval.next();
 			if(prev.equals(next)) break;
@@ -643,15 +692,15 @@ public class OutputPlane extends CoordPlane
 			if (firstTry)
 			{
 				
-				try
-				{
-					PrintWriter out = new PrintWriter("output.text");
-					out.println(sep.saddle.point);
-					out.println(in);
-					out.println();
-					for(Point2D pt : record) out.println(pt);
-					out.close();
-				} catch (FileNotFoundException ignored) {}
+//				try
+//				{
+//					PrintWriter out = new PrintWriter("output.text");
+//					out.println(sep.saddle.point);
+//					out.println(in);
+//					out.println();
+//					for(Point2D pt : record) out.println(pt);
+//					out.close();
+//				} catch (FileNotFoundException ignored) {}
 //					System.out.println("flipping");
 
 				return minDist(sepStart.flip(sep), other, at, bt, false);

@@ -25,6 +25,7 @@ import java.util.List;
  */
 public class InputPlane extends CoordPlane
 {
+
 	/**
 	 * a and b are the parameters, initialised to (0,0)
 	 */
@@ -78,6 +79,7 @@ public class InputPlane extends CoordPlane
 	{
 
 		super(side);
+
 		saddleCanvas = new Canvas(side, side);
 		getChildren().addAll(saddleCanvas);
 		updateSaddleCons = false;
@@ -141,6 +143,8 @@ public class InputPlane extends CoordPlane
 		});
 
 	}
+
+
 
 	public void interrupt()
 	{
