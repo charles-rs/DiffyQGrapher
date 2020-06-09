@@ -1,14 +1,22 @@
 package FXObjects;
 
 import javafx.application.Platform;
+import javafx.embed.swing.SwingFXUtils;
 import javafx.geometry.Point2D;
+import javafx.scene.SnapshotParameters;
 import javafx.scene.canvas.Canvas;
 import javafx.scene.canvas.GraphicsContext;
+import javafx.scene.image.WritableImage;
 import javafx.scene.input.KeyCode;
 import javafx.scene.input.MouseEvent;
 import javafx.scene.layout.Pane;
 import javafx.scene.paint.Color;
 import javafx.scene.shape.Rectangle;
+
+import javax.imageio.ImageIO;
+import java.awt.image.BufferedImage;
+import java.io.File;
+import java.io.IOException;
 
 /**
  * abstract class representing a coordinate plane. Does lots of coordinate plane stuff, but has to be extended to do
@@ -407,4 +415,20 @@ public abstract class CoordPlane extends Pane
 	 * Clears the coordinate plane and redraws
 	 */
 	public abstract void clear();
+
+	public boolean writePNG(File f)
+	{
+		BufferedImage bi = new BufferedImage((int) this.getWidth(), (int) this.getHeight(), BufferedImage.TYPE_INT_ARGB);
+		SwingFXUtils.fromFXImage(this.snapshot(
+				new SnapshotParameters(),
+				new WritableImage((int) this.getWidth(), (int) this.getHeight())), bi);
+		try
+		{
+			ImageIO.write(bi, "png", f);
+			return true;
+		} catch (IOException oof)
+		{
+			return false;
+		}
+	}
 }

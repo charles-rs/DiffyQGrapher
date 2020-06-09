@@ -18,8 +18,10 @@ import javafx.scene.Scene;
 import javafx.scene.control.*;
 import javafx.scene.input.KeyCode;
 import javafx.scene.layout.*;
+import javafx.stage.FileChooser;
 import javafx.stage.Stage;
 
+import java.io.File;
 import java.io.StringReader;
 
 /**
@@ -54,6 +56,12 @@ public class Main extends Application
 
 		//MENU ITEMS GO HERE
 		/////////////////////////////////////////////////////////////
+		MenuItem saveInpt = new MenuItem("Save Parameter Space");
+		MenuItem saveOut = new MenuItem("Save Solution Space");
+		MenuItem quit = new MenuItem("Quit");
+		file.getItems().addAll(saveInpt, saveOut, quit);
+
+
 		Menu evalOpt = new Menu("Change Evaluator");
 		options.getItems().addAll(evalOpt);
 		String strEuler, strMidEuler, strRungeKutta;
@@ -358,6 +366,28 @@ public class Main extends Application
 		sdlConBif.setOnAction((e) ->
 		{
 			outPlane.clickMode = ClickModeType.SELECTSEP;
+		});
+		quit.setOnAction(e ->
+		{
+			primaryStage.close();
+		});
+		saveInpt.setOnAction(e ->
+		{
+			FileChooser chooser = new FileChooser();
+			chooser.setInitialDirectory(new File(System.getProperty("user.home")));
+			chooser.setInitialFileName("params.png");
+			chooser.getExtensionFilters().add(new FileChooser.ExtensionFilter("PNG Images", "*.png"));
+			File selected = chooser.showOpenDialog(primaryStage);
+			inPlane.writePNG(selected);
+		});
+		saveOut.setOnAction(e ->
+		{
+			FileChooser chooser = new FileChooser();
+			chooser.setInitialDirectory(new File(System.getProperty("user.home")));
+			chooser.setInitialFileName("solutions.png");
+			chooser.getExtensionFilters().add(new FileChooser.ExtensionFilter("PNG Images", "*.png"));
+			File selected = chooser.showOpenDialog(primaryStage);
+			outPlane.writePNG(selected);
 		});
 		setSaddleBounds.setOnAction(e ->
 				getSaddleBoundsAndSet());

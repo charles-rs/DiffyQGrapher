@@ -17,12 +17,15 @@ public class CriticalPoint
 		point = p;
 		type = t;
 		matrix = s;
-		if(t == CritPointTypes.SADDLE)
+		try
 		{
-			if (matrix.getEigenVector(0).get(0) < 0)
-				matrix.getEigenVector(0).set(matrix.getEigenVector(0).negative());
-			if (matrix.getEigenVector(1).get(0) < 0)
-				matrix.getEigenVector(1).set(matrix.getEigenVector(1).negative());
-		}
+			if (t == CritPointTypes.SADDLE)
+			{
+				if (matrix.getEigenVector(0).get(0) < 0)
+					matrix.getEigenVector(0).set(matrix.getEigenVector(0).negative());
+				if (matrix.getEigenVector(1).get(0) < 0)
+					matrix.getEigenVector(1).set(matrix.getEigenVector(1).negative());
+			}
+		} catch (NullPointerException ignored) {}
 	}
 }
