@@ -6,6 +6,7 @@ import javafx.geometry.Point2D;
 import javafx.scene.SnapshotParameters;
 import javafx.scene.canvas.Canvas;
 import javafx.scene.canvas.GraphicsContext;
+import javafx.scene.image.ImageView;
 import javafx.scene.image.WritableImage;
 import javafx.scene.input.KeyCode;
 import javafx.scene.input.MouseEvent;
@@ -14,6 +15,7 @@ import javafx.scene.paint.Color;
 import javafx.scene.shape.Rectangle;
 
 import javax.imageio.ImageIO;
+import java.awt.*;
 import java.awt.image.BufferedImage;
 import java.io.File;
 import java.io.IOException;
@@ -26,6 +28,11 @@ import java.io.IOException;
  */
 public abstract class CoordPlane extends Pane
 {
+	protected BufferedImage canv;
+	private WritableImage fxImg;
+	protected ImageView vw;
+	protected Graphics2D g;
+
 	/**
 	 * the canvas where everything is drawn
 	 */
@@ -91,9 +98,20 @@ public abstract class CoordPlane extends Pane
 		setPrefWidth(side);
 		c = new Canvas(side, side);
 		gc = c.getGraphicsContext2D();
-		getChildren().add(c);
+		//getChildren().add(c);
 		c.widthProperty().bind(this.widthProperty());
 		c.heightProperty().bind(this.heightProperty());
+
+		fxImg = new WritableImage((int) side, (int) side);
+
+		canv = new BufferedImage(1000, 1000, BufferedImage.TYPE_INT_ARGB);
+		g = canv.createGraphics();
+		vw = new ImageView();
+		vw.fitWidthProperty().bind(this.widthProperty());
+		vw.fitHeightProperty().bind(this.heightProperty());
+		SwingFXUtils.toFXImage(canv, fxImg);
+		vw.setImage(fxImg);
+		getChildren().add(vw);
 
 		/*
 		this.widthProperty().addListener((obs, oldVal, newVal) ->
@@ -224,13 +242,24 @@ public abstract class CoordPlane extends Pane
 	{
 		if(this == selected)
 		{
-			gc.setFill(Color.BLUE);
+//			gc.setFill(Color.BLUE);
+			g.setColor(java.awt.Color.BLUE);
 		}
-		gc.fillRect(0,0,2,c.getHeight());
-		gc.fillRect(0,0,c.getWidth(),2);
-		gc.fillRect(0, c.getHeight() - 2, c.getWidth(), 2);
-		gc.fillRect(c.getWidth() - 2, 0, 2, c.getHeight());
-		if(this == selected) gc.setFill(Color.BLACK);
+		else
+		{
+			g.setColor(java.awt.Color.BLACK);
+		}
+//		gc.fillRect(0,0,2,c.getHeight());
+//		gc.fillRect(0,0,c.getWidth(),2);
+//		gc.fillRect(0, c.getHeight() - 2, c.getWidth(), 2);
+//		gc.fillRect(c.getWidth() - 2, 0, 2, c.getHeight());
+
+		g.fillRect(0, 0, 2, canv.getHeight());
+		g.fillRect(0, 0, canv.getWidth(), 2);
+		g.fillRect(0, canv.getHeight() - 2, canv.getWidth(), 2);
+		g.fillRect(canv.getWidth() - 2, 0, 2, canv.getHeight());
+
+//		if(this == selected) gc.setFill(Color.BLACK);
 	}
 
 	/**
@@ -243,11 +272,18 @@ public abstract class CoordPlane extends Pane
 		drawBorders();
 	}
 
+	public void render()
+	{
+		fxImg = SwingFXUtils.toFXImage(canv, fxImg);
+		vw.setImage(fxImg);
+	}
+
 	/**
 	 * draws the axes with the appropriate labels.
 	 */
 	public void drawAxes()
 	{
+
 		String strxMin, strxMax, stryMin, stryMax;
 		strxMin = String.valueOf(xMin);
 		strxMax = String.valueOf(xMax);
@@ -269,13 +305,25 @@ public abstract class CoordPlane extends Pane
 		{
 			stryMax = stryMax.substring(0, 8);
 		} catch (StringIndexOutOfBoundsException ignored) {}
-		gc.clearRect(0, 0, c.getWidth(), c.getHeight());
-		gc.strokeLine(0, normToScrY(0), c.getWidth(), normToScrY(0));
-		gc.strokeLine(normToScrX(0), 0, normToScrX(0), c.getHeight());
-		gc.fillText(strxMin, 2, c.getHeight()/2 - 2);
-		gc.fillText(stryMin, c.getWidth()/2 + 2, c.getHeight() - 2);
-		gc.fillText(stryMax, c.getWidth()/2 + 2, 12);
-		gc.fillText(strxMax, c.getWidth() - 7 * strxMax.length(), c.getHeight()/2 - 4);
+
+//		gc.clearRect(0, 0, c.getWidth(), c.getHeight());
+//		gc.strokeLine(0, normToScrY(0), c.getWidth(), normToScrY(0));
+//		gc.strokeLine(normToScrX(0), 0, normToScrX(0), c.getHeight());
+//		gc.fillText(strxMin, 2, c.getHeight()/2 - 2);
+//		gc.fillText(stryMin, c.getWidth()/2 + 2, c.getHeight() - 2);
+//		gc.fillText(stryMax, c.getWidth()/2 + 2, 12);
+//		gc.fillText(strxMax, c.getWidth() - 7 * strxMax.length(), c.getHeight()/2 - 4);
+
+		g.setColor(java.awt.Color.WHITE);
+		g.fillRect(0, 0, canv.getWidth(), canv.getHeight());
+		g.setColor(java.awt.Color.BLACK);
+		g.drawLine(0, imgNormToScrY(0), canv.getWidth(), imgNormToScrY(0));
+		g.drawLine(imgNormToScrX(0), 0, imgNormToScrX(0), canv.getHeight());
+		g.drawString(strxMin, 2, canv.getHeight()/2 - 2);
+		g.drawString(stryMin, canv.getWidth()/2 + 2, canv.getHeight() - 2);
+		g.drawString(stryMax, canv.getWidth()/2 + 2, 12);
+		g.drawString(strxMax, canv.getWidth() - 7 * strxMax.length(), canv.getHeight()/2 - 4);
+
 	}
 
 	/**
@@ -324,6 +372,16 @@ public abstract class CoordPlane extends Pane
 		return (y / c.getHeight() + (yMax / (yMin - yMax))) * (yMin - yMax);
 	}
 
+	protected double imgScrToNormX(int x)
+	{
+		return ((double) x / (double) canv.getWidth() + (xMin/(xMax - xMin))) * (xMax - xMin);
+	}
+
+	protected double imgScrToNormY(int y)
+	{
+		return ((double) y / (double) canv.getHeight() + (yMax / (yMin - yMax))) * (yMin - yMax);
+	}
+
 	/**
 	 * converts a screen (pixel) point to the current mathematical coordinates
 	 * @param other the point to convert
@@ -353,6 +411,14 @@ public abstract class CoordPlane extends Pane
 		return (y / (yMin - yMax) - (yMax / (yMin - yMax))) * c.getHeight();
 	}
 
+	protected int imgNormToScrX(double x)
+	{
+		return (int) Math.round((x / (xMax - xMin) - (xMin/(xMax - xMin))) * canv.getHeight());
+	}
+	protected int imgNormToScrY(double y)
+	{
+		return (int) Math.round((y / (yMin - yMax) - (yMax / (yMin - yMax))) * canv.getHeight());
+	}
 	/**
 	 * converts a mathematical point to the screen (pixel) coordinate point
 	 * @param other the point to convert
@@ -371,10 +437,9 @@ public abstract class CoordPlane extends Pane
 	 */
 	protected void drawLine(double x1, double y1, double x2, double y2)
 	{
-		Platform.runLater(() ->
-		{
-			gc.strokeLine(normToScrX(x1), normToScrY(y1), normToScrX(x2), normToScrY(y2));
-		});
+//		gc.strokeLine(normToScrX(x1), normToScrY(y1), normToScrX(x2), normToScrY(y2));
+		g.drawLine(imgNormToScrX(x1), imgNormToScrY(y1), imgNormToScrX(x2), imgNormToScrY(y2));
+
 	}
 
 	/**
@@ -418,13 +483,13 @@ public abstract class CoordPlane extends Pane
 
 	public boolean writePNG(File f)
 	{
-		BufferedImage bi = new BufferedImage((int) this.getWidth(), (int) this.getHeight(), BufferedImage.TYPE_INT_ARGB);
-		SwingFXUtils.fromFXImage(this.snapshot(
-				new SnapshotParameters(),
-				new WritableImage((int) this.getWidth(), (int) this.getHeight())), bi);
+//		BufferedImage bi = new BufferedImage((int) this.getWidth(), (int) this.getHeight(), BufferedImage.TYPE_INT_ARGB);
+//		SwingFXUtils.fromFXImage(this.snapshot(
+//				new SnapshotParameters(),
+//				new WritableImage((int) this.getWidth(), (int) this.getHeight())), bi);
 		try
 		{
-			ImageIO.write(bi, "png", f);
+			ImageIO.write(canv, "png", f);
 			return true;
 		} catch (IOException oof)
 		{

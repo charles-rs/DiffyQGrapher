@@ -150,7 +150,10 @@ public class Main extends Application
 		{
 			outPlane.clearObjects();
 			outPlane.draw();
+			outPlane.render();
 			inPlane.clear();
+			inPlane.draw();
+			inPlane.render();
 		});
 		outPButtonBox.getChildren().addAll(btnClearOut, resetZoom, update);
 		outPButtonBox.setAlignment(Pos.CENTER);
@@ -452,6 +455,7 @@ public class Main extends Application
 		newWindow.setScene(newScene);
 		newWindow.show();
 		graph.draw();
+		graph.render();
 	}
 
 	/**

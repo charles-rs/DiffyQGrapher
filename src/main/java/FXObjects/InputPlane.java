@@ -92,6 +92,7 @@ public class InputPlane extends CoordPlane
 		degenSaddleCons = new LinkedList<>();
 		saddleCanvas.setVisible(true);
 		draw();
+		render();
 		setOnKeyPressed((e) ->
 		{
 			KeyCode temp = e.getCode();
@@ -110,6 +111,7 @@ public class InputPlane extends CoordPlane
 			}
 			e.consume();
 			draw();
+			render();
 		});
 
 		aField.textProperty().addListener((obs, s, t1) ->

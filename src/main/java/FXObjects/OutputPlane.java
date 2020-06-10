@@ -72,7 +72,15 @@ public class OutputPlane extends CoordPlane
 	private Color stblSeparatrixColor = Color.ORANGERED;
 	private Color unstblSeparatrixColor = Color.DARKCYAN;
 	private Color criticalColor = Color.RED;
-	private Color lnColor = Color.CADETBLUE;
+
+	private java.awt.Color awtSolutionColor = fromFXColor(solutionColor);
+	private java.awt.Color awtIsoclineColor = fromFXColor(isoclineColor);
+	private java.awt.Color awtHorizIsoColor = fromFXColor(horizIsoColor);
+	private java.awt.Color awtVertIsoColor = fromFXColor(vertIsoColor);
+	private java.awt.Color awtStblSeparatrixColor = fromFXColor(stblSeparatrixColor);
+	private java.awt.Color awtUnstblSeparatrixColor = fromFXColor(unstblSeparatrixColor);
+	private java.awt.Color awtCriticalColor = fromFXColor(criticalColor);
+
 	public InputPlane in;
 	private Thread artist [];
 
@@ -96,6 +104,7 @@ public class OutputPlane extends CoordPlane
 		selectedCritPoints = new LinkedList<>();
 		selectedSeps = new ArrayList<>(2);
 		draw();
+		render();
 		tField.setText(Double.toString(t));
 
 		tField.setOnKeyPressed((e) ->
@@ -138,6 +147,16 @@ public class OutputPlane extends CoordPlane
 				e.consume();
 			}
 		});
+	}
+
+	private java.awt.Color fromFXColor(Color c)
+	{
+		if(c == null) return java.awt.Color.white;
+		return new java.awt.Color(
+				(float) c.getRed(),
+				(float) c.getGreen(),
+				(float) c.getBlue(),
+				(float) c.getOpacity());
 	}
 
 	public Derivative getDx()
@@ -202,7 +221,8 @@ public class OutputPlane extends CoordPlane
 		{
 			case DRAWPATH:
 				initials.add(temp);
-				drawGraph(temp, true);
+				draw();
+//				drawGraph(temp, true);
 				break;
 			case FINDCRITICAL:
 				try
@@ -612,7 +632,7 @@ public class OutputPlane extends CoordPlane
 	}
 	private double minDist(final sepStart sep, final Point2D other, final double at, final double bt, boolean firstTry) throws RootNotFound
 	{
-		boolean shortcut = false;
+		boolean shortcut = true;
 		double min = Double.MAX_VALUE;
 //		System.out.println(sep.getStart(.01));
 		Evaluator eval1 = EvaluatorFactory.getEvaluator(evalType, dx, dy);
@@ -652,20 +672,24 @@ public class OutputPlane extends CoordPlane
 //		LinkedList<Point2D> record = new LinkedList<>();
 //		if(!firstTry)
 //			eval.initialise(sep.getStart(factor * (xMax - xMin)/c.getWidth()), 0, at, bt, -in);
-		while(inBoundsSaddle(prev) && eval.getT() < 5 && !Thread.interrupted())
+		while(inBoundsSaddle(prev) && eval.getT() < 25 && !Thread.interrupted())
 //		while (next.distance(other) < prev.distance(other) || !approaching)
 		{
 //			System.out.println(prev);
 //			record.add(prev);
 			prev = next;
 			next = eval.next();
-			if(prev.equals(next)) break;
+			if(prev.equals(next))
+			{
+				System.out.println("is this the problem?");
+				break;
+			}
 			if (!approaching && next.distance(other) <= prev.distance(other))
 			{
 				approaching = true;
 			} else if(approaching && next.distance(other) >= prev.distance(other))
 			{
-				if(shortcut) break;
+				if(shortcut) return prev.distance(other);
 				approaching = false;
 			}
 			if(approaching)
@@ -771,7 +795,7 @@ public class OutputPlane extends CoordPlane
 		while (dist1 > tol)
 		{
 			if(Thread.interrupted()) throw new RootNotFound();
-			if(System.nanoTime() - time > 2e9) throw new RootNotFound();
+			if(System.nanoTime() - time > 5e9) throw new RootNotFound();
 //			System.out.println("A': " + at);
 //			System.out.println("B': " + bt);
 //			System.out.println("dist: " + dist1);
@@ -1016,6 +1040,9 @@ public class OutputPlane extends CoordPlane
 	private void drawGraphs()
 	{
 		gc.setStroke(solutionColor);
+		g.setColor(awtSolutionColor);
+
+
 		for (Node n : needsReset)
 		{
 			n.setVisible(false);
@@ -1029,6 +1056,7 @@ public class OutputPlane extends CoordPlane
 		{
 			labelCritical(p);
 		}
+
 		gc.setStroke(Color.BLACK);
 	}
 
@@ -1057,7 +1085,8 @@ public class OutputPlane extends CoordPlane
 				if (inBounds(prev) || inBounds(next))
 					synchronized (gc)
 					{
-						gc.strokeLine(normToScrX(prev.getX()), normToScrY(prev.getY()), normToScrX(next.getX()), normToScrY(next.getY()));
+						drawLine(prev, next);
+						//gc.strokeLine(normToScrX(prev.getX()), normToScrY(prev.getY()), normToScrX(next.getX()), normToScrY(next.getY()));
 					}
 				prev = next;
 			}
@@ -1070,7 +1099,8 @@ public class OutputPlane extends CoordPlane
 				if (inBounds(prev) || inBounds(next))
 					synchronized (gc)
 					{
-						gc.strokeLine(normToScrX(prev.getX()), normToScrY(prev.getY()), normToScrX(next.getX()), normToScrY(next.getY()));
+						drawLine(prev, next);
+						//gc.strokeLine(normToScrX(prev.getX()), normToScrY(prev.getY()), normToScrX(next.getX()), normToScrY(next.getY()));
 					}
 				prev = next;
 			}
@@ -1229,7 +1259,8 @@ public class OutputPlane extends CoordPlane
 								sign = Math.signum((y - first.getY()) / (x - first.getX()));
 							}
 							second = new Point2D(x, y);
-							gc.strokeLine(normToScrX(first.getX()), normToScrY(first.getY()), normToScrX(second.getX()), normToScrY(second.getY()));
+							drawLine(first, second);
+							//gc.strokeLine(normToScrX(first.getX()), normToScrY(first.getY()), normToScrX(second.getX()), normToScrY(second.getY()));
 							first = second;
 						} else break;
 					} else
@@ -1252,7 +1283,8 @@ public class OutputPlane extends CoordPlane
 								thing = Maths.divide(slope, slopeDeriv);
 							}
 							second = new Point2D(x, y);
-							gc.strokeLine(normToScrX(first.getX()), normToScrY(first.getY()), normToScrX(second.getX()), normToScrY(second.getY()));
+							drawLine(first, second);
+							//gc.strokeLine(normToScrX(first.getX()), normToScrY(first.getY()), normToScrX(second.getX()), normToScrY(second.getY()));
 							first = second;
 						} else break;
 					}
@@ -1319,10 +1351,12 @@ public class OutputPlane extends CoordPlane
 				if (!temp)
 				{
 					gc.setStroke(stblSeparatrixColor);
+					g.setColor(awtStblSeparatrixColor);
 					sn = '-';
 				}
 				else
 				{
+					g.setColor(awtUnstblSeparatrixColor);
 					gc.setStroke(unstblSeparatrixColor);
 					sn = '+';
 				}
@@ -1331,11 +1365,13 @@ public class OutputPlane extends CoordPlane
 
 				if (temp)
 				{
+					g.setColor(awtStblSeparatrixColor);
 					gc.setStroke(stblSeparatrixColor);
 					sn = '-';
 				}
 				else
 				{
+					g.setColor(awtUnstblSeparatrixColor);
 					gc.setStroke(unstblSeparatrixColor);
 					sn = '+';
 				}
@@ -1378,21 +1414,26 @@ public class OutputPlane extends CoordPlane
 		}
 		drawSelectedCritPoints();
 		gc.setLineWidth(2);
+		g.setStroke(new BasicStroke(2));
 		double inc = 2 * (xMax - xMin)/c.getWidth();
 		for (sepStart s : selectedSeps)
 		{
 			if (!s.posEig())
 			{
 				gc.setStroke(stblSeparatrixColor);
+				g.setColor(awtStblSeparatrixColor);
 				drawGraphBack(new initCond(s.getStart(inc).getX(), s.getStart(inc).getY(), 0), false, '-');
 			} else
 			{
+				g.setColor(awtUnstblSeparatrixColor);
 				gc.setStroke(unstblSeparatrixColor);
 				drawGraphBack(new initCond(s.getStart(inc).getX(), s.getStart(inc).getY(), 0), false, '+');
 			}
 		}
+		g.setStroke(new BasicStroke(1));
 		gc.setLineWidth(1);
 		gc.setStroke(Color.BLACK);
+		render();
 	}
 
 
