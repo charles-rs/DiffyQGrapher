@@ -35,7 +35,7 @@ public class DerivativeGraph extends CoordPlane
 	{
 		super(side);
 		derivative = d;
-		inc = (xMax - xMin) / 5000.;
+		inc = (xMax.get() - xMin.get()) / 5000.;
 		this.var = var;
 		this.a = a;
 		this.b = b;
@@ -105,7 +105,7 @@ public class DerivativeGraph extends CoordPlane
 		super.draw();
 		try
 		{
-			double increment = xMin;
+			double increment = xMin.get();
 			double temp, next;
 			switch (var)
 			{
@@ -113,7 +113,7 @@ public class DerivativeGraph extends CoordPlane
 					temp = derivative.eval(increment, y, a, b, t);
 					increment += inc;
 					next = derivative.eval(increment, y, a, b, t);
-					while(increment <= xMax)
+					while(increment <= xMax.get())
 					{
 						gc.strokeLine(normToScrX(increment - inc), normToScrY(temp),
 								normToScrX(increment), normToScrY(next));
@@ -126,7 +126,7 @@ public class DerivativeGraph extends CoordPlane
 					temp = derivative.eval(x, increment, a, b, t);
 					increment += inc;
 					next = derivative.eval(x, increment, a, b, t);
-					while(increment <= xMax)
+					while(increment <= xMax.get())
 					{
 						gc.strokeLine(normToScrX(increment - inc), normToScrY(temp),
 								normToScrX(increment), normToScrY(next));
@@ -139,7 +139,7 @@ public class DerivativeGraph extends CoordPlane
 					temp = derivative.eval(x, y, a, b, increment);
 					increment += inc;
 					next = derivative.eval(x, y, a, b, increment);
-					while(increment <= xMax)
+					while(increment <= xMax.get())
 					{
 						gc.strokeLine(normToScrX(increment - inc), normToScrY(temp),
 								normToScrX(increment), normToScrY(next));

@@ -1,6 +1,8 @@
 package FXObjects;
 
 import javafx.application.Platform;
+import javafx.beans.property.DoubleProperty;
+import javafx.beans.property.SimpleDoubleProperty;
 import javafx.embed.swing.SwingFXUtils;
 import javafx.geometry.Point2D;
 import javafx.scene.SnapshotParameters;
@@ -12,7 +14,10 @@ import javafx.scene.input.KeyCode;
 import javafx.scene.input.MouseEvent;
 import javafx.scene.layout.Pane;
 import javafx.scene.paint.Color;
+import javafx.scene.shape.Line;
 import javafx.scene.shape.Rectangle;
+import javafx.scene.text.Text;
+import javafx.scene.text.Font;
 
 import javax.imageio.ImageIO;
 import java.awt.*;
@@ -28,6 +33,10 @@ import java.io.IOException;
  */
 public abstract class CoordPlane extends Pane
 {
+
+
+	private Line xAxis, yAxis;
+	private Rectangle border;
 	protected BufferedImage canv;
 	private WritableImage fxImg;
 	protected ImageView vw;
@@ -40,7 +49,7 @@ public abstract class CoordPlane extends Pane
 	/**
 	 * the variables holding the current limits of the axes
 	 */
-	protected double xMin, xMax, yMin, yMax;
+	protected DoubleProperty xMin, xMax, yMin, yMax;
 
 	/**
 	 * stores the initial bounds for resetting
@@ -79,10 +88,17 @@ public abstract class CoordPlane extends Pane
 	 */
 	public CoordPlane (double side)
 	{
-		xMin = -5;
-		yMin = -5;
-		xMax = 5;
-		yMax = 5;
+		border = new Rectangle();
+		border.setX(0);
+		border.setY(0);
+		border.widthProperty().bind(this.widthProperty());
+		border.heightProperty().bind(this.heightProperty());
+		border.setStrokeWidth(2);
+		this.getChildren().addAll(border);
+		xMin = new SimpleDoubleProperty(-5);
+		yMin = new SimpleDoubleProperty(-5);
+		xMax = new SimpleDoubleProperty(5);
+		yMax = new SimpleDoubleProperty(5);
 		initZoom = new double [] {-5D, 5D, -5D, 5D};
 
 		right = KeyCode.RIGHT;
@@ -104,7 +120,7 @@ public abstract class CoordPlane extends Pane
 
 		fxImg = new WritableImage((int) side, (int) side);
 
-		canv = new BufferedImage(1000, 1000, BufferedImage.TYPE_INT_ARGB);
+		canv = new BufferedImage(1024, 1024, BufferedImage.TYPE_INT_ARGB);
 		g = canv.createGraphics();
 		vw = new ImageView();
 		vw.fitWidthProperty().bind(this.widthProperty());
@@ -112,6 +128,46 @@ public abstract class CoordPlane extends Pane
 		SwingFXUtils.toFXImage(canv, fxImg);
 		vw.setImage(fxImg);
 		getChildren().add(vw);
+
+		xAxis = new Line();
+//		xAxis.startYProperty().bind(this.heightProperty().divide(2));
+//		xAxis.endYProperty().bind(this.heightProperty().divide(2));
+//		xAxis.setStartX(0);
+//		xAxis.endXProperty().bind(this.widthProperty());
+		yAxis = new Line();
+//		yAxis.startXProperty().bind(this.widthProperty().divide(2));
+//		yAxis.endXProperty().bind(this.widthProperty().divide(2));
+//		yAxis.setStartY(0);
+//		yAxis.endYProperty().bind(this.heightProperty());
+		getChildren().addAll(xAxis, yAxis);
+
+		Font font = new Font(8);
+
+		Text xMinLbl = new Text();
+		Text xMaxLbl = new Text();
+		Text yMinLbl = new Text();
+		Text yMaxLbl = new Text();
+		xMinLbl.setFont(font);
+		xMaxLbl.setFont(font);
+		yMinLbl.setFont(font);
+		yMaxLbl.setFont(font);
+
+		xMinLbl.textProperty().bind(xMin.asString());
+		xMaxLbl.textProperty().bind(xMax.asString());
+		yMinLbl.textProperty().bind(yMin.asString());
+		yMaxLbl.textProperty().bind(yMax.asString());
+		getChildren().addAll(xMinLbl, xMaxLbl, yMinLbl, yMaxLbl);
+
+
+		xMinLbl.xProperty().set(2);
+		xMinLbl.yProperty().bind(this.heightProperty().divide(2).subtract(2));
+		xMaxLbl.xProperty().bind(this.widthProperty().subtract(xMaxLbl.textProperty().length().multiply(5)));
+		xMaxLbl.yProperty().bind(this.heightProperty().divide(2).subtract(4));
+		yMinLbl.xProperty().bind(this.widthProperty().divide(2).add(2));
+		yMinLbl.yProperty().bind(this.heightProperty().subtract(2));
+		yMaxLbl.xProperty().bind(this.widthProperty().divide(2).add(2));
+		yMaxLbl.yProperty().set(10);
+
 
 		/*
 		this.widthProperty().addListener((obs, oldVal, newVal) ->
@@ -164,11 +220,19 @@ public abstract class CoordPlane extends Pane
 						double xMinTemp, xMaxTemp, yMinTemp, yMaxTemp;
 						if(mouseEvent.isControlDown())
 						{
-							xMaxTemp = (xMax - scrToNormX(zoomBox.getX() + zoomBox.getWidth())) * (xMax - xMin) / (scrToNormX(zoomBox.getX() + zoomBox.getWidth()) - scrToNormX(zoomBox.getX())) + xMax;
-							xMinTemp = (xMin - scrToNormX(zoomBox.getX())) * (xMax - xMin) / (scrToNormX(zoomBox.getX() + zoomBox.getWidth()) - scrToNormX(zoomBox.getX())) + xMin;
+							xMaxTemp = (xMax.get() - scrToNormX(zoomBox.getX() + zoomBox.getWidth())) *
+									(xMax.get() - xMin.get()) / (scrToNormX(zoomBox.getX() + zoomBox.getWidth()) -
+									scrToNormX(zoomBox.getX())) + xMax.get();
+							xMinTemp = (xMin.get() - scrToNormX(zoomBox.getX())) * (xMax.get() - xMin.get()) /
+									(scrToNormX(zoomBox.getX() + zoomBox.getWidth()) -
+											scrToNormX(zoomBox.getX())) + xMin.get();
 
-							yMaxTemp = (yMax - scrToNormY(zoomBox.getY())) * (yMax - yMin) / (scrToNormY(zoomBox.getY() - zoomBox.getHeight()) - scrToNormY(zoomBox.getY())) + yMax;
-							yMinTemp = (yMin - scrToNormY(zoomBox.getY() + zoomBox.getHeight())) * (yMax - yMin) / (scrToNormY(zoomBox.getY() - zoomBox.getHeight()) - scrToNormY(zoomBox.getY())) + yMin;
+							yMaxTemp = (yMax.get() - scrToNormY(zoomBox.getY())) * (yMax.get() - yMin.get()) /
+									(scrToNormY(zoomBox.getY() - zoomBox.getHeight()) -
+											scrToNormY(zoomBox.getY())) + yMax.get();
+							yMinTemp = (yMin.get() - scrToNormY(zoomBox.getY() + zoomBox.getHeight())) *
+									(yMax.get() - yMin.get()) / (scrToNormY(zoomBox.getY() -
+									zoomBox.getHeight()) - scrToNormY(zoomBox.getY())) + yMin.get();
 						} else
 						{
 							xMaxTemp = scrToNormX(zoomBox.getX() + zoomBox.getWidth());
@@ -178,10 +242,10 @@ public abstract class CoordPlane extends Pane
 						}
 						zoomBox.setWidth(0);
 						zoomBox.setHeight(0);
-						xMin = xMinTemp;
-						yMin = yMinTemp;
-						xMax = xMaxTemp;
-						yMax = yMaxTemp;
+						xMin.set(xMinTemp);
+						yMin.set(yMinTemp);
+						xMax.set(xMaxTemp);
+						yMax.set(yMaxTemp);
 						updateForZoom();
 						draw();
 					}
@@ -204,10 +268,10 @@ public abstract class CoordPlane extends Pane
 
 	public void resetZoom()
 	{
-		xMin = initZoom [0];
-		xMax = initZoom [1];
-		yMin = initZoom [2];
-		yMax = initZoom [3];
+		xMin.set(initZoom [0]);
+		xMax.set(initZoom [1]);
+		yMin.set(initZoom [2]);
+		yMax.set(initZoom [3]);
 		updateForZoom();
 		draw();
 	}
@@ -244,20 +308,22 @@ public abstract class CoordPlane extends Pane
 		{
 //			gc.setFill(Color.BLUE);
 			g.setColor(java.awt.Color.BLUE);
+			border.setStroke(Color.BLUE);
 		}
 		else
 		{
 			g.setColor(java.awt.Color.BLACK);
+			border.setStroke(Color.BLACK);
 		}
 //		gc.fillRect(0,0,2,c.getHeight());
 //		gc.fillRect(0,0,c.getWidth(),2);
 //		gc.fillRect(0, c.getHeight() - 2, c.getWidth(), 2);
 //		gc.fillRect(c.getWidth() - 2, 0, 2, c.getHeight());
 
-		g.fillRect(0, 0, 2, canv.getHeight());
-		g.fillRect(0, 0, canv.getWidth(), 2);
-		g.fillRect(0, canv.getHeight() - 2, canv.getWidth(), 2);
-		g.fillRect(canv.getWidth() - 2, 0, 2, canv.getHeight());
+//		g.fillRect(0, 0, 2, canv.getHeight());
+//		g.fillRect(0, 0, canv.getWidth(), 2);
+//		g.fillRect(0, canv.getHeight() - 2, canv.getWidth(), 2);
+//		g.fillRect(canv.getWidth() - 2, 0, 2, canv.getHeight());
 
 //		if(this == selected) gc.setFill(Color.BLACK);
 	}
@@ -285,10 +351,10 @@ public abstract class CoordPlane extends Pane
 	{
 
 		String strxMin, strxMax, stryMin, stryMax;
-		strxMin = String.valueOf(xMin);
-		strxMax = String.valueOf(xMax);
-		stryMin = String.valueOf(yMin);
-		stryMax = String.valueOf(yMax);
+		strxMin = String.valueOf(xMin.get());
+		strxMax = String.valueOf(xMax.get());
+		stryMin = String.valueOf(yMin.get());
+		stryMax = String.valueOf(yMax.get());
 		try
 		{
 			strxMin = strxMin.substring(0, 8);
@@ -317,12 +383,27 @@ public abstract class CoordPlane extends Pane
 		g.setColor(java.awt.Color.WHITE);
 		g.fillRect(0, 0, canv.getWidth(), canv.getHeight());
 		g.setColor(java.awt.Color.BLACK);
-		g.drawLine(0, imgNormToScrY(0), canv.getWidth(), imgNormToScrY(0));
-		g.drawLine(imgNormToScrX(0), 0, imgNormToScrX(0), canv.getHeight());
-		g.drawString(strxMin, 2, canv.getHeight()/2 - 2);
-		g.drawString(stryMin, canv.getWidth()/2 + 2, canv.getHeight() - 2);
-		g.drawString(stryMax, canv.getWidth()/2 + 2, 12);
-		g.drawString(strxMax, canv.getWidth() - 7 * strxMax.length(), canv.getHeight()/2 - 4);
+
+		double x0 = normToScrX(0);
+		yAxis.setVisible(inBounds(0, scrToNormY(this.getHeight() / 2)));
+		yAxis.setStartX(x0);
+		yAxis.setEndX(x0);
+		yAxis.setStartY(0);
+		yAxis.setEndY(this.getHeight());
+
+		double y0 = normToScrY(0);
+		xAxis.setVisible(inBounds(scrToNormX(this.getWidth() / 2), 0));
+		xAxis.setStartY(y0);
+		xAxis.setEndY(y0);
+		xAxis.setStartX(0);
+		xAxis.setEndX(this.getWidth());
+
+//		g.drawLine(0, imgNormToScrY(0), canv.getWidth(), imgNormToScrY(0));
+//		g.drawLine(imgNormToScrX(0), 0, imgNormToScrX(0), canv.getHeight());
+//		g.drawString(strxMin, 2, canv.getHeight()/2 - 2);
+//		g.drawString(stryMin, canv.getWidth()/2 + 2, canv.getHeight() - 2);
+//		g.drawString(stryMax, canv.getWidth()/2 + 2, 12);
+//		g.drawString(strxMax, canv.getWidth() - 7 * strxMax.length(), canv.getHeight()/2 - 4);
 
 	}
 
@@ -334,7 +415,7 @@ public abstract class CoordPlane extends Pane
 	 */
 	protected boolean inBounds(double x, double y)
 	{
-		return x <= xMax && x >= xMin && y <= yMax && y >= yMin;
+		return x <= xMax.get() && x >= xMin.get() && y <= yMax.get() && y >= yMin.get();
 	}
 
 	/**
@@ -360,7 +441,7 @@ public abstract class CoordPlane extends Pane
 	 */
 	protected double scrToNormX(double x)
 	{
-		return (x / c.getWidth() + (xMin/(xMax - xMin))) * (xMax - xMin);
+		return (x / c.getWidth() + (xMin.get()/(xMax.get() - xMin.get()))) * (xMax.get() - xMin.get());
 	}
 	/**
 	 * converts a screen (pixel) coordinate to the current mathematical coordinates.
@@ -369,17 +450,17 @@ public abstract class CoordPlane extends Pane
 	 */
 	protected double scrToNormY(double y)
 	{
-		return (y / c.getHeight() + (yMax / (yMin - yMax))) * (yMin - yMax);
+		return (y / c.getHeight() + (yMax.get() / (yMin.get() - yMax.get()))) * (yMin.get() - yMax.get());
 	}
 
 	protected double imgScrToNormX(int x)
 	{
-		return ((double) x / (double) canv.getWidth() + (xMin/(xMax - xMin))) * (xMax - xMin);
+		return ((double) x / (double) canv.getWidth() + (xMin.get()/(xMax.get() - xMin.get()))) * (xMax.get() - xMin.get());
 	}
 
 	protected double imgScrToNormY(int y)
 	{
-		return ((double) y / (double) canv.getHeight() + (yMax / (yMin - yMax))) * (yMin - yMax);
+		return ((double) y / (double) canv.getHeight() + (yMax.get() / (yMin.get() - yMax.get()))) * (yMin.get() - yMax.get());
 	}
 
 	/**
@@ -399,7 +480,7 @@ public abstract class CoordPlane extends Pane
 	 */
 	protected double normToScrX(double x)
 	{
-		return (x / (xMax - xMin) - (xMin/(xMax - xMin))) * c.getWidth();
+		return (x / (xMax.get() - xMin.get()) - (xMin.get()/(xMax.get() - xMin.get()))) * c.getWidth();
 	}
 	/**
 	 * converts a mathematical coordinate to the screen (pixel) coordinates.
@@ -408,16 +489,16 @@ public abstract class CoordPlane extends Pane
 	 */
 	protected double normToScrY(double y)
 	{
-		return (y / (yMin - yMax) - (yMax / (yMin - yMax))) * c.getHeight();
+		return (y / (yMin.get() - yMax.get()) - (yMax.get() / (yMin.get() - yMax.get()))) * c.getHeight();
 	}
 
 	protected int imgNormToScrX(double x)
 	{
-		return (int) Math.round((x / (xMax - xMin) - (xMin/(xMax - xMin))) * canv.getHeight());
+		return (int) Math.round((x / (xMax.get() - xMin.get()) - (xMin.get()/(xMax.get() - xMin.get()))) * canv.getHeight());
 	}
 	protected int imgNormToScrY(double y)
 	{
-		return (int) Math.round((y / (yMin - yMax) - (yMax / (yMin - yMax))) * canv.getHeight());
+		return (int) Math.round((y / (yMin.get() - yMax.get()) - (yMax.get() / (yMin.get() - yMax.get()))) * canv.getHeight());
 	}
 	/**
 	 * converts a mathematical point to the screen (pixel) coordinate point

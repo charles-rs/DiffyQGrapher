@@ -11,6 +11,7 @@ import javafx.scene.image.ImageView;
 import javafx.scene.input.KeyCode;
 import javafx.scene.input.MouseEvent;
 import javafx.scene.paint.Color;
+import javafx.scene.shape.Circle;
 import org.ejml.data.SingularMatrixException;
 import org.ejml.simple.SimpleMatrix;
 
@@ -26,6 +27,7 @@ import java.util.List;
 public class InputPlane extends CoordPlane
 {
 
+	private Circle pt;
 	/**
 	 * a and b are the parameters, initialised to (0,0)
 	 */
@@ -91,6 +93,12 @@ public class InputPlane extends CoordPlane
 		saddleCons = new LinkedList<>();
 		degenSaddleCons = new LinkedList<>();
 		saddleCanvas.setVisible(true);
+		pt = new Circle();
+		pt.setRadius(2);
+		pt.setFill(Color.RED);
+		pt.setCenterX(normToScrX(0));
+		pt.setCenterY(normToScrY(0));
+		this.getChildren().addAll(pt);
 		draw();
 		render();
 		setOnKeyPressed((e) ->
@@ -98,16 +106,16 @@ public class InputPlane extends CoordPlane
 			KeyCode temp = e.getCode();
 			if (temp == right)
 			{
-				a += (xMax - xMin) / 1000;
+				a += (xMax.get() - xMin.get()) / 1000;
 			} else if (temp == left)
 			{
-				a -= (xMax - xMin) / 1000;
+				a -= (xMax.get() - xMin.get()) / 1000;
 			} else if (temp == up)
 			{
-				b += (yMax - yMin) / 1000;
+				b += (yMax.get() - yMin.get()) / 1000;
 			} else if (temp == down)
 			{
-				b -= (yMax - yMin) / 1000;
+				b -= (yMax.get() - yMin.get()) / 1000;
 			}
 			e.consume();
 			draw();
@@ -168,9 +176,12 @@ public class InputPlane extends CoordPlane
 	 */
 	private void drawPoint()
 	{
-		gc.setFill(Color.RED);
-		gc.fillOval(normToScrX(a) - 2, normToScrY(b) - 2, 4, 4);
-		gc.setFill(Color.BLACK);
+//		gc.setFill(Color.RED);
+//		gc.fillOval(normToScrX(a) - 2, normToScrY(b) - 2, 4, 4);
+//		gc.setFill(Color.BLACK);
+		pt.setCenterX(normToScrX(a));
+		pt.setCenterY(normToScrY(b));
+
 	}
 
 	/**
@@ -228,8 +239,8 @@ public class InputPlane extends CoordPlane
 		derivative[2][1] = det.differentiate('y').collapse();
 		derivative[2][2] = det.differentiate('a').collapse();
 		derivative[2][3] = det.differentiate('b').collapse();
-		double xInc = (xMax - xMin) / c.getWidth();
-		double yInc = (yMax - yMin) / c.getHeight();
+		double xInc = (xMax.get() - xMin.get()) / this.getWidth();
+		double yInc = (yMax.get() - yMin.get()) / this.getHeight();
 		boolean isA = true;
 		double first[] = start;
 		double second[];
@@ -323,8 +334,8 @@ public class InputPlane extends CoordPlane
 		derivative[2][1] = tr.differentiate('y').collapse();
 		derivative[2][2] = tr.differentiate('a').collapse();
 		derivative[2][3] = tr.differentiate('b').collapse();
-		double xInc = (xMax - xMin) / c.getWidth();
-		double yInc = (yMax - yMin) / c.getHeight();
+		double xInc = (xMax.get() - xMin.get()) / this.getWidth();
+		double yInc = (yMax.get() - yMin.get()) / this.getHeight();
 		boolean isA = true;
 		double first[] = start;
 		double second[];

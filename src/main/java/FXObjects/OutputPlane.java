@@ -33,6 +33,8 @@ import org.ejml.simple.SimpleMatrix;
 
 import javax.imageio.ImageIO;
 import java.awt.*;
+import java.awt.geom.AffineTransform;
+import java.awt.image.BufferedImage;
 import java.io.*;
 import java.nio.IntBuffer;
 import java.util.ArrayList;
@@ -88,10 +90,10 @@ public class OutputPlane extends CoordPlane
 	{
 		super(side);
 
-		dSaddleXMax = this.xMax;
-		dSaddleXMin = this.xMin;
-		dSaddleYMax = this.yMax;
-		dSaddleYMin = this.yMin;
+		dSaddleXMax = this.xMax.get();
+		dSaddleXMin = this.xMin.get();
+		dSaddleYMax = this.yMax.get();
+		dSaddleYMin = this.yMin.get();
 
 		artist = new Thread [16];
 		evalType = EvalType.RungeKutta;
@@ -125,20 +127,20 @@ public class OutputPlane extends CoordPlane
 		{
 			if (e.getCode() == left)
 			{
-				xMin -= (xMax - xMin) / 20;
-				xMax -= (xMax - xMin) / 20;
+				xMin.set(xMin.get() - (xMax.get() - xMin.get()) / 20);
+				xMax.set(xMax.get() - (xMax.get() - xMin.get()) / 20);
 			} else if (e.getCode() == right)
 			{
-				xMin += (xMax - xMin) / 20;
-				xMax += (xMax - xMin) / 20;
+				xMin.set(xMin.get() + (xMax.get() - xMin.get()) / 20);
+				xMax.set(xMax.get() + (xMax.get() - xMin.get()) / 20);
 			} else if (e.getCode() == up)
 			{
-				yMin += (yMax - yMin) / 20;
-				yMax += (yMax - yMin) / 20;
+				yMin.set(yMin.get() + (yMax.get() - yMin.get()) / 20);
+				yMax.set(yMax.get() + (yMax.get() - yMin.get()) / 20);
 			} else if (e.getCode() == down)
 			{
-				yMin -= (yMax - yMin) / 20;
-				yMax -= (yMax - yMin) / 20;
+				yMin.set(yMin.get() - (yMax.get() - yMin.get()) / 20);
+				yMax.set(yMax.get() - (yMax.get() - yMin.get()) / 20);
 			}
 			KeyCode temp = e.getCode();
 			if (temp == left || temp == right || temp == up || temp == down)
@@ -176,7 +178,7 @@ public class OutputPlane extends CoordPlane
 	@Override
 	protected void updateForZoom()
 	{
-		inc = ((xMax - xMin)/c.getWidth() + (yMax - yMin)/c.getHeight())/2;
+		inc = ((xMax.get() - xMin.get())/c.getWidth() + (yMax.get() - yMin.get())/c.getHeight())/2;
 	}
 
 	public void clearObjects()
@@ -219,17 +221,21 @@ public class OutputPlane extends CoordPlane
 		Point2D pt = new Point2D(x, y);
 		switch (clickMode)
 		{
+
 			case DRAWPATH:
 				initials.add(temp);
-				draw();
-//				drawGraph(temp, true);
+				g.setColor(awtSolutionColor);
+				drawGraph(temp, true);
+				render();
 				break;
 			case FINDCRITICAL:
 				try
 				{
 					CriticalPoint root = EvaluatorFactory.getBestEvaluator(dx, dy).findCritical(pt, a, b, t);
 					criticalPoints.add(root);
-					drawGraphs();
+					labelCritical(root);
+//					drawGraphs();
+					render();
 				} catch (RootNotFound r)
 				{
 					//TODO better output system
@@ -240,15 +246,18 @@ public class OutputPlane extends CoordPlane
 				drawHorizIso(pt);
 				horizIsos.add(pt);
 				clickMode = ClickModeType.DRAWPATH;
+				render();
 				break;
 			case DRAWVERTISO:
 				drawVertIso(new Point2D(x, y));
 				vertIsos.add(pt);
 				clickMode = ClickModeType.DRAWPATH;
+				render();
 				break;
 			case DRAWISO:
 				isoclines.add(temp);
 				drawIso(temp);
+				render();
 				break;
 			case SELECTSADDLE:
 				try
@@ -257,6 +266,7 @@ public class OutputPlane extends CoordPlane
 					fireEvent(new SaddleSelected(p));
 					selectedCritPoints.add(p);
 					drawSelectedCritPoints();
+					render();
 				} catch (RootNotFound ignored)
 				{
 				}
@@ -268,6 +278,7 @@ public class OutputPlane extends CoordPlane
 					fireEvent(new SourceOrSinkSelected(p));
 					selectedCritPoints.add(p);
 					drawSelectedCritPoints();
+					render();
 				} catch (RootNotFound ignored)
 				{
 				}
@@ -278,7 +289,7 @@ public class OutputPlane extends CoordPlane
 					CriticalPoint p = critical(pt);
 					if (selectedSeps.size() < 2)
 					{
-						double tol = (xMax - xMin)/c.getWidth();
+						double tol = (xMax.get() - xMin.get())/c.getWidth();
 						Point2D p1 = new Point2D(p.point.getX() + tol * p.matrix.getEigenVector(0).get(0),
 								p.point.getY() + tol * p.matrix.getEigenVector(0).get(1));
 						Point2D p2 = new Point2D(p.point.getX() - tol * p.matrix.getEigenVector(0).get(0),
@@ -425,8 +436,8 @@ public class OutputPlane extends CoordPlane
 
 			in.saddleCanvas.getGraphicsContext2D().setStroke(in.saddleConColor);
 
-			double aInc = 1D * (in.xMax - in.xMin) / in.c.getWidth();
-			double bInc = 1D * (in.yMax - in.yMin) / in.c.getHeight();
+			double aInc = 1D * (in.xMax.get() - in.xMin.get()) / in.getWidth();
+			double bInc = 1D * (in.yMax.get() - in.yMin.get()) / in.getHeight();
 			AST.Node tr = Maths.add(dx.differentiate('x'), dy.differentiate('y')).collapse();
 			// This is a variable that helps us guess better for the next value (using euler's method)
 			double otherInc = 0D;
@@ -529,7 +540,7 @@ public class OutputPlane extends CoordPlane
 //						else
 //							otherInc = bInc * (diff.getX()/diff.getY());
 //					}
-						if (s1.saddle.point.distance(s2.saddle.point) < .000001 * ((xMax - xMin) + (yMax - yMin))/2)
+						if (s1.saddle.point.distance(s2.saddle.point) < .000001 * ((xMax.get() - xMin.get()) + (yMax.get() - yMin.get()))/2)
 						{
 							System.out.println("they are the same");
 							try
@@ -706,7 +717,7 @@ public class OutputPlane extends CoordPlane
 			System.out.println("____________________________");
 			System.out.println("a: " + at);
 			System.out.println("b: " + bt);
-			System.out.println("Start: " + sep.getStart(factor * (xMax - xMin)/c.getWidth()));
+			System.out.println("Start: " + sep.getStart(factor * (xMax.get() - xMin.get())/this.getWidth()));
 			System.out.println("Goal: " + other);
 			System.out.println("approaching?: " + approaching);
 			System.out.println("first try? " + firstTry);
@@ -760,17 +771,17 @@ public class OutputPlane extends CoordPlane
 		if(isA)
 		{
 			old = at;
-			inc = (in.xMax - in.xMin) / 10000;
+			inc = (in.xMax.get() - in.xMin.get()) / 10000;
 		}
 		else
 		{
 			old = bt;
-			inc = (in.yMax - in.yMin)/10000;
+			inc = (in.yMax.get() - in.yMin.get())/10000;
 		}
 		double tol;
 		if(isA)
-			tol = (in.xMax - in.xMin)/(1 * in.c.getWidth());
-		else tol = (in.yMax - in.yMin)/(1 * in.c.getHeight());
+			tol = (in.xMax.get() - in.xMin.get())/(1 * in.getWidth());
+		else tol = (in.yMax.get() - in.yMin.get())/(1 * in.getHeight());
 		Point2D saddle1 = s1.saddle.point;
 		Point2D saddle2 = s2.saddle.point;
 		assertSaddle(s1, s2);
@@ -789,8 +800,8 @@ public class OutputPlane extends CoordPlane
 			sad = saddle1;
 		}
 		if(isA)
-			inc = (in.xMax - in.xMin)/10000.;//.000001;
-		else inc = (in.yMax - in.yMin)/10000.;
+			inc = (in.xMax.get() - in.xMin.get())/10000.;//.000001;
+		else inc = (in.yMax.get() - in.yMin.get())/10000.;
 		dist1 = minDist(sep, sad, at, bt, true);
 		while (dist1 > tol)
 		{
@@ -852,13 +863,13 @@ public class OutputPlane extends CoordPlane
 //				inc *= 1.1;
 			}
 			dist1 = dist2;
-			if(at < 2 * in.xMin - in.xMax || at > 2 * in.xMax - in.xMin ||
-			bt < 2 * in.yMin - in.yMax || bt > 2 * in.yMax - in.yMin)
+			if(at < 2 * in.xMin.get() - in.xMax.get() || at > 2 * in.xMax.get() - in.xMin.get() ||
+			bt < 2 * in.yMin.get() - in.yMax.get() || bt > 2 * in.yMax.get() - in.yMin.get())
 				throw new RootNotFound(true);
 		}
 //		System.out.println(new Point2D(at, bt));
-		double aInc = (in.xMax - in.xMin) / in.c.getWidth();
-		double bInc = (in.yMax - in.yMin) / in.c.getHeight();
+		double aInc = (in.xMax.get() - in.xMin.get()) / in.getWidth();
+		double bInc = (in.yMax.get() - in.yMin.get()) / in.getHeight();
 		if(isA)
 		{
 			if(Math.abs((at - old)/bInc) > 2.)
@@ -913,8 +924,8 @@ public class OutputPlane extends CoordPlane
 	private double sepIntersect(sepStart s, double a, double b, Point2D[] ln, Point2D res) throws RootNotFound
 	{
 		double x, y;
-		x = s.getStart((xMax - xMin)/c.getWidth()).getX();
-		y = s.getStart((yMax - yMin)/c.getHeight()).getY();
+		x = s.getStart((xMax.get() - xMin.get())/this.getWidth()).getX();
+		y = s.getStart((yMax.get() - yMin.get())/this.getHeight()).getY();
 		Evaluator eval = EvaluatorFactory.getEvaluator(evalType, dx, dy);
 		Point2D prev;
 		Point2D next;
@@ -1011,7 +1022,8 @@ public class OutputPlane extends CoordPlane
 		{
 			c.getGraphicsContext2D().setFill(criticalColor);
 			c.getGraphicsContext2D().fillOval(normToScrX(p.point.getX()) - 2.5, normToScrY(p.point.getY()) - 2.5, 5, 5);
-
+			g.setColor(awtCriticalColor);
+			g.fillOval(imgNormToScrX(p.point.getX()) - 5, imgNormToScrY(p.point.getY()) - 5, 10, 10);
 
 			Label text = new Label(p.type.getStringRep());
 			text.setPadding(new Insets(2));
@@ -1126,6 +1138,7 @@ public class OutputPlane extends CoordPlane
 	private void drawIso(initCond init)
 	{
 		gc.setStroke(isoclineColor);
+		g.setColor(awtIsoclineColor);
 		try
 		{
 			double val = dy.eval(init.x, init.y, a, b, t) / dx.eval(init.x, init.y, a, b, t);
@@ -1142,6 +1155,7 @@ public class OutputPlane extends CoordPlane
 	private void drawHorizIso(Point2D pt)
 	{
 		gc.setStroke(horizIsoColor);
+		g.setColor(awtHorizIsoColor);
 		try
 		{
 			AST.Node thing = Maths.divide(dy, dy.differentiate('y')).collapse();
@@ -1182,6 +1196,7 @@ public class OutputPlane extends CoordPlane
 	private void drawVertIso(Point2D pt)
 	{
 		gc.setStroke(vertIsoColor);
+		g.setColor(awtVertIsoColor);
 		try
 		{
 			AST.Node thing = Maths.divide(dx, dx.differentiate('x')).collapse();
@@ -1232,8 +1247,8 @@ public class OutputPlane extends CoordPlane
 			double sign = 1;
 			double tol = 30.;
 			long time = System.nanoTime();
-			double xinc = 1.5 * (xMax - xMin) / c.getWidth();
-			double yinc = 1.5 * (yMax - yMin) / c.getHeight();
+			double xinc = 1.5 * (xMax.get() - xMin.get()) / this.getWidth();
+			double yinc = 1.5 * (yMax.get() - yMin.get()) / c.getHeight();
 			for (int j = 0; j < 2; j++)
 			{
 				while (inBounds(first) && System.nanoTime() - time < 100000000)
@@ -1301,15 +1316,22 @@ public class OutputPlane extends CoordPlane
 
 	private void drawArrow(double x, double y, double dx, double dy)
 	{
-		double angle = Math.toDegrees(Math.atan(-dy / dx));
-		if (dx < 0) angle += 180;
-		double xScr = normToScrX(x);
-		double yScr = normToScrY(y);
-		gc.save();
-		gc.transform(new Affine(new Rotate(angle, xScr, yScr)));
-		gc.strokeLine(xScr, yScr, xScr - 5, yScr + 3);
-		gc.strokeLine(xScr, yScr, xScr - 5, yScr - 3);
-		gc.restore();
+		double angle = (Math.atan(-dy / dx));
+		if (dx < 0) angle += Math.PI;
+//		double xScr = normToScrX(x);
+//		double yScr = normToScrY(y);
+//		gc.save();
+//		gc.transform(new Affine(new Rotate(angle, xScr, yScr)));
+//		gc.strokeLine(xScr, yScr, xScr - 5, yScr + 3);
+//		gc.strokeLine(xScr, yScr, xScr - 5, yScr - 3);
+//		gc.restore();
+		int xScr = imgNormToScrX(x);
+		int yScr = imgNormToScrY(y);
+		AffineTransform saveAt = g.getTransform();
+		g.rotate(angle, xScr, yScr);
+		g.drawLine(xScr, yScr, xScr - 10, yScr + 6);
+		g.drawLine(xScr, yScr, xScr - 10, yScr - 6);
+		g.setTransform(saveAt);
 
 	}
 
@@ -1334,7 +1356,7 @@ public class OutputPlane extends CoordPlane
 
 	private void drawSep(CriticalPoint c)
 	{
-		double tol = 2 * (xMax - xMin)/this.c.getWidth();
+		double tol = 2 * (xMax.get() - xMin.get())/this.getWidth();
 		try
 		{
 			if (c.type == CritPointTypes.SADDLE)
@@ -1415,7 +1437,7 @@ public class OutputPlane extends CoordPlane
 		drawSelectedCritPoints();
 		gc.setLineWidth(2);
 		g.setStroke(new BasicStroke(2));
-		double inc = 2 * (xMax - xMin)/c.getWidth();
+		double inc = 2 * (xMax.get() - xMin.get())/this.getWidth();
 		for (sepStart s : selectedSeps)
 		{
 			if (!s.posEig())
@@ -1434,6 +1456,52 @@ public class OutputPlane extends CoordPlane
 		gc.setLineWidth(1);
 		gc.setStroke(Color.BLACK);
 		render();
+	}
+	@Override
+	public boolean writePNG(File f)
+	{
+		BufferedImage temp = new BufferedImage(canv.getWidth(), canv.getHeight(), canv.getType());
+		Graphics2D g2 = temp.createGraphics();
+		g2.drawImage(canv, 0, 0, null);
+		g2.setColor(awtCriticalColor);
+		for(CriticalPoint p : this.criticalPoints)
+		{
+			if(inBounds(p.point))
+			{
+				int x, y;
+				x = imgNormToScrX(p.point.getX()) + 8;
+				y = imgNormToScrY(p.point.getY()) - 12;
+				g2.setFont(g2.getFont().deriveFont(12F));
+				int w = g2.getFontMetrics().stringWidth(p.type.getStringRep());
+
+				if (y <= 0)
+				{
+					System.out.print("changing from " + y);
+					y = imgNormToScrY(p.point.getY()) + 16;
+					System.out.println("to " + y);
+				}
+				if (x + w + 4 > temp.getWidth())
+				{
+					x = imgNormToScrX(p.point.getX()) - 12 - w;
+				}
+				System.out.println("w: " + w);
+				System.out.println("drawing string at (" + x + ", " + y + ")");
+				g2.drawString(p.type.getStringRep(), x, y);
+			}
+		}
+		g2.setColor(java.awt.Color.BLACK);
+		int x0 = imgNormToScrX(0);
+		int y0 = imgNormToScrY(0);
+		g2.drawLine(x0, 0, x0, temp.getHeight());
+		g2.drawLine(0, y0, temp.getWidth(), y0);
+		try
+		{
+			ImageIO.write(temp, "png", f);
+			return true;
+		} catch (IOException oof)
+		{
+			return false;
+		}
 	}
 
 
