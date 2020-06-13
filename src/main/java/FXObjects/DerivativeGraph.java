@@ -6,6 +6,8 @@ import javafx.scene.control.TextField;
 import javafx.scene.input.KeyCode;
 import javafx.scene.input.MouseEvent;
 
+import java.io.File;
+
 /**
  * class to represent graphs of individual derivatives.
  */
@@ -159,4 +161,10 @@ public class DerivativeGraph extends CoordPlane
 	@Override
 	public void clear()
 	{}
+
+	@Override
+	public boolean writePNG(File f)
+	{
+		return false;
+	}
 }

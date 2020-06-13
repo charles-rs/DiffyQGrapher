@@ -13,7 +13,11 @@ import javafx.scene.shape.Circle;
 import org.ejml.data.SingularMatrixException;
 import org.ejml.simple.SimpleMatrix;
 
+import javax.imageio.ImageIO;
 import java.awt.*;
+import java.awt.image.BufferedImage;
+import java.io.File;
+import java.io.IOException;
 import java.util.LinkedList;
 import java.util.List;
 
@@ -22,6 +26,8 @@ import java.util.List;
  */
 public class InputPlane extends CoordPlane
 {
+
+	InClickModeType clickMode;
 
 	private final Circle pt;
 	/**
@@ -83,6 +89,7 @@ public class InputPlane extends CoordPlane
 
 		super(side);
 
+		clickMode = InClickModeType.MOVEPOINT;
 		saddleCanvas = new Canvas(side, side);
 //		getChildren().addAll(saddleCanvas);
 		updateSaddleCons = false;
@@ -165,8 +172,15 @@ public class InputPlane extends CoordPlane
 	{
 		if (!e.isConsumed())
 		{
-			a = scrToNormX(e.getX());
-			b = scrToNormY(e.getY());
+			switch (clickMode)
+			{
+				case MOVEPOINT:
+					a = scrToNormX(e.getX());
+					b = scrToNormY(e.getY());
+					break;
+				case PLACEPENT:
+					//TODO do shit, open a pentagram dialog and get that shit on the screen
+			}
 			render();
 		}
 	}
@@ -552,5 +566,25 @@ public class InputPlane extends CoordPlane
 		draw();
 	}
 
+	@Override
+	public boolean writePNG(File f)
+	{
+		BufferedImage temp = new BufferedImage(canv.getWidth(), canv.getHeight(), canv.getType());
+		Graphics2D g2 = temp.createGraphics();
+		g2.drawImage(canv, 0, 0, null);
+		g2.setColor(java.awt.Color.BLACK);
+		int x0 = imgNormToScrX(0);
+		int y0 = imgNormToScrY(0);
+		g2.drawLine(x0, 0, x0, temp.getHeight());
+		g2.drawLine(0, y0, temp.getWidth(), y0);
+		try
+		{
+			ImageIO.write(temp, "png", f);
+			return true;
+		} catch (IOException | NullPointerException oof)
+		{
+			return false;
+		}
+	}
 
 }

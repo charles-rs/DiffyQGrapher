@@ -100,7 +100,8 @@ public class Main extends Application
 		MenuItem separatrices = new MenuItem("Separatrices");
 		MenuItem horizIso = new MenuItem("Horizontal Isocline");
 		MenuItem vertIso = new MenuItem("Vertical Isocline");
-		draw.getItems().addAll(separatrices, horizIso, vertIso);
+		MenuItem pentagram = new MenuItem("Pentagram");
+		draw.getItems().addAll(separatrices, horizIso, vertIso, pentagram);
 
 
 		MenuItem saddleBif = new MenuItem("Saddle Node Bifurcation");
@@ -357,6 +358,10 @@ public class Main extends Application
 		{
 			outPlane.clickMode = ClickModeType.DRAWVERTISO;
 		});
+		pentagram.setOnAction(e ->
+		{
+
+		});
 		saddleBif.setOnAction((e) ->
 		{
 			outPlane.clickMode = ClickModeType.SELECTSADDLE;
@@ -377,20 +382,24 @@ public class Main extends Application
 		saveInpt.setOnAction(e ->
 		{
 			FileChooser chooser = new FileChooser();
+			chooser.setTitle("Select File");
 			chooser.setInitialDirectory(new File(System.getProperty("user.home")));
 			chooser.setInitialFileName("params.png");
 			chooser.getExtensionFilters().add(new FileChooser.ExtensionFilter("PNG Images", "*.png"));
-			File selected = chooser.showOpenDialog(primaryStage);
-			inPlane.writePNG(selected);
+			File selected = chooser.showSaveDialog(primaryStage);
+			if (selected != null)
+				inPlane.writePNG(selected);
 		});
 		saveOut.setOnAction(e ->
 		{
 			FileChooser chooser = new FileChooser();
+			chooser.setTitle("Select File");
 			chooser.setInitialDirectory(new File(System.getProperty("user.home")));
 			chooser.setInitialFileName("solutions.png");
 			chooser.getExtensionFilters().add(new FileChooser.ExtensionFilter("PNG Images", "*.png"));
-			File selected = chooser.showOpenDialog(primaryStage);
-			outPlane.writePNG(selected);
+			File selected = chooser.showSaveDialog(primaryStage);
+			if (selected != null)
+				outPlane.writePNG(selected);
 		});
 		setSaddleBounds.setOnAction(e ->
 				getSaddleBoundsAndSet());

@@ -1462,16 +1462,12 @@ public class OutputPlane extends CoordPlane
 
 				if (y <= 0)
 				{
-					System.out.print("changing from " + y);
 					y = imgNormToScrY(p.point.getY()) + 16;
-					System.out.println("to " + y);
 				}
 				if (x + w + 4 > temp.getWidth())
 				{
 					x = imgNormToScrX(p.point.getX()) - 12 - w;
 				}
-				System.out.println("w: " + w);
-				System.out.println("drawing string at (" + x + ", " + y + ")");
 				g2.drawString(p.type.getStringRep(), x, y);
 			}
 		}
@@ -1484,7 +1480,7 @@ public class OutputPlane extends CoordPlane
 		{
 			ImageIO.write(temp, "png", f);
 			return true;
-		} catch (IOException oof)
+		} catch (IOException | NullPointerException oof)
 		{
 			return false;
 		}

@@ -328,8 +328,7 @@ public abstract class CoordPlane extends Pane
 	}
 
 	/**
-	 * redraws everything in the window. There may be a time when it is optimised to only redraw the necessary parts
-	 * of the window, but it hasn't been a performance issue.
+	 * redraws everything in the window to the canv bufferedImage.
 	 */
 	public void draw()
 	{
@@ -337,6 +336,9 @@ public abstract class CoordPlane extends Pane
 		drawBorders();
 	}
 
+	/**
+	 * renders the canv bufferedImage to the screen
+	 */
 	public void render()
 	{
 		Platform.runLater(() ->
@@ -581,21 +583,14 @@ public abstract class CoordPlane extends Pane
 	 */
 	public abstract void clear();
 
-	public boolean writePNG(File f)
-	{
-//		BufferedImage bi = new BufferedImage((int) this.getWidth(), (int) this.getHeight(), BufferedImage.TYPE_INT_ARGB);
-//		SwingFXUtils.fromFXImage(this.snapshot(
-//				new SnapshotParameters(),
-//				new WritableImage((int) this.getWidth(), (int) this.getHeight())), bi);
-		try
-		{
-			ImageIO.write(canv, "png", f);
-			return true;
-		} catch (IOException oof)
-		{
-			return false;
-		}
-	}
+	/**
+	 * writes this to the provided file
+	 * @param f the file to write to
+	 * @return whether or not the write succeeded
+	 */
+	public abstract boolean writePNG(File f);
+
+
 	protected java.awt.Color fromFXColor(Color c)
 	{
 		if(c == null) return java.awt.Color.white;
