@@ -9,15 +9,11 @@ import Events.SourceOrSinkSelected;
 import Exceptions.EvaluationException;
 import Exceptions.RootNotFound;
 import javafx.application.Platform;
-import javafx.embed.swing.SwingFXUtils;
 import javafx.geometry.Insets;
 import javafx.geometry.Point2D;
 import javafx.scene.Node;
 import javafx.scene.control.Label;
 import javafx.scene.control.TextField;
-import javafx.scene.image.PixelFormat;
-import javafx.scene.image.PixelReader;
-import javafx.scene.image.WritablePixelFormat;
 import javafx.scene.input.KeyCode;
 import javafx.scene.input.MouseEvent;
 import javafx.scene.layout.Border;
@@ -26,8 +22,6 @@ import javafx.scene.layout.BorderStrokeStyle;
 import javafx.scene.layout.BorderWidths;
 import javafx.scene.paint.Color;
 import javafx.scene.text.Text;
-import javafx.scene.transform.Affine;
-import javafx.scene.transform.Rotate;
 import org.ejml.simple.SimpleMatrix;
 
 
@@ -36,11 +30,9 @@ import java.awt.*;
 import java.awt.geom.AffineTransform;
 import java.awt.image.BufferedImage;
 import java.io.*;
-import java.nio.IntBuffer;
 import java.util.ArrayList;
 import java.util.LinkedList;
 import java.util.List;
-import java.util.concurrent.ThreadPoolExecutor;
 
 
 public class OutputPlane extends CoordPlane
@@ -106,7 +98,7 @@ public class OutputPlane extends CoordPlane
 		selectedCritPoints = new LinkedList<>();
 		selectedSeps = new ArrayList<>(2);
 		draw();
-		render();
+//		render();
 		tField.setText(Double.toString(t));
 
 		tField.setOnKeyPressed((e) ->
@@ -151,15 +143,7 @@ public class OutputPlane extends CoordPlane
 		});
 	}
 
-	private java.awt.Color fromFXColor(Color c)
-	{
-		if(c == null) return java.awt.Color.white;
-		return new java.awt.Color(
-				(float) c.getRed(),
-				(float) c.getGreen(),
-				(float) c.getBlue(),
-				(float) c.getOpacity());
-	}
+
 
 	public Derivative getDx()
 	{
@@ -224,8 +208,7 @@ public class OutputPlane extends CoordPlane
 
 			case DRAWPATH:
 				initials.add(temp);
-				g.setColor(awtSolutionColor);
-				drawGraph(temp, true);
+				drawGraph(temp, true, awtSolutionColor);
 				render();
 				break;
 			case FINDCRITICAL:
@@ -433,8 +416,13 @@ public class OutputPlane extends CoordPlane
 		try
 		{
 			PrintWriter out = new PrintWriter("output.text");
-
-			in.saddleCanvas.getGraphicsContext2D().setStroke(in.saddleConColor);
+			java.awt.Color tempCol;
+			if (s1.saddle.point.distance(s2.saddle.point) < .000001 * ((xMax.get() - xMin.get()) + (yMax.get() - yMin.get()))/2)
+				tempCol = (in.awtHomoSaddleConColor);
+				//				in.saddleCanvas.getGraphicsContext2D().setStroke(in.homoSaddleConColor);
+			else tempCol = (in.awtHeteroSaddleConColor);
+			in.g.setStroke(new BasicStroke(3));
+//			in.g.setColor(java.awt.Color.RED);
 
 			double aInc = 1D * (in.xMax.get() - in.xMin.get()) / in.getWidth();
 			double bInc = 1D * (in.yMax.get() - in.yMin.get()) / in.getHeight();
@@ -502,7 +490,10 @@ public class OutputPlane extends CoordPlane
 //						{
 //
 //						}
-						in.drawLine(prev, next, in.saddleCanvas);
+//						in.drawLine(prev, next, in.saddleCanvas);
+						in.drawLine(prev, next, tempCol);
+						Platform.runLater(in::render);
+//						in.render();
 //
 //						sg.drawLine(
 //								(int) normToScrX(prev.getX()),
@@ -601,6 +592,7 @@ public class OutputPlane extends CoordPlane
 
 			Platform.runLater(this::draw);
 			out.close();
+			in.render();
 		} catch (FileNotFoundException ignored) {}
 	}
 
@@ -1020,11 +1012,13 @@ public class OutputPlane extends CoordPlane
 	{
 		if (inBounds(p.point))
 		{
-			c.getGraphicsContext2D().setFill(criticalColor);
-			c.getGraphicsContext2D().fillOval(normToScrX(p.point.getX()) - 2.5, normToScrY(p.point.getY()) - 2.5, 5, 5);
-			g.setColor(awtCriticalColor);
-			g.fillOval(imgNormToScrX(p.point.getX()) - 5, imgNormToScrY(p.point.getY()) - 5, 10, 10);
-
+//			c.getGraphicsContext2D().setFill(criticalColor);
+//			c.getGraphicsContext2D().fillOval(normToScrX(p.point.getX()) - 2.5, normToScrY(p.point.getY()) - 2.5, 5, 5);
+			synchronized (g)
+			{
+				g.setColor(awtCriticalColor);
+				g.fillOval(imgNormToScrX(p.point.getX()) - 5, imgNormToScrY(p.point.getY()) - 5, 10, 10);
+			}
 			Label text = new Label(p.type.getStringRep());
 			text.setPadding(new Insets(2));
 			text.setBorder(new Border(new BorderStroke(criticalColor, BorderStrokeStyle.SOLID, null, new BorderWidths(1))));
@@ -1052,7 +1046,6 @@ public class OutputPlane extends CoordPlane
 	private void drawGraphs()
 	{
 		gc.setStroke(solutionColor);
-		g.setColor(awtSolutionColor);
 
 
 		for (Node n : needsReset)
@@ -1062,7 +1055,7 @@ public class OutputPlane extends CoordPlane
 		needsReset.clear();
 		for (initCond i : initials)
 		{
-			drawGraph(i, true);
+			drawGraph(i, true, awtSolutionColor);
 		}
 		for (CriticalPoint p : criticalPoints)
 		{
@@ -1072,12 +1065,12 @@ public class OutputPlane extends CoordPlane
 		gc.setStroke(Color.BLACK);
 	}
 
-	private void drawGraph(initCond init, boolean arrow)
+	private void drawGraph(initCond init, boolean arrow, java.awt.Color color)
 	{
-		drawGraphBack(init, arrow, '1');
+		drawGraphBack(init, arrow, '1', color);
 	}
 
-	private void drawGraphBack(initCond init, boolean arrow, char dir)
+	private void drawGraphBack(initCond init, boolean arrow, char dir, java.awt.Color color)
 	{
 		double x, y;
 		x = init.x;
@@ -1095,11 +1088,7 @@ public class OutputPlane extends CoordPlane
 			{
 				next = eval.next();
 				if (inBounds(prev) || inBounds(next))
-					synchronized (gc)
-					{
-						drawLine(prev, next);
-						//gc.strokeLine(normToScrX(prev.getX()), normToScrY(prev.getY()), normToScrX(next.getX()), normToScrY(next.getY()));
-					}
+						drawLine(prev, next, color);
 				prev = next;
 			}
 		eval.initialise(x, y, t, a, b, -inc);
@@ -1111,7 +1100,7 @@ public class OutputPlane extends CoordPlane
 				if (inBounds(prev) || inBounds(next))
 					synchronized (gc)
 					{
-						drawLine(prev, next);
+						drawLine(prev, next, color);
 						//gc.strokeLine(normToScrX(prev.getX()), normToScrY(prev.getY()), normToScrX(next.getX()), normToScrY(next.getY()));
 					}
 				prev = next;
@@ -1138,12 +1127,11 @@ public class OutputPlane extends CoordPlane
 	private void drawIso(initCond init)
 	{
 		gc.setStroke(isoclineColor);
-		g.setColor(awtIsoclineColor);
 		try
 		{
 			double val = dy.eval(init.x, init.y, a, b, t) / dx.eval(init.x, init.y, a, b, t);
 			AST.Node slope = Maths.minus(Maths.divide(dy, dx), new Value(val));
-			drawIsoHelper(slope, new Point2D(init.x, init.y));
+			drawIsoHelper(slope, new Point2D(init.x, init.y), awtIsoclineColor);
 
 
 		} catch (EvaluationException ignored)
@@ -1169,7 +1157,7 @@ public class OutputPlane extends CoordPlane
 			}
 			if (Math.abs(y - yOld) < .000001)
 			{
-				drawIsoHelper(dy, new Point2D(x, y));
+				drawIsoHelper(dy, new Point2D(x, y), awtHorizIsoColor);
 			} else
 			{
 				thing = Maths.divide(dy, dy.differentiate('x')).collapse();
@@ -1184,7 +1172,7 @@ public class OutputPlane extends CoordPlane
 				}
 				if (Math.abs(x - xOld) < .000001)
 				{
-					drawIsoHelper(dy, new Point2D(x, y));
+					drawIsoHelper(dy, new Point2D(x, y), awtHorizIsoColor);
 				}
 			}
 		} catch (EvaluationException ignored)
@@ -1196,7 +1184,6 @@ public class OutputPlane extends CoordPlane
 	private void drawVertIso(Point2D pt)
 	{
 		gc.setStroke(vertIsoColor);
-		g.setColor(awtVertIsoColor);
 		try
 		{
 			AST.Node thing = Maths.divide(dx, dx.differentiate('x')).collapse();
@@ -1211,7 +1198,7 @@ public class OutputPlane extends CoordPlane
 			}
 			if (Math.abs(x - xOld) < .000001)
 			{
-				drawIsoHelper(dx, new Point2D(x, y));
+				drawIsoHelper(dx, new Point2D(x, y), awtVertIsoColor);
 			} else
 			{
 				thing = Maths.divide(dx, dx.differentiate('y')).collapse();
@@ -1225,7 +1212,7 @@ public class OutputPlane extends CoordPlane
 				}
 				if (Math.abs(y - yOld) < .000001)
 				{
-					drawIsoHelper(dx, new Point2D(x, y));
+					drawIsoHelper(dx, new Point2D(x, y), awtVertIsoColor);
 				}
 			}
 		} catch (EvaluationException ignored)
@@ -1234,7 +1221,7 @@ public class OutputPlane extends CoordPlane
 		gc.setStroke(Color.BLACK);
 	}
 
-	private void drawIsoHelper(AST.Node slope, Point2D init)
+	private void drawIsoHelper(AST.Node slope, Point2D init, java.awt.Color color)
 	{
 		try
 		{
@@ -1274,7 +1261,7 @@ public class OutputPlane extends CoordPlane
 								sign = Math.signum((y - first.getY()) / (x - first.getX()));
 							}
 							second = new Point2D(x, y);
-							drawLine(first, second);
+							drawLine(first, second, color);
 							//gc.strokeLine(normToScrX(first.getX()), normToScrY(first.getY()), normToScrX(second.getX()), normToScrY(second.getY()));
 							first = second;
 						} else break;
@@ -1298,7 +1285,7 @@ public class OutputPlane extends CoordPlane
 								thing = Maths.divide(slope, slopeDeriv);
 							}
 							second = new Point2D(x, y);
-							drawLine(first, second);
+							drawLine(first, second, color);
 							//gc.strokeLine(normToScrX(first.getX()), normToScrY(first.getY()), normToScrX(second.getX()), normToScrY(second.getY()));
 							first = second;
 						} else break;
@@ -1370,30 +1357,31 @@ public class OutputPlane extends CoordPlane
 				Point2D initl = new Point2D(point1.x, point1.y);
 //				temp = tester.next().subtract(initl).angle(initl) < .1;
 				temp = c.matrix.getEigenvalue(0).getReal() > 0;
+				java.awt.Color tempCol;
 				if (!temp)
 				{
 					gc.setStroke(stblSeparatrixColor);
-					g.setColor(awtStblSeparatrixColor);
+					tempCol = (awtStblSeparatrixColor);
 					sn = '-';
 				}
 				else
 				{
-					g.setColor(awtUnstblSeparatrixColor);
+					tempCol = (awtUnstblSeparatrixColor);
 					gc.setStroke(unstblSeparatrixColor);
 					sn = '+';
 				}
-				drawGraphBack(point1, false, sn);
-				drawGraphBack(point3, false, sn);
+				drawGraphBack(point1, false, sn, tempCol);
+				drawGraphBack(point3, false, sn, tempCol);
 
 				if (temp)
 				{
-					g.setColor(awtStblSeparatrixColor);
+					tempCol = (awtStblSeparatrixColor);
 					gc.setStroke(stblSeparatrixColor);
 					sn = '-';
 				}
 				else
 				{
-					g.setColor(awtUnstblSeparatrixColor);
+					tempCol = (awtUnstblSeparatrixColor);
 					gc.setStroke(unstblSeparatrixColor);
 					sn = '+';
 				}
@@ -1401,8 +1389,8 @@ public class OutputPlane extends CoordPlane
 						c.point.getY() + tol * c.matrix.getEigenVector(1).get(1), t);
 				initCond point4 = new initCond(c.point.getX() - tol * c.matrix.getEigenVector(1).get(0),
 						c.point.getY() - tol * c.matrix.getEigenVector(1).get(1), t);
-				drawGraphBack(point2, false, sn);
-				drawGraphBack(point4, false, sn);
+				drawGraphBack(point2, false, sn, tempCol);
+				drawGraphBack(point4, false, sn, tempCol);
 			}
 		} catch (NullPointerException ignored)
 		{
@@ -1443,13 +1431,11 @@ public class OutputPlane extends CoordPlane
 			if (!s.posEig())
 			{
 				gc.setStroke(stblSeparatrixColor);
-				g.setColor(awtStblSeparatrixColor);
-				drawGraphBack(new initCond(s.getStart(inc).getX(), s.getStart(inc).getY(), 0), false, '-');
+				drawGraphBack(new initCond(s.getStart(inc).getX(), s.getStart(inc).getY(), 0), false, '-', awtStblSeparatrixColor);
 			} else
 			{
-				g.setColor(awtUnstblSeparatrixColor);
 				gc.setStroke(unstblSeparatrixColor);
-				drawGraphBack(new initCond(s.getStart(inc).getX(), s.getStart(inc).getY(), 0), false, '+');
+				drawGraphBack(new initCond(s.getStart(inc).getX(), s.getStart(inc).getY(), 0), false, '+', awtUnstblSeparatrixColor);
 			}
 		}
 		g.setStroke(new BasicStroke(1));

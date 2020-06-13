@@ -5,7 +5,6 @@ import javafx.beans.property.DoubleProperty;
 import javafx.beans.property.SimpleDoubleProperty;
 import javafx.embed.swing.SwingFXUtils;
 import javafx.geometry.Point2D;
-import javafx.scene.SnapshotParameters;
 import javafx.scene.canvas.Canvas;
 import javafx.scene.canvas.GraphicsContext;
 import javafx.scene.image.ImageView;
@@ -37,7 +36,7 @@ public abstract class CoordPlane extends Pane
 
 	private Line xAxis, yAxis;
 	private Rectangle border;
-	protected BufferedImage canv;
+	protected final BufferedImage canv;
 	private WritableImage fxImg;
 	protected ImageView vw;
 	protected Graphics2D g;
@@ -340,8 +339,14 @@ public abstract class CoordPlane extends Pane
 
 	public void render()
 	{
-		fxImg = SwingFXUtils.toFXImage(canv, fxImg);
-		vw.setImage(fxImg);
+		Platform.runLater(() ->
+		{
+			synchronized (canv)
+			{
+				fxImg = SwingFXUtils.toFXImage(canv, fxImg);
+			}
+			vw.setImage(fxImg);
+		});
 	}
 
 	/**
@@ -380,23 +385,31 @@ public abstract class CoordPlane extends Pane
 //		gc.fillText(stryMax, c.getWidth()/2 + 2, 12);
 //		gc.fillText(strxMax, c.getWidth() - 7 * strxMax.length(), c.getHeight()/2 - 4);
 
-		g.setColor(java.awt.Color.WHITE);
-		g.fillRect(0, 0, canv.getWidth(), canv.getHeight());
-		g.setColor(java.awt.Color.BLACK);
+		synchronized (g)
+		{
+			g.setColor(java.awt.Color.WHITE);
+			g.fillRect(0, 0, canv.getWidth(), canv.getHeight());
+		}
 
 		double x0 = normToScrX(0);
-		yAxis.setVisible(inBounds(0, scrToNormY(this.getHeight() / 2)));
-		yAxis.setStartX(x0);
-		yAxis.setEndX(x0);
-		yAxis.setStartY(0);
-		yAxis.setEndY(this.getHeight());
+		synchronized (yAxis)
+		{
+			yAxis.setVisible(inBounds(0, scrToNormY(this.getHeight() / 2)));
+			yAxis.setStartX(x0);
+			yAxis.setEndX(x0);
+			yAxis.setStartY(0);
+			yAxis.setEndY(this.getHeight());
+		}
 
 		double y0 = normToScrY(0);
-		xAxis.setVisible(inBounds(scrToNormX(this.getWidth() / 2), 0));
-		xAxis.setStartY(y0);
-		xAxis.setEndY(y0);
-		xAxis.setStartX(0);
-		xAxis.setEndX(this.getWidth());
+		synchronized (xAxis)
+		{
+			xAxis.setVisible(inBounds(scrToNormX(this.getWidth() / 2), 0));
+			xAxis.setStartY(y0);
+			xAxis.setEndY(y0);
+			xAxis.setStartX(0);
+			xAxis.setEndX(this.getWidth());
+		}
 
 //		g.drawLine(0, imgNormToScrY(0), canv.getWidth(), imgNormToScrY(0));
 //		g.drawLine(imgNormToScrX(0), 0, imgNormToScrX(0), canv.getHeight());
@@ -515,11 +528,16 @@ public abstract class CoordPlane extends Pane
 	 * @param y1 the y coord of the first point
 	 * @param x2 the x coord of the second point
 	 * @param y2 the y coord of the second point
+	 * @param color the color to draw in
 	 */
-	protected void drawLine(double x1, double y1, double x2, double y2)
+	protected void drawLine(double x1, double y1, double x2, double y2, java.awt.Color color)
 	{
 //		gc.strokeLine(normToScrX(x1), normToScrY(y1), normToScrX(x2), normToScrY(y2));
-		g.drawLine(imgNormToScrX(x1), imgNormToScrY(y1), imgNormToScrX(x2), imgNormToScrY(y2));
+		synchronized (g)
+		{
+			g.setColor(color);
+			g.drawLine(imgNormToScrX(x1), imgNormToScrY(y1), imgNormToScrX(x2), imgNormToScrY(y2));
+		}
 
 	}
 
@@ -527,10 +545,11 @@ public abstract class CoordPlane extends Pane
 	 * draws a line between p1 and p2, with input in mathematical coordinates
 	 * @param p1 the first point
 	 * @param p2 the second point
+	 * @param color
 	 */
-	protected void drawLine(Point2D p1, Point2D p2)
+	protected void drawLine(Point2D p1, Point2D p2, java.awt.Color color)
 	{
-		drawLine(p1.getX(), p1.getY(), p2.getX(), p2.getY());
+		drawLine(p1.getX(), p1.getY(), p2.getX(), p2.getY(), color);
 	}
 
 	/**
@@ -576,5 +595,14 @@ public abstract class CoordPlane extends Pane
 		{
 			return false;
 		}
+	}
+	protected java.awt.Color fromFXColor(Color c)
+	{
+		if(c == null) return java.awt.Color.white;
+		return new java.awt.Color(
+				(float) c.getRed(),
+				(float) c.getGreen(),
+				(float) c.getBlue(),
+				(float) c.getOpacity());
 	}
 }

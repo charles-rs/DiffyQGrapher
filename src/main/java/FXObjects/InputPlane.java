@@ -3,11 +3,9 @@ package FXObjects;
 import AST.Maths;
 import AST.Node;
 import Exceptions.EvaluationException;
-import javafx.embed.swing.SwingFXUtils;
 import javafx.geometry.Point2D;
 import javafx.scene.canvas.Canvas;
 import javafx.scene.control.TextField;
-import javafx.scene.image.ImageView;
 import javafx.scene.input.KeyCode;
 import javafx.scene.input.MouseEvent;
 import javafx.scene.paint.Color;
@@ -16,8 +14,6 @@ import org.ejml.data.SingularMatrixException;
 import org.ejml.simple.SimpleMatrix;
 
 import java.awt.*;
-import java.awt.image.BufferedImage;
-import java.util.ArrayList;
 import java.util.LinkedList;
 import java.util.List;
 
@@ -27,7 +23,7 @@ import java.util.List;
 public class InputPlane extends CoordPlane
 {
 
-	private Circle pt;
+	private final Circle pt;
 	/**
 	 * a and b are the parameters, initialised to (0,0)
 	 */
@@ -45,8 +41,13 @@ public class InputPlane extends CoordPlane
 	 * colors of various bifurcations so that they are easily differentiable by the user
 	 */
 	private Color saddleBifColor = Color.BLUE;
-	private Color hopfBifColor = Color.ORANGE;
-	Color saddleConColor = Color.PURPLE;
+	private Color hopfBifColor = Color.DARKRED;
+	Color homoSaddleConColor = Color.PURPLE;
+	Color heteroSaddleConColor = Color.GREEN;
+	java.awt.Color awtSaddleBifColor = fromFXColor(saddleBifColor);
+	java.awt.Color awtHopfBifColor = fromFXColor(hopfBifColor);
+	java.awt.Color awtHomoSaddleConColor = fromFXColor(homoSaddleConColor);
+	java.awt.Color awtHeteroSaddleConColor = fromFXColor(heteroSaddleConColor);
 	/**
 	 * Lists to store all of the bifurcations
 	 */
@@ -83,7 +84,7 @@ public class InputPlane extends CoordPlane
 		super(side);
 
 		saddleCanvas = new Canvas(side, side);
-		getChildren().addAll(saddleCanvas);
+//		getChildren().addAll(saddleCanvas);
 		updateSaddleCons = false;
 		this.op = op;
 		this.aField = aField;
@@ -100,7 +101,7 @@ public class InputPlane extends CoordPlane
 		pt.setCenterY(normToScrY(0));
 		this.getChildren().addAll(pt);
 		draw();
-		render();
+//		render();
 		setOnKeyPressed((e) ->
 		{
 			KeyCode temp = e.getCode();
@@ -118,7 +119,6 @@ public class InputPlane extends CoordPlane
 				b -= (yMax.get() - yMin.get()) / 1000;
 			}
 			e.consume();
-			draw();
 			render();
 		});
 
@@ -127,7 +127,7 @@ public class InputPlane extends CoordPlane
 			try
 			{
 				a = Double.parseDouble(t1);
-				draw();
+				render();
 			} catch (NumberFormatException n)
 			{
 				//aField.setText(Double.toString(a));
@@ -139,18 +139,18 @@ public class InputPlane extends CoordPlane
 			try
 			{
 				b = Double.parseDouble(t1);
-				draw();
+				render();
 			} catch (NumberFormatException n)
 			{
 				if (b != 0.0)
 					bField.setText(Double.toString(b));
 			}
 		});
-		addEventFilter(MouseEvent.MOUSE_RELEASED, me ->
-		{
-			if(zoomBox.isVisible() && zoomBox.getWidth() > 0 && zoomBox.getHeight() > 0)
-				drawSaddleCons();
-		});
+//		addEventFilter(MouseEvent.MOUSE_RELEASED, me ->
+//		{
+//			if(zoomBox.isVisible() && zoomBox.getWidth() > 0 && zoomBox.getHeight() > 0)
+//				drawSaddleCons();
+//		});
 
 	}
 
@@ -167,7 +167,7 @@ public class InputPlane extends CoordPlane
 		{
 			a = scrToNormX(e.getX());
 			b = scrToNormY(e.getY());
-			draw();
+			render();
 		}
 	}
 
@@ -179,8 +179,11 @@ public class InputPlane extends CoordPlane
 //		gc.setFill(Color.RED);
 //		gc.fillOval(normToScrX(a) - 2, normToScrY(b) - 2, 4, 4);
 //		gc.setFill(Color.BLACK);
-		pt.setCenterX(normToScrX(a));
-		pt.setCenterY(normToScrY(b));
+		synchronized (pt)
+		{
+			pt.setCenterX(normToScrX(a));
+			pt.setCenterY(normToScrY(b));
+		}
 
 	}
 
@@ -189,8 +192,14 @@ public class InputPlane extends CoordPlane
 	 */
 	private void showValues()
 	{
-		aField.setText(Double.toString(a));
-		bField.setText(Double.toString(b));
+		synchronized (aField)
+		{
+			aField.setText(Double.toString(a));
+		}
+		synchronized (bField)
+		{
+			bField.setText(Double.toString(b));
+		}
 	}
 
 	/**
@@ -262,6 +271,7 @@ public class InputPlane extends CoordPlane
 			else second = bifHelp(first[0], first[1], first[2], first[3] + yInc, dx, dy,
 					det, derivative, 'b');
 			gc.strokeLine(normToScrX(first[2]), normToScrY(first[3]), normToScrX(second[2]), normToScrY(second[3]));
+			drawLine(first[2], first[3], second[2], second[3], awtSaddleBifColor);
 		}
 		first = start;
 		try
@@ -282,6 +292,7 @@ public class InputPlane extends CoordPlane
 					det, derivative, 'b');
 			if(second == null) break;
 			gc.strokeLine(normToScrX(first[2]), normToScrY(first[3]), normToScrX(second[2]), normToScrY(second[3]));
+			drawLine(first[2], first[3], second[2], second[3], awtSaddleBifColor);
 		}
 
 		gc.setStroke(Color.BLACK);
@@ -294,6 +305,7 @@ public class InputPlane extends CoordPlane
 	public void saddleBif(Point2D start)
 	{
 		saddleBifHelp(new double[]{start.getX(), start.getY(), a, b}, true);
+		render();
 	}
 
 	/**
@@ -303,6 +315,7 @@ public class InputPlane extends CoordPlane
 	public void hopfBif(Point2D start)
 	{
 		hopfBifHelp(new double[]{start.getX(), start.getY(), a, b}, true);
+		render();
 	}
 
 	/**
@@ -314,6 +327,7 @@ public class InputPlane extends CoordPlane
 	{
 		gc.setStroke(hopfBifColor);
 
+		g.setColor(awtHopfBifColor);
 		Node dx = op.getDx();
 		Node dy = op.getDy();
 		Node tr = Maths.add(dx.differentiate('x'), dy.differentiate('y')).collapse();
@@ -358,6 +372,7 @@ public class InputPlane extends CoordPlane
 					second = bifHelp(first[0], first[1], first[2] + xInc, first[3], dx, dy, tr, derivative, 'a');
 				else second = bifHelp(first[0], first[1], first[2], first[3] + yInc, dx, dy, tr, derivative, 'b');
 				gc.strokeLine(normToScrX(first[2]), normToScrY(first[3]), normToScrX(second[2]), normToScrY(second[3]));
+				drawLine(first[2], first[3], second[2], second[3], awtHopfBifColor);
 			}
 			first = start;
 			try
@@ -376,6 +391,7 @@ public class InputPlane extends CoordPlane
 				else second = bifHelp(first[0], first[1], first[2], first[3] - yInc, dx, dy, tr, derivative, 'b');
 				if (second == null) break;
 				gc.strokeLine(normToScrX(first[2]), normToScrY(first[3]), normToScrX(second[2]), normToScrY(second[3]));
+				drawLine(first[2], first[3], second[2], second[3], awtHopfBifColor);
 			}
 		} catch (EvaluationException ignored) {}
 		gc.setStroke(Color.BLACK);
@@ -457,11 +473,19 @@ public class InputPlane extends CoordPlane
 	}
 
 	@Override
+	public void render()
+	{
+		super.render();
+		showValues();
+		drawPoint();
+	}
+
+	@Override
 	public void draw()
 	{
 		super.draw();
-		showValues();
-		drawPoint();
+		g.setStroke(new BasicStroke(2));
+
 		for(double saddleBif []: saddleBifs)
 		{
 			saddleBifHelp(saddleBif, false);
@@ -470,8 +494,9 @@ public class InputPlane extends CoordPlane
 		{
 			hopfBifHelp(hopfBif, false);
 		}
+		drawSaddleCons();
 		drawDegenSaddleCons();
-
+		render();
 	}
 
 	/**
@@ -506,10 +531,13 @@ public class InputPlane extends CoordPlane
 //	dy/dt = y^2 - x
 	public void drawDegenSaddleCons()
 	{
-		gc.setStroke(saddleConColor);
+		gc.setStroke(homoSaddleConColor);
+		g.setColor(awtHomoSaddleConColor);
 		for(Point2D p : degenSaddleCons)
 		{
 			gc.strokeOval(normToScrX(p.getX()) - 3, normToScrY(p.getY()) - 3, 6, 6);
+			g.drawOval(imgNormToScrX(p.getX()) - 6, imgNormToScrY(p.getY()) - 6, 12, 12);
+
 		}
 		gc.setStroke(Color.BLACK);
 	}
