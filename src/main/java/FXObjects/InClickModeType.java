@@ -6,5 +6,7 @@ package FXObjects;
 public enum InClickModeType
 {
 	MOVEPOINT,
-	PLACEPENT;
+	PLACEPENT,
+	REMOVEPENT,
+	EDITPENT;
 }

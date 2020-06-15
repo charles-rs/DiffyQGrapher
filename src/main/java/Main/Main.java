@@ -5,10 +5,7 @@ import Evaluation.EvalType;
 import Events.SaddleSelected;
 import Events.SourceOrSinkSelected;
 import Exceptions.SyntaxError;
-import FXObjects.ClickModeType;
-import FXObjects.DerivativeGraph;
-import FXObjects.InputPlane;
-import FXObjects.OutputPlane;
+import FXObjects.*;
 import Parser.Tokenizer;
 import javafx.application.Application;
 import javafx.event.ActionEvent;
@@ -17,6 +14,7 @@ import javafx.geometry.Pos;
 import javafx.scene.Scene;
 import javafx.scene.control.*;
 import javafx.scene.input.KeyCode;
+import javafx.scene.input.KeyEvent;
 import javafx.scene.layout.*;
 import javafx.stage.FileChooser;
 import javafx.stage.Stage;
@@ -101,7 +99,9 @@ public class Main extends Application
 		MenuItem horizIso = new MenuItem("Horizontal Isocline");
 		MenuItem vertIso = new MenuItem("Vertical Isocline");
 		MenuItem pentagram = new MenuItem("Pentagram");
-		draw.getItems().addAll(separatrices, horizIso, vertIso, pentagram);
+		MenuItem noMorePentagram = new MenuItem("Remove Pentagram");
+		MenuItem editPentagram = new MenuItem("Edit Pentagram");
+		draw.getItems().addAll(separatrices, horizIso, vertIso, pentagram, noMorePentagram, editPentagram);
 
 
 		MenuItem saddleBif = new MenuItem("Saddle Node Bifurcation");
@@ -360,7 +360,15 @@ public class Main extends Application
 		});
 		pentagram.setOnAction(e ->
 		{
-
+			inPlane.clickMode = InClickModeType.PLACEPENT;
+		});
+		noMorePentagram.setOnAction(e ->
+		{
+			inPlane.clickMode = InClickModeType.REMOVEPENT;
+		});
+		editPentagram.setOnAction(e ->
+		{
+			inPlane.clickMode = InClickModeType.EDITPENT;
 		});
 		saddleBif.setOnAction((e) ->
 		{
@@ -510,6 +518,17 @@ public class Main extends Application
 
 		Scene newScene = new Scene(mainV);
 		newWindow.setScene(newScene);
+		newWindow.addEventHandler(KeyEvent.ANY, new EventHandler<KeyEvent>()
+		{
+			@Override
+			public void handle(KeyEvent keyEvent)
+			{
+				if(keyEvent.getCode() == KeyCode.ENTER)
+				{
+					newWindow.close();
+				}
+			}
+		});
 		newWindow.setOnCloseRequest((e) ->
 		{
 			try

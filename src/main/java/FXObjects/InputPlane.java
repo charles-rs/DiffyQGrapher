@@ -3,13 +3,24 @@ package FXObjects;
 import AST.Maths;
 import AST.Node;
 import Exceptions.EvaluationException;
+import javafx.event.EventHandler;
+import javafx.geometry.Insets;
 import javafx.geometry.Point2D;
+import javafx.geometry.Pos;
+import javafx.scene.Scene;
 import javafx.scene.canvas.Canvas;
+import javafx.scene.control.Label;
 import javafx.scene.control.TextField;
 import javafx.scene.input.KeyCode;
+import javafx.scene.input.KeyEvent;
 import javafx.scene.input.MouseEvent;
+import javafx.scene.layout.AnchorPane;
+import javafx.scene.layout.StackPane;
+import javafx.scene.layout.VBox;
 import javafx.scene.paint.Color;
 import javafx.scene.shape.Circle;
+import javafx.stage.Stage;
+import javafx.stage.WindowEvent;
 import org.ejml.data.SingularMatrixException;
 import org.ejml.simple.SimpleMatrix;
 
@@ -18,8 +29,9 @@ import java.awt.*;
 import java.awt.image.BufferedImage;
 import java.io.File;
 import java.io.IOException;
-import java.util.LinkedList;
+import java.util.ArrayList;
 import java.util.List;
+
 
 /**
  * Class to represent the input parameter plane.
@@ -27,7 +39,9 @@ import java.util.List;
 public class InputPlane extends CoordPlane
 {
 
-	InClickModeType clickMode;
+	public InClickModeType clickMode;
+
+	List<Pentagram> pentlist;
 
 	private final Circle pt;
 	/**
@@ -96,10 +110,11 @@ public class InputPlane extends CoordPlane
 		this.op = op;
 		this.aField = aField;
 		this.bField = bField;
-		saddleBifs = new LinkedList<>();
-		hopfBifs = new LinkedList<>();
-		saddleCons = new LinkedList<>();
-		degenSaddleCons = new LinkedList<>();
+		saddleBifs = new ArrayList<>();
+		hopfBifs = new ArrayList<>();
+		saddleCons = new ArrayList<>();
+		degenSaddleCons = new ArrayList<>();
+		pentlist = new ArrayList<>();
 		saddleCanvas.setVisible(true);
 		pt = new Circle();
 		pt.setRadius(2);
@@ -179,6 +194,7 @@ public class InputPlane extends CoordPlane
 					b = scrToNormY(e.getY());
 					break;
 				case PLACEPENT:
+					getInfoAndAddPentagram(e.getX(), e.getY());
 					//TODO do shit, open a pentagram dialog and get that shit on the screen
 			}
 			render();
@@ -492,6 +508,7 @@ public class InputPlane extends CoordPlane
 		super.render();
 		showValues();
 		drawPoint();
+		drawPentagrams();
 	}
 
 	@Override
@@ -511,6 +528,24 @@ public class InputPlane extends CoordPlane
 		drawSaddleCons();
 		drawDegenSaddleCons();
 		render();
+	}
+
+	/**
+	 * Draws the pentagrams to the screen
+	 */
+	private void drawPentagrams()
+	{
+		for(Pentagram p : pentlist)
+		{
+			drawPentagram(p);
+		}
+	}
+
+	private void drawPentagram(Pentagram p)
+	{
+		p.setLayoutX(normToScrX(p.mathLoc.getX()) - 15);
+		p.setLayoutY(normToScrY(p.mathLoc.getY()) - 15);
+		p.setVisible(true);
 	}
 
 	/**
@@ -562,6 +597,11 @@ public class InputPlane extends CoordPlane
 		saddleBifs.clear();
 		hopfBifs.clear();
 		saddleCons.clear();
+		for(Pentagram p : pentlist)
+		{
+			this.getChildren().remove(p);
+		}
+		pentlist.clear();
 		saddleCanvas.getGraphicsContext2D().clearRect(0, 0, c.getWidth(), c.getHeight());
 		draw();
 	}
@@ -577,6 +617,30 @@ public class InputPlane extends CoordPlane
 		int y0 = imgNormToScrY(0);
 		g2.drawLine(x0, 0, x0, temp.getHeight());
 		g2.drawLine(0, y0, temp.getWidth(), y0);
+		for(Pentagram p : pentlist)
+		{
+			int w = imgNormToScrX(scrToNormX(p.border.getWidth()));
+			int h = imgNormToScrY(scrToNormY(p.border.getHeight()));
+			int x = imgNormToScrX(scrToNormX(p.getLayoutX()));
+			int y = imgNormToScrY(scrToNormY(p.getLayoutY()));
+			g2.drawRect(x, y, w, h);
+			g2.setFont(new Font("Big", Font.PLAIN, 20));
+			g2.drawString(String.valueOf(p.getSaddles()),
+					x + w/2 - g2.getFontMetrics().stringWidth(p.saddle.getText())/2,
+					y + h/2 + g2.getFontMetrics().getHeight()/2 - 5);
+			g2.drawString(String.valueOf(p.getSinks()),
+					x + 5,
+					y + g2.getFontMetrics().getHeight());
+			g2.drawString(String.valueOf(p.getSources()),
+					x + w - g2.getFontMetrics().stringWidth(String.valueOf(p.getSources())) - 3,
+					y + g2.getFontMetrics().getHeight());
+			g2.drawString(String.valueOf(p.getAttrCycles()),
+					x + 5,
+					y + h - 5);
+			g2.drawString(String.valueOf(p.getRepelCycles()),
+					x + w - g2.getFontMetrics().stringWidth(String.valueOf(p.getRepelCycles())) - 3,
+					y + h - 5);
+		}
 		try
 		{
 			ImageIO.write(temp, "png", f);
@@ -584,6 +648,112 @@ public class InputPlane extends CoordPlane
 		} catch (IOException | NullPointerException oof)
 		{
 			return false;
+		}
+	}
+
+	private void getInfoAndAddPentagram(double x, double y)
+	{
+		{
+			Pentagram P = new Pentagram(new Point2D(x, y), new Point2D(scrToNormX(x), scrToNormY(y)));
+			int info [] = new int [5];
+			Stage newWindow = new Stage();
+			newWindow.setTitle("Enter Info for Pentagram");
+			StackPane mainStack = new StackPane();
+			Label
+					lblSink = new Label("# Sinks"),
+					lblSource = new Label("# Sources"),
+					lblSad = new Label("# Saddles"),
+					lblAttr = new Label("# Attracting Cycles"),
+					lblRep = new Label("# Repelling Cycles");
+			TextField
+					txtSink = new TextField("0"),
+					txtSource = new TextField("0"),
+					txtSad = new TextField("0"),
+					txtAttr = new TextField("0"),
+					txtRep = new TextField("0");
+			double w = 50;
+			txtSink.setMaxWidth(w);
+			txtSource.setMaxWidth(w);
+			txtSad.setMaxWidth(w);
+			txtAttr.setMaxWidth(w);
+			txtRep.setMaxWidth(w);
+
+			VBox
+					vSink = new VBox(lblSink, txtSink),
+					vSource = new VBox(lblSource, txtSource),
+					vSad = new VBox(lblSad, txtSad),
+					vAttr = new VBox(lblAttr, txtAttr),
+					vRep = new VBox(lblRep, txtRep);
+			vSink.setAlignment(Pos.TOP_LEFT);
+			vSource.setAlignment(Pos.TOP_RIGHT);
+			vSad.setAlignment(Pos.CENTER);
+			vAttr.setAlignment(Pos.BOTTOM_LEFT);
+			vRep.setAlignment(Pos.BOTTOM_RIGHT);
+
+			double anchor = 15;
+
+			mainStack.setPadding(new Insets(15));
+			mainStack.getChildren().addAll(vSink, vSource, vSad, vAttr, vRep);
+			mainStack.setMinWidth(350);
+			mainStack.setMinHeight(200);
+
+			Scene newScene = new Scene(mainStack);
+			newWindow.setScene(newScene);
+			newWindow.addEventHandler(KeyEvent.KEY_PRESSED, keyEvent ->
+			{
+				if(keyEvent.getCode() == KeyCode.ENTER)
+				{
+					try
+					{
+						info[0] = Integer.parseInt(txtSink.getText());
+					} catch (NumberFormatException ignored) {}
+					try
+					{
+						info[1] = Integer.parseInt(txtSource.getText());
+					} catch (NumberFormatException ignored) {}
+					try
+					{
+						info[2] = Integer.parseInt(txtSad.getText());
+					} catch (NumberFormatException ignored) {}
+					try
+					{
+						info[3] = Integer.parseInt(txtAttr.getText());
+					} catch (NumberFormatException ignored) {}
+					try
+					{
+						info[4] = Integer.parseInt(txtRep.getText());
+					} catch (NumberFormatException ignored) {}
+					P.setInfo(null, info);
+					P.updateTexts();
+					pentlist.add(P);
+					getChildren().add(P);
+					P.addEventHandler(MouseEvent.MOUSE_CLICKED, me ->
+					{
+						if(clickMode == InClickModeType.REMOVEPENT)
+						{
+							getChildren().remove(P);
+							pentlist.remove(P);
+							clickMode = InClickModeType.MOVEPOINT;
+						}
+						else if (clickMode == InClickModeType.EDITPENT)
+						{
+							getChildren().remove(P);
+							pentlist.remove(P);
+							getInfoAndAddPentagram(x, y);
+							clickMode = InClickModeType.MOVEPOINT;
+						}
+					});
+					drawPentagram(P);
+					newWindow.fireEvent(new WindowEvent(newWindow, WindowEvent.WINDOW_CLOSE_REQUEST));
+				}
+			});
+			newWindow.setOnCloseRequest((e) ->
+			{
+				clickMode = InClickModeType.MOVEPOINT;
+			});
+			newWindow.show();
+
+
 		}
 	}
 
