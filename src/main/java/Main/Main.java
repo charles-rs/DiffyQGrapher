@@ -101,7 +101,10 @@ public class Main extends Application
 		MenuItem pentagram = new MenuItem("Pentagram");
 		MenuItem noMorePentagram = new MenuItem("Remove Pentagram");
 		MenuItem editPentagram = new MenuItem("Edit Pentagram");
-		draw.getItems().addAll(separatrices, horizIso, vertIso, pentagram, noMorePentagram, editPentagram);
+		MenuItem limCycle = new MenuItem("Limit Cycle");
+		draw.getItems().addAll(separatrices, horizIso, vertIso, new SeparatorMenuItem(),
+				pentagram, noMorePentagram, editPentagram, new SeparatorMenuItem(),
+				limCycle);
 
 
 		MenuItem saddleBif = new MenuItem("Saddle Node Bifurcation");
@@ -369,6 +372,10 @@ public class Main extends Application
 		editPentagram.setOnAction(e ->
 		{
 			inPlane.clickMode = InClickModeType.EDITPENT;
+		});
+		limCycle.setOnAction(e ->
+		{
+			outPlane.clickMode = ClickModeType.FINDLIMCYCLE;
 		});
 		saddleBif.setOnAction((e) ->
 		{

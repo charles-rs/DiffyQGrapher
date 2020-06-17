@@ -23,4 +23,13 @@ public enum CritPointTypes
 	{
 		return stringRep;
 	}
+
+	public boolean isSink()
+	{
+		return this == SPIRALSINK || this == NODESINK;
+	}
+	public boolean isSource()
+	{
+		return this == SPIRALSOURCE || this == NODESOURCE;
+	}
 }

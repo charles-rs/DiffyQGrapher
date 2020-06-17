@@ -21,6 +21,7 @@ import javafx.scene.layout.BorderStroke;
 import javafx.scene.layout.BorderStrokeStyle;
 import javafx.scene.layout.BorderWidths;
 import javafx.scene.paint.Color;
+import javafx.scene.shape.Line;
 import javafx.scene.text.Text;
 import org.ejml.simple.SimpleMatrix;
 
@@ -41,6 +42,9 @@ public class OutputPlane extends CoordPlane
 	 * Bounds for calculating saddle connections
 	 */
 	public double dSaddleXMin, dSaddleXMax, dSaddleYMin, dSaddleYMax;
+
+	private Line cycleLine;
+	int limCycStep = 0;
 
 	private double t = 0;
 	private final List<initCond> initials;
@@ -66,6 +70,8 @@ public class OutputPlane extends CoordPlane
 	private Color stblSeparatrixColor = Color.ORANGERED;
 	private Color unstblSeparatrixColor = Color.DARKCYAN;
 	private Color criticalColor = Color.RED;
+	private Color attrLimCycleColor = Color.GREEN;
+	private Color repLimCycleColor = Color.MAGENTA;
 
 	private java.awt.Color awtSolutionColor = fromFXColor(solutionColor);
 	private java.awt.Color awtIsoclineColor = fromFXColor(isoclineColor);
@@ -74,20 +80,24 @@ public class OutputPlane extends CoordPlane
 	private java.awt.Color awtStblSeparatrixColor = fromFXColor(stblSeparatrixColor);
 	private java.awt.Color awtUnstblSeparatrixColor = fromFXColor(unstblSeparatrixColor);
 	private java.awt.Color awtCriticalColor = fromFXColor(criticalColor);
+	private java.awt.Color awtAttrLimCycleColor = fromFXColor(attrLimCycleColor);
+	private java.awt.Color awtRepLimCycleColor = fromFXColor(repLimCycleColor);
 
 	public InputPlane in;
-	private Thread artist [];
 
 	public OutputPlane(double side, TextField tField)
 	{
 		super(side);
+
+		cycleLine = new Line();
+		this.getChildren().add(cycleLine);
+		cycleLine.setVisible(false);
 
 		dSaddleXMax = this.xMax.get();
 		dSaddleXMin = this.xMin.get();
 		dSaddleYMax = this.yMax.get();
 		dSaddleYMin = this.yMin.get();
 
-		artist = new Thread [16];
 		evalType = EvalType.RungeKutta;
 		initials = new LinkedList<>();
 		criticalPoints = new LinkedList<>();
@@ -337,10 +347,154 @@ public class OutputPlane extends CoordPlane
 				} catch (RootNotFound ignored)
 				{
 				}
+				break;
+			case FINDLIMCYCLE:
+				switch (limCycStep)
+				{
+					case 0:
+						cycleLine.setStartX(e.getX());
+						cycleLine.setStartY(e.getY());
+						limCycStep = 1;
+						break;
+					case 1:
+						cycleLine.setEndX(e.getX());
+						cycleLine.setEndY(e.getY());
+						cycleLine.setVisible(true);
+						limCycStep = 2;
+						break;
+					case 2:
+						drawLimCycle(pt);
+						limCycStep = 0;
+						clickMode = ClickModeType.DRAWPATH;
+						break;
+				}
 		}
 
 	}
 
+	private void drawLimCycle(Point2D start)
+	{
+		//get to the line
+		Evaluator eval = EvaluatorFactory.getEvaluator(evalType, dx, dy);
+		eval.initialise(start, t, a, b, inc);
+		Point2D p1 = start;
+		Point2D p2 = eval.next();
+		Point2D isect = null;
+		while (eval.getT() < 100)
+		{
+			try
+			{
+				isect = getIntersectionCycleLine(p1, p2);
+				break;
+			} catch (RootNotFound r)
+			{
+				p1 = p2;
+				p2 = eval.next();
+			}
+		}
+		if(isect == null)
+		{
+			eval.initialise(start, t, a, b, -inc);
+			while (eval.getT() < 100)
+			{
+				try
+				{
+					isect = getIntersectionCycleLine(p1, p2);
+					break;
+				} catch (RootNotFound r)
+				{
+					p1 = p2;
+					p2 = eval.next();
+				}
+			}
+		}
+		if(isect == null) return;
+		System.out.println("got here");
+		p1 = isect;
+		eval.initialise(isect, t, a, b, eval.getInc());
+		try
+		{
+			p2 = getNextIsectCyc(eval);
+		} catch (RootNotFound ignored) {}
+		eval.initialise(isect, t, a, b, -eval.getInc());
+		try
+		{
+			p2 = getNextIsectCyc(eval);
+		} catch (RootNotFound r)
+		{
+			return;
+		}
+		System.out.println("and here");
+		double d1, d2;
+		d2 = p2.distance(p1);
+		boolean haveFlipped = false;
+		try
+		{
+			while(inBounds(p2))
+			{
+				p1 = p2;
+				p2 = getNextIsectCyc(eval);
+				d1 = d2;
+				d2 = p2.distance(p1);
+				System.out.println(p2);
+				if(d2 > d1)
+				{
+					if(haveFlipped) return;
+					else
+					{
+						haveFlipped = true;
+						eval.initialise(p2, t, a, b, -eval.getInc());
+					}
+				}
+				if(p1.distance(p2) < inc/1000)
+				{
+					if(eval.getInc() > 0)
+						drawGraphBack(new initCond(p2), false, '+', awtAttrLimCycleColor);
+					else
+						drawGraphBack(new initCond(p2), false, '-', awtRepLimCycleColor);
+				}
+			}
+		} catch (RootNotFound ignored) {}
+
+	}
+
+	/**
+	 * gets the next intersection of the provided evaluator with the cycle line
+	 * @param eval the evaluator to use
+	 * @return the next intersection with the cycle line
+	 * @throws RootNotFound if it doesn't intersect
+	 */
+	private Point2D getNextIsectCyc(Evaluator eval) throws RootNotFound
+	{
+		Point2D p1 = eval.getCurrent();
+		Point2D p2 = eval.next();
+		double tInc = eval.getInc();
+		while (eval.getT() < 100)
+		{
+			try
+			{
+				return getIntersectionCycleLine(p1, p2);
+			} catch (RootNotFound r)
+			{
+				p1 = p2;
+				p2 = eval.next();
+			}
+			CriticalPoint temp = null;
+			try
+			{
+				temp = critical(p2);
+			} catch (RootNotFound ignored) {}
+			if(temp != null)
+			{
+				if (tInc > 0 && temp.type.isSink() || tInc < 0 && temp.type.isSource())
+				{
+					if (p2.distance(temp.point) < inc / 10) throw new RootNotFound();
+				}
+			}
+		}
+		throw new RootNotFound();
+	}
+	
 	private SimpleMatrix getDerivsOfSol(Point2D p, double a, double b)
 	{
 		AST.Node res[] = new AST.Node[2];
@@ -1505,32 +1659,88 @@ public class OutputPlane extends CoordPlane
 			this.y = p.getY();
 		}
 	}
-	private static class Artist extends Thread
-	{
-		public Artist()
-		{
 
-		}
+
+	/**
+	 * test if q lies on segment pr if they are colinear
+	 * @param p start
+	 * @param q point to test
+	 * @param r end
+	 * @return whether or not q is on pr
+	 */
+	boolean onSegment(Point2D p, Point2D q, Point2D r)
+	{
+		return q.getX() <= Math.max(p.getX(), r.getX()) && q.getX() >= Math.min(p.getX(), r.getX()) &&
+				q.getY() <= Math.max(p.getY(), r.getY()) && q.getY() >= Math.min(p.getY(), r.getY());
 	}
-	@Deprecated
-	private Point2D getIntersection(Point2D p1, Point2D p2, Point2D q1, Point2D q2) throws RootNotFound
+
+	/** To find orientation of ordered triplet (p, q, r).
+	 * The function returns following values
+	 * 0 --> p, q and r are colinear
+	 * 1 --> Clockwise
+	 * 2 --> Counterclockwise
+	 */
+	int orientation(Point2D p, Point2D q, Point2D r)
 	{
-		double a1 = p2.getY() - p1.getY();
-		double b1 = p2.getX() - p1.getX();
-		double c1 = a1 * p1.getX() + b1 * p1.getY();
+		double val = (q.getY() - p.getY()) * (r.getX() - q.getX()) -
+				(q.getX() - p.getX()) * (r.getY() - q.getY());
 
-		double a2 = q2.getY() - q1.getY();
-		double b2 = q2.getX() - q1.getX();
-		double c2 = a2 * q1.getX() + b2 * q1.getY();
+		if (val == 0) return 0; // colinear
 
-		double det = a1 * b2 - a2 * b1;
-		if (det == 0) throw new RootNotFound();
-		else
-		{
-			double x = (b2 * c1 - b1 * c2) / det;
-			double y = (a1 * c2 - a2 * c1) / det;
-			return new Point2D(x, y);
-		}
+		return (val > 0)? 1: 2; // clock or counterclock wise
+	}
+
+	/**
+	* The main function that returns true if line segment 'p1q1' and 'p2q2' intersect.
+	 * @param p1 first start
+	 * @param q1 first end
+	 * @param p2 second start
+	 * @param q2  second end
+	 * @return the intersection
+	 * @throws RootNotFound if they dont intersect
+	 */
+	Point2D getIntersection(Point2D p1, Point2D q1, Point2D p2, Point2D q2) throws RootNotFound
+	{
+		// Find the four orientations needed for general and
+		// special cases
+		int o1 = orientation(p1, q1, p2);
+		int o2 = orientation(p1, q1, q2);
+		int o3 = orientation(p2, q2, p1);
+		int o4 = orientation(p2, q2, q1);
+
+		// General case
+		if (o1 != o2 && o3 != o4)
+			return new Point2D(
+					((p1.getX() * q1.getY() - p1.getY() * q1.getX()) * (p2.getX() - q2.getX()) -
+							(p1.getX() - q1.getX()) * (p2.getX() * q2.getY() - p2.getY() * q2.getX())) /
+							((p1.getX() - q1.getX()) * (p2.getY() -
+									q2.getY()) - (p1.getY() - q1.getY()) * (p2.getX() - q2.getX())),
+					((p1.getX() * q1.getY() - p1.getY() * q1.getX()) * (p2.getY() - q2.getY()) -
+							(p1.getY() - q1.getY()) * (p2.getX() * q2.getY() - p2.getY() * q2.getX())) /
+							((p1.getX() - q1.getX()) * (p2.getY() - q2.getY()) -
+									(p1.getY() - q1.getY()) * (p2.getX() - q2.getX())));
+
+		// Special Cases
+		// p1, q1 and p2 are colinear and p2 lies on segment p1q1
+		if (o1 == 0 && onSegment(p1, p2, q1)) return p2;
+
+		// p1, q1 and q2 are colinear and q2 lies on segment p1q1
+		if (o2 == 0 && onSegment(p1, q2, q1)) return q2;
+
+		// p2, q2 and p1 are colinear and p1 lies on segment p2q2
+		if (o3 == 0 && onSegment(p2, p1, q2)) return p1;
+
+		// p2, q2 and q1 are colinear and q1 lies on segment p2q2
+		if (o4 == 0 && onSegment(p2, q1, q2)) return q1;
+
+		throw new RootNotFound();
+	}
+
+	private Point2D getIntersectionCycleLine(Point2D p1, Point2D p2) throws RootNotFound
+	{
+		return getIntersection(scrToNorm(new Point2D(cycleLine.getStartX(), cycleLine.getStartY())),
+				scrToNorm(new Point2D(cycleLine.getEndX(), cycleLine.getEndY())),
+				p1, p2);
 	}
 
 }

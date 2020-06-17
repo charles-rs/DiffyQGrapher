@@ -83,6 +83,15 @@ public abstract class Evaluator
 	}
 
 	/**
+	 * gets the current location
+	 * @return the current location of the evaluator
+	 */
+	public Point2D getCurrent()
+	{
+		return new Point2D(x, y);
+	}
+
+	/**
 	 * gets the current time of the evaluator
 	 * @return the current t
 	 */
