@@ -40,7 +40,7 @@ public class Main extends Application
 
 		AnchorPane anchor = new AnchorPane();
 		TextArea inputArea = new TextArea();
-		inputArea.setText("dx/dt = \ndy/dt = ");
+		inputArea.setText("dx/dt = \ndy/dt = \n");
 		inputArea.setPrefRowCount(8);
 		inputArea.setPrefColumnCount(20);
 		VBox root = new VBox();

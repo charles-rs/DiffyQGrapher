@@ -82,6 +82,12 @@ public abstract class Evaluator
 		initialise(p.getX(), p.getY(), t, a, b, inc);
 	}
 
+	public void resetT()
+	{
+		this.t = 0;
+	}
+
+
 	/**
 	 * gets the current location
 	 * @return the current location of the evaluator

@@ -409,22 +409,22 @@ public class OutputPlane extends CoordPlane
 			}
 		}
 		if(isect == null) return;
-		System.out.println("got here");
 		p1 = isect;
 		eval.initialise(isect, t, a, b, eval.getInc());
 		try
 		{
 			p2 = getNextIsectCyc(eval);
-		} catch (RootNotFound ignored) {}
-		eval.initialise(isect, t, a, b, -eval.getInc());
-		try
-		{
-			p2 = getNextIsectCyc(eval);
 		} catch (RootNotFound r)
 		{
-			return;
+			eval.initialise(isect, t, a, b, -eval.getInc());
+			try
+			{
+				p2 = getNextIsectCyc(eval);
+			} catch (RootNotFound r2)
+			{
+				return;
+			}
 		}
-		System.out.println("and here");
 		double d1, d2;
 		d2 = p2.distance(p1);
 		boolean haveFlipped = false;
@@ -434,27 +434,44 @@ public class OutputPlane extends CoordPlane
 			{
 				p1 = p2;
 				p2 = getNextIsectCyc(eval);
+				eval.resetT();
 				d1 = d2;
 				d2 = p2.distance(p1);
-				System.out.println(p2);
+				System.out.println("D1: " + d1);
+				System.out.println("D2: " + d2);
 				if(d2 > d1)
 				{
-					if(haveFlipped) return;
+					if(haveFlipped)
+					{
+						System.out.println("issue 1");
+						return;
+					}
 					else
 					{
 						haveFlipped = true;
 						eval.initialise(p2, t, a, b, -eval.getInc());
 					}
 				}
-				if(p1.distance(p2) < inc/1000)
+				if(p1.distance(p2) < inc/10000)
 				{
+					g.setStroke(new BasicStroke(2));
 					if(eval.getInc() > 0)
 						drawGraphBack(new initCond(p2), false, '+', awtAttrLimCycleColor);
 					else
 						drawGraphBack(new initCond(p2), false, '-', awtRepLimCycleColor);
+					g.setStroke(new BasicStroke(1));
+					render();
+					cycleLine.setVisible(false);
+					break;
 				}
 			}
-		} catch (RootNotFound ignored) {}
+		} catch (RootNotFound ignored)
+		{
+			g.setColor(java.awt.Color.RED);
+			g.fillOval(imgNormToScrX(p2.getX()) - 5, imgNormToScrY(p2.getY()) - 5, 10, 10);
+			render();
+			System.out.println("issue 2");
+		}
 
 	}
 
@@ -469,7 +486,8 @@ public class OutputPlane extends CoordPlane
 		Point2D p1 = eval.getCurrent();
 		Point2D p2 = eval.next();
 		double tInc = eval.getInc();
-		while (eval.getT() < 100)
+		//TODO maybe add another setting for limcycle bounds
+		while (inBoundsSaddle(p2) && eval.getT() < 100)
 		{
 			try
 			{
