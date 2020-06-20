@@ -55,6 +55,7 @@ public class OutputPlane extends CoordPlane
 	private final List<Point2D> vertIsos;
 	private final List<Node> needsReset;
 	private final List<sepStart> selectedSeps;
+	private List<LimCycleStart> limCycles;
 	double inc = .01;
 	private double a, b;
 	private Derivative dx, dy;
@@ -85,6 +86,8 @@ public class OutputPlane extends CoordPlane
 
 	public InputPlane in;
 
+	private Thread limCycleArtist = new Thread(), limCycleUpdater = new Thread();
+
 	public OutputPlane(double side, TextField tField)
 	{
 		super(side);
@@ -99,13 +102,14 @@ public class OutputPlane extends CoordPlane
 		dSaddleYMin = this.yMin.get();
 
 		evalType = EvalType.RungeKutta;
-		initials = new LinkedList<>();
-		criticalPoints = new LinkedList<>();
-		isoclines = new LinkedList<>();
-		needsReset = new LinkedList<>();
-		horizIsos = new LinkedList<>();
-		vertIsos = new LinkedList<>();
-		selectedCritPoints = new LinkedList<>();
+		initials = new ArrayList<>();
+		criticalPoints = new ArrayList<>();
+		isoclines = new ArrayList<>();
+		limCycles = new ArrayList<>();
+		needsReset = new ArrayList<>();
+		horizIsos = new ArrayList<>();
+		vertIsos = new ArrayList<>();
+		selectedCritPoints = new ArrayList<>();
 		selectedSeps = new ArrayList<>(2);
 		draw();
 //		render();
@@ -187,6 +191,7 @@ public class OutputPlane extends CoordPlane
 	public void updateA(double a)
 	{
 		this.a = a;
+
 		draw();
 	}
 
@@ -363,7 +368,12 @@ public class OutputPlane extends CoordPlane
 						limCycStep = 2;
 						break;
 					case 2:
-						drawLimCycle(pt);
+						limCycleArtist.interrupt();
+						limCycleArtist = new Thread(() ->
+								drawLimCycle(pt,
+										scrToNorm(new Point2D(cycleLine.getStartX(), cycleLine.getStartY())),
+										scrToNorm(new Point2D(cycleLine.getEndX(), cycleLine.getEndY())), true));
+						limCycleArtist.start();
 						limCycStep = 0;
 						clickMode = ClickModeType.DRAWPATH;
 						break;
@@ -372,11 +382,27 @@ public class OutputPlane extends CoordPlane
 
 	}
 
-	private void drawLimCycle(Point2D start)
+	private void updateLimCycles()
+	{
+		limCycleUpdater.interrupt();
+		limCycleUpdater = new Thread(() ->
+		{
+			ArrayList<LimCycleStart> temp = new ArrayList<>();
+			for (LimCycleStart lc : limCycles)
+			{
+				if (drawLimCycle(lc.st, lc.refLine[0], lc.refLine[1], false))
+					temp.add(lc);
+			}
+			limCycles = temp;
+		});
+		limCycleUpdater.start();
+	}
+
+	private boolean drawLimCycle(Point2D start, Point2D lnSt, Point2D lnNd, boolean add)
 	{
 		//get to the line
 		Evaluator eval = EvaluatorFactory.getEvaluator(evalType, dx, dy);
-		eval.initialise(start, t, a, b, inc);
+		eval.initialise(start, 0, a, b, inc);
 		Point2D p1 = start;
 		Point2D p2 = eval.next();
 		Point2D isect = null;
@@ -384,7 +410,7 @@ public class OutputPlane extends CoordPlane
 		{
 			try
 			{
-				isect = getIntersectionCycleLine(p1, p2);
+				isect = getIntersection(p1, p2, lnSt, lnNd);
 				break;
 			} catch (RootNotFound r)
 			{
@@ -394,12 +420,12 @@ public class OutputPlane extends CoordPlane
 		}
 		if(isect == null)
 		{
-			eval.initialise(start, t, a, b, -inc);
+			eval.initialise(start, 0, a, b, -inc);
 			while (eval.getT() < 100)
 			{
 				try
 				{
-					isect = getIntersectionCycleLine(p1, p2);
+					isect = getIntersection(p1, p2, lnSt, lnNd);
 					break;
 				} catch (RootNotFound r)
 				{
@@ -408,21 +434,21 @@ public class OutputPlane extends CoordPlane
 				}
 			}
 		}
-		if(isect == null) return;
+		if(isect == null) return false;
 		p1 = isect;
-		eval.initialise(isect, t, a, b, eval.getInc());
+		eval.initialise(isect, 0, a, b, eval.getInc());
 		try
 		{
 			p2 = getNextIsectCyc(eval);
 		} catch (RootNotFound r)
 		{
-			eval.initialise(isect, t, a, b, -eval.getInc());
+			eval.initialise(isect, 0, a, b, -eval.getInc());
 			try
 			{
 				p2 = getNextIsectCyc(eval);
 			} catch (RootNotFound r2)
 			{
-				return;
+				return false;
 			}
 		}
 		double d1, d2;
@@ -430,58 +456,80 @@ public class OutputPlane extends CoordPlane
 		boolean haveFlipped = false;
 		try
 		{
-			while(inBounds(p2))
+			while(inBounds(p2) && !Thread.interrupted())
 			{
-				p1 = p2;
-				p2 = getNextIsectCyc(eval);
-				eval.resetT();
-				d1 = d2;
-				d2 = p2.distance(p1);
-				System.out.println("D1: " + d1);
-				System.out.println("D2: " + d2);
-				if(d2 > d1)
+				try
+				{
+					p1 = p2;
+					p2 = getNextIsectLn(eval, lnSt, lnNd);
+					if (Math.abs(eval.getT()) < 3 * Math.abs(eval.getInc()))
+						p2 = getNextIsectLn(eval, lnSt, lnNd);
+					System.out.println(eval.getT());
+					eval.resetT();
+					d1 = d2;
+					d2 = p2.distance(p1);
+					System.out.println("D1: " + d1);
+					System.out.println("P1: " + p1);
+					System.out.println("D2: " + d2);
+					System.out.println("P2: " + p2);
+					if (p1.distance(p2) < inc / 10000)
+					{
+						synchronized (g)
+						{
+							g.setStroke(new BasicStroke(4));
+							if (eval.getInc() > 0)
+								drawGraphBack(new initCond(p2), false, '+', awtAttrLimCycleColor);
+							else
+								drawGraphBack(new initCond(p2), false, '-', awtRepLimCycleColor);
+							g.setStroke(new BasicStroke(1));
+						}
+						synchronized (canv)
+						{
+							render();
+						}
+						cycleLine.setVisible(false);
+//						Point2D st = scrToNorm(new Point2D(cycleLine.getStartX(), cycleLine.getStartY()));
+//						Point2D nd = scrToNorm(new Point2D(cycleLine.getEndX(), cycleLine.getEndY()));
+						if(add)
+						{
+							limCycles.add(new LimCycleStart(p2, eval.getInc(), lnSt, lnNd));
+						}
+						return true;
+					}
+				} catch (RootNotFound r)
 				{
 					if(haveFlipped)
-					{
-						System.out.println("issue 1");
-						return;
-					}
+						throw new RootNotFound();
 					else
 					{
 						haveFlipped = true;
-						eval.initialise(p2, t, a, b, -eval.getInc());
+						eval.initialise(isect, 0, a, b, -eval.getInc());
 					}
-				}
-				if(p1.distance(p2) < inc/10000)
-				{
-					g.setStroke(new BasicStroke(2));
-					if(eval.getInc() > 0)
-						drawGraphBack(new initCond(p2), false, '+', awtAttrLimCycleColor);
-					else
-						drawGraphBack(new initCond(p2), false, '-', awtRepLimCycleColor);
-					g.setStroke(new BasicStroke(1));
-					render();
-					cycleLine.setVisible(false);
-					break;
 				}
 			}
 		} catch (RootNotFound ignored)
 		{
-			g.setColor(java.awt.Color.RED);
-			g.fillOval(imgNormToScrX(p2.getX()) - 5, imgNormToScrY(p2.getY()) - 5, 10, 10);
-			render();
+//			g.setColor(java.awt.Color.RED);
+//			g.fillOval(imgNormToScrX(p2.getX()) - 5, imgNormToScrY(p2.getY()) - 5, 10, 10);
+//			render();
 			System.out.println("issue 2");
+			if(add)
+			{
+				cycleLine.setVisible(false);
+			}
 		}
-
+		return false;
 	}
 
 	/**
-	 * gets the next intersection of the provided evaluator with the cycle line
+	 * gets the next intersection of the provided evaluator with the provided line
 	 * @param eval the evaluator to use
-	 * @return the next intersection with the cycle line
+	 * @param st the start of the line
+	 * @param nd the end of the line
+	 * @return the next intersection with the line
 	 * @throws RootNotFound if it doesn't intersect
 	 */
-	private Point2D getNextIsectCyc(Evaluator eval) throws RootNotFound
+	private Point2D getNextIsectLn(Evaluator eval, Point2D st, Point2D nd) throws RootNotFound
 	{
 		Point2D p1 = eval.getCurrent();
 		Point2D p2 = eval.next();
@@ -491,7 +539,8 @@ public class OutputPlane extends CoordPlane
 		{
 			try
 			{
-				return getIntersectionCycleLine(p1, p2);
+
+				return getIntersection(p1, p2, st, nd);
 			} catch (RootNotFound r)
 			{
 				p1 = p2;
@@ -512,6 +561,49 @@ public class OutputPlane extends CoordPlane
 		}
 		throw new RootNotFound();
 	}
+
+	/**
+	 * gets the next intersection of the provided evaluator with the cycle line
+	 * @param eval the evaluator to use
+	 * @return the next intersection with the cycle line
+	 * @throws RootNotFound if it doesn't intersect
+	 */
+	private Point2D getNextIsectCyc(Evaluator eval) throws RootNotFound
+	{
+		return getNextIsectLn(eval,
+				scrToNorm(new Point2D(cycleLine.getStartX(), cycleLine.getStartY())),
+				scrToNorm(new Point2D(cycleLine.getEndX(), cycleLine.getEndY())));
+		/*Point2D p1 = eval.getCurrent();
+		Point2D p2 = eval.next();
+		double tInc = eval.getInc();
+		//TODO maybe add another setting for limcycle bounds
+		while (inBoundsSaddle(p2) && eval.getT() < 100)
+		{
+			try
+			{
+
+				return getIntersectionCycleLine(p1, p2);
+			} catch (RootNotFound r)
+			{
+				p1 = p2;
+				p2 = eval.next();
+			}
+			CriticalPoint temp = null;
+			try
+			{
+				temp = critical(p2);
+			} catch (RootNotFound ignored) {}
+			if(temp != null)
+			{
+				if (tInc > 0 && temp.type.isSink() || tInc < 0 && temp.type.isSource())
+				{
+					if (p2.distance(temp.point) < inc / 10) throw new RootNotFound();
+				}
+			}
+		}
+		throw new RootNotFound();*/
+	}
+
 	
 	private SimpleMatrix getDerivsOfSol(Point2D p, double a, double b)
 	{
@@ -1510,6 +1602,7 @@ public class OutputPlane extends CoordPlane
 		isoclines.clear();
 		vertIsos.clear();
 		horizIsos.clear();
+		limCycles.clear();
 		draw();
 	}
 
@@ -1614,6 +1707,7 @@ public class OutputPlane extends CoordPlane
 		gc.setLineWidth(1);
 		gc.setStroke(Color.BLACK);
 		render();
+		updateLimCycles();
 	}
 	@Override
 	public boolean writePNG(File f)
