@@ -13,6 +13,7 @@ import javafx.scene.input.KeyCode;
 import javafx.scene.input.MouseEvent;
 import javafx.scene.layout.Pane;
 import javafx.scene.paint.Color;
+import javafx.scene.shape.Circle;
 import javafx.scene.shape.Line;
 import javafx.scene.shape.Rectangle;
 import javafx.scene.text.Text;
@@ -40,6 +41,7 @@ public abstract class CoordPlane extends Pane
 	private WritableImage fxImg;
 	protected ImageView vw;
 	protected Graphics2D g;
+	protected Circle loading;
 
 	/**
 	 * the canvas where everything is drawn
@@ -99,6 +101,16 @@ public abstract class CoordPlane extends Pane
 		xMax = new SimpleDoubleProperty(5);
 		yMax = new SimpleDoubleProperty(5);
 		initZoom = new double [] {-5D, 5D, -5D, 5D};
+
+		loading = new Circle();
+		loading.centerXProperty().bind(this.widthProperty().subtract(5));
+		loading.setCenterY(5);
+		loading.setRadius(5);
+		loading.setFill(Color.RED);
+		loading.setStroke(Color.RED);
+		loading.setVisible(false);
+
+		this.getChildren().add(loading);
 
 		right = KeyCode.RIGHT;
 		left = KeyCode.LEFT;
@@ -191,6 +203,7 @@ public abstract class CoordPlane extends Pane
 		zoomBox.setFill(Color.TRANSPARENT);
 		this.getChildren().add(zoomBox);
 		zoomBox.toFront();
+
 
 		addEventFilter(MouseEvent.ANY, mouseEvent ->
 		{

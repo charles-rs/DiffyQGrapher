@@ -3,6 +3,7 @@ package FXObjects;
 import AST.Maths;
 import AST.Node;
 import Exceptions.EvaluationException;
+import javafx.application.Platform;
 import javafx.event.EventHandler;
 import javafx.geometry.Insets;
 import javafx.geometry.Point2D;
@@ -173,6 +174,7 @@ public class InputPlane extends CoordPlane
 //			if(zoomBox.isVisible() && zoomBox.getWidth() > 0 && zoomBox.getHeight() > 0)
 //				drawSaddleCons();
 //		});
+		loading.toFront();
 
 	}
 
@@ -559,14 +561,17 @@ public class InputPlane extends CoordPlane
 		if(artist != null)
 			artist.interrupt();
 		saddleCanvas.getGraphicsContext2D().clearRect(0, 0, c.getWidth(), c.getHeight());
+
 		for(SaddleCon sad : saddleCons)
 		{
 			artist = new Thread(() ->
 			{
+				Platform.runLater(() -> loading.setVisible(true));
 				synchronized (this)
 				{
 					op.renderSaddleCon(sad.pt, sad.s1, sad.s2, false);
 				}
+				Platform.runLater(() -> loading.setVisible(false));
 			});
 			artist.start();
 		}

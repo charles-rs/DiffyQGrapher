@@ -155,6 +155,7 @@ public class OutputPlane extends CoordPlane
 				e.consume();
 			}
 		});
+		loading.toFront();
 	}
 
 
@@ -334,6 +335,7 @@ public class OutputPlane extends CoordPlane
 
 							in.artist = new Thread(() ->
 							{
+								Platform.runLater(() -> in.loading.setVisible(true));
 								synchronized (selectedSeps)
 								{
 									synchronized (in)
@@ -342,6 +344,7 @@ public class OutputPlane extends CoordPlane
 										selectedSeps.clear();
 									}
 								}
+								Platform.runLater(() -> in.loading.setVisible(false));
 							});
 							in.artist.start();
 
@@ -370,9 +373,14 @@ public class OutputPlane extends CoordPlane
 					case 2:
 						limCycleArtist.interrupt();
 						limCycleArtist = new Thread(() ->
+						{
+							Platform.runLater(() -> loading.setVisible(true));
 								drawLimCycle(pt,
 										scrToNorm(new Point2D(cycleLine.getStartX(), cycleLine.getStartY())),
-										scrToNorm(new Point2D(cycleLine.getEndX(), cycleLine.getEndY())), true));
+										scrToNorm(new Point2D(cycleLine.getEndX(), cycleLine.getEndY())), true);
+							Platform.runLater(() -> loading.setVisible(false));
+						});
+
 						limCycleArtist.start();
 						limCycStep = 0;
 						clickMode = ClickModeType.DRAWPATH;
@@ -387,6 +395,7 @@ public class OutputPlane extends CoordPlane
 		limCycleUpdater.interrupt();
 		limCycleUpdater = new Thread(() ->
 		{
+			Platform.runLater(() ->loading.setVisible(true));
 			ArrayList<LimCycleStart> temp = new ArrayList<>();
 			for (LimCycleStart lc : limCycles)
 			{
@@ -394,6 +403,7 @@ public class OutputPlane extends CoordPlane
 					temp.add(lc);
 			}
 			limCycles = temp;
+			Platform.runLater(() -> loading.setVisible(false));
 		});
 		limCycleUpdater.start();
 	}
