@@ -1,5 +1,7 @@
 package FXObjects;
 
+import AST.Deriv;
+import AST.Derivative;
 import AST.Maths;
 import AST.Node;
 import Exceptions.EvaluationException;
@@ -76,6 +78,7 @@ public class InputPlane extends CoordPlane
 	List<double[]> hopfBifs;
 	List<SaddleCon> saddleCons;
 	List<Point2D> degenSaddleCons;
+	List<Point2D> degenHopf;
 	/**
 	 * a separate thread that deals with drawing difficult bifurcations so as not to lock up the program
 	 */
@@ -116,6 +119,7 @@ public class InputPlane extends CoordPlane
 		saddleCons = new ArrayList<>();
 		degenSaddleCons = new ArrayList<>();
 		pentlist = new ArrayList<>();
+		degenHopf = new ArrayList<>();
 		saddleCanvas.setVisible(true);
 		pt = new Circle();
 		pt.setRadius(2);
@@ -263,23 +267,23 @@ public class InputPlane extends CoordPlane
 
 		Node dx = op.getDx();
 		Node dy = op.getDy();
-		Node det = Maths.minus(Maths.mult(dx.differentiate('x'), dy.differentiate('y')),
-				Maths.mult(dx.differentiate('y'), dy.differentiate('x'))).collapse();
+		Node det = Maths.minus(Maths.mult(dx.diff('x'), dy.diff('y')),
+				Maths.mult(dx.diff('y'), dy.diff('x'))).collapse();
 		Node derivative[][] = new Node[3][4];
-		derivative[0][0] = dx.differentiate('x').collapse();
-		derivative[0][1] = dx.differentiate('y').collapse();
-		derivative[0][2] = dx.differentiate('a').collapse();
-		derivative[0][3] = dx.differentiate('b').collapse();
+		derivative[0][0] = dx.diff('x');
+		derivative[0][1] = dx.diff('y');
+		derivative[0][2] = dx.diff('a');
+		derivative[0][3] = dx.diff('b');
 
-		derivative[1][0] = dy.differentiate('x').collapse();
-		derivative[1][1] = dy.differentiate('y').collapse();
-		derivative[1][2] = dy.differentiate('a').collapse();
-		derivative[1][3] = dy.differentiate('b').collapse();
+		derivative[1][0] = dy.diff('x');
+		derivative[1][1] = dy.diff('y');
+		derivative[1][2] = dy.diff('a');
+		derivative[1][3] = dy.diff('b');
 
-		derivative[2][0] = det.differentiate('x').collapse();
-		derivative[2][1] = det.differentiate('y').collapse();
-		derivative[2][2] = det.differentiate('a').collapse();
-		derivative[2][3] = det.differentiate('b').collapse();
+		derivative[2][0] = det.diff('x');
+		derivative[2][1] = det.diff('y');
+		derivative[2][2] = det.diff('a');
+		derivative[2][3] = det.diff('b');
 		double xInc = (xMax.get() - xMin.get()) / this.getWidth();
 		double yInc = (yMax.get() - yMin.get()) / this.getHeight();
 		boolean isA = true;
@@ -347,6 +351,7 @@ public class InputPlane extends CoordPlane
 	public void hopfBif(Point2D start)
 	{
 		hopfBifHelp(new double[]{start.getX(), start.getY(), a, b}, true);
+		drawDegenHopf();
 		render();
 	}
 
@@ -360,26 +365,50 @@ public class InputPlane extends CoordPlane
 		gc.setStroke(hopfBifColor);
 
 		g.setColor(awtHopfBifColor);
-		Node dx = op.getDx();
-		Node dy = op.getDy();
-		Node tr = Maths.add(dx.differentiate('x'), dy.differentiate('y')).collapse();
-		Node det = Maths.minus(Maths.mult(dx.differentiate('x'), dy.differentiate('y')),
-				Maths.mult(dx.differentiate('y'), dy.differentiate('x'))).collapse();
+		Node dx = op.getDx().getVal();
+		Node dy = op.getDy().getVal();
+		Node tr = Maths.add(dx.diff('x'), dy.diff('y')).collapse();
+		Node det = Maths.minus(Maths.mult(dx.diff('x'), dy.diff('y')),
+				Maths.mult(dx.diff('y'), dy.diff('x'))).collapse();
+		Node xDiv, yDiv;
+		Node m20, m11, m02, m30, m21, m12, m03, v20, v11, v02, v30, v21, v12, v03;
+		xDiv = dx.diff('y');
+		m20 = dx.diff('x').diff('x').div(2).div(xDiv);
+		m11 = dx.diff('x').diff('y').div(xDiv);
+		m02 = dx.diff('y').diff('y').div(2).div(xDiv);
+		m30 = dx.diff('x').diff('x').diff('x').div(2).div(xDiv);
+		m21 = dx.diff('x').diff('x').diff('y').div(2).div(xDiv);
+		m12 = dx.diff('x').diff('y').diff('y').div(2).div(xDiv);
+		m03 = dx.diff('y').diff('y').diff('y').div(6).div(xDiv);
+
+
+		yDiv = dy.diff('x').neg();
+		v20 = dy.diff('x').diff('x').div(2).div(yDiv);
+		v11 = dy.diff('x').diff('y').div(yDiv);
+		v02 = dy.diff('y').diff('y').div(2).div(yDiv);
+		v30 = dy.diff('x').diff('x').diff('x').div(6).div(yDiv);
+		v21 = dy.diff('x').diff('x').diff('y').div(2).div(yDiv);
+		v12 = dy.diff('x').diff('y').diff('y').div(2).div(yDiv);
+		v03 = dy.diff('y').diff('y').diff('y').div(2).div(yDiv);
+
+		Node L = m30.add(m12).add(v21).add(v03).sub(m20.mul(m11)).add(v11.mul(v02)).sub(m02.mul(v02).mul(2)).sub(m02.mul(m11)).add(m20.mul(v20).mul(2)).add(v11.mul(v20)).collapse();
+		System.out.println(L.toLatex(new StringBuilder()));
+
 		Node derivative[][] = new Node[3][4];
-		derivative[0][0] = dx.differentiate('x').collapse();
-		derivative[0][1] = dx.differentiate('y').collapse();
-		derivative[0][2] = dx.differentiate('a').collapse();
-		derivative[0][3] = dx.differentiate('b').collapse();
+		derivative[0][0] = dx.diff('x');
+		derivative[0][1] = dx.diff('y');
+		derivative[0][2] = dx.diff('a');
+		derivative[0][3] = dx.diff('b');
 
-		derivative[1][0] = dy.differentiate('x').collapse();
-		derivative[1][1] = dy.differentiate('y').collapse();
-		derivative[1][2] = dy.differentiate('a').collapse();
-		derivative[1][3] = dy.differentiate('b').collapse();
+		derivative[1][0] = dy.diff('x');
+		derivative[1][1] = dy.diff('y');
+		derivative[1][2] = dy.diff('a');
+		derivative[1][3] = dy.diff('b');
 
-		derivative[2][0] = tr.differentiate('x').collapse();
-		derivative[2][1] = tr.differentiate('y').collapse();
-		derivative[2][2] = tr.differentiate('a').collapse();
-		derivative[2][3] = tr.differentiate('b').collapse();
+		derivative[2][0] = tr.diff('x');
+		derivative[2][1] = tr.diff('y');
+		derivative[2][2] = tr.diff('a');
+		derivative[2][3] = tr.diff('b');
 		double xInc = (xMax.get() - xMin.get()) / this.getWidth();
 		double yInc = (yMax.get() - yMin.get()) / this.getHeight();
 		boolean isA = true;
@@ -397,13 +426,26 @@ public class InputPlane extends CoordPlane
 		double t = op.getT();
 		try
 		{
-			while (inBounds(first[2], first[3]) && second != null && det.eval(first[0], first[1], first[2], first[3], t) > 0.)
+			while (inBounds(first[2], first[3]) && second != null && det.eval(first, t) > 0.)
 			{
 				first = second;
 				if (isA)
 					second = bifHelp(first[0], first[1], first[2] + xInc, first[3], dx, dy, tr, derivative, 'a');
 				else second = bifHelp(first[0], first[1], first[2], first[3] + yInc, dx, dy, tr, derivative, 'b');
-				gc.strokeLine(normToScrX(first[2]), normToScrY(first[3]), normToScrX(second[2]), normToScrY(second[3]));
+				double firstEval = L.eval(first, t);
+				double secondEval = L.eval(second, t);
+				if(firstEval == 0D || firstEval == -0D)
+					degenHopf.add(new Point2D(first[2], first[3]));
+				else if (secondEval == 0D || secondEval == -0D)
+					degenHopf.add(new Point2D(second[2], second[3]));
+				else if (Math.signum(firstEval) != Math.signum(secondEval))
+				{
+					Point2D prev = new Point2D(first[2], first[3]);
+					Point2D next = new Point2D(second[2], second[3]);
+					double factor = Math.abs(firstEval) / (Math.abs(secondEval) + Math.abs(firstEval));
+					degenHopf.add(prev.add(next.subtract(prev).multiply(factor)));
+					System.out.println("DEGEN DEGEN DEGEN");
+				}
 				drawLine(first[2], first[3], second[2], second[3], awtHopfBifColor);
 			}
 			first = start;
@@ -422,7 +464,21 @@ public class InputPlane extends CoordPlane
 					second = bifHelp(first[0], first[1], first[2] - xInc, first[3], dx, dy, tr, derivative, 'a');
 				else second = bifHelp(first[0], first[1], first[2], first[3] - yInc, dx, dy, tr, derivative, 'b');
 				if (second == null) break;
-				gc.strokeLine(normToScrX(first[2]), normToScrY(first[3]), normToScrX(second[2]), normToScrY(second[3]));
+				double firstEval = L.eval(first, t);
+				double secondEval = L.eval(second, t);
+				if(firstEval == 0D || firstEval == -0D)
+					degenHopf.add(new Point2D(first[2], first[3]));
+				else if (secondEval == 0D || secondEval == -0D)
+					degenHopf.add(new Point2D(second[2], second[3]));
+				else if (Math.signum(firstEval) != Math.signum(secondEval))
+				{
+					Point2D prev = new Point2D(first[2], first[3]);
+					Point2D next = new Point2D(second[2], second[3]);
+					double factor = Math.abs(firstEval) / (Math.abs(secondEval) + Math.abs(firstEval));
+					degenHopf.add(prev.add(next.subtract(prev).multiply(factor)));
+					System.out.println("DEGEN DEGEN DEGEN");
+				}
+
 				drawLine(first[2], first[3], second[2], second[3], awtHopfBifColor);
 			}
 		} catch (EvaluationException ignored) {}
@@ -527,6 +583,7 @@ public class InputPlane extends CoordPlane
 		{
 			hopfBifHelp(hopfBif, false);
 		}
+		drawDegenHopf();
 		drawSaddleCons();
 		drawDegenSaddleCons();
 		render();
@@ -596,12 +653,23 @@ public class InputPlane extends CoordPlane
 		gc.setStroke(Color.BLACK);
 	}
 
+	private void drawDegenHopf()
+	{
+		g.setColor(awtHopfBifColor);
+		for(Point2D p : degenHopf)
+		{
+			g.drawOval(imgNormToScrX(p.getX()) - 6, imgNormToScrY(p.getY()) - 6, 12, 12);
+		}
+	}
+
 	@Override
 	public void clear()
 	{
 		saddleBifs.clear();
 		hopfBifs.clear();
 		saddleCons.clear();
+		degenSaddleCons.clear();
+		degenHopf.clear();
 		for(Pentagram p : pentlist)
 		{
 			this.getChildren().remove(p);

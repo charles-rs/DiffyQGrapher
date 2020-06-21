@@ -64,4 +64,15 @@ public class Derivative extends Node
 			return this.diff.equals(((Derivative) other).diff) && this.val.equals(((Derivative) other).val);
 		} else return false;
 	}
+	public Node getVal()
+	{
+		return val.clone();
+	}
+	@Override
+	public StringBuilder toLatex(StringBuilder sb)
+	{
+		diff.toLatex(sb);
+		val.toLatex(sb);
+		return sb;
+	}
 }

@@ -60,6 +60,31 @@ public class Function extends Node
 		}
 		return sb;
 	}
+	@Override
+	public StringBuilder toLatex(StringBuilder sb)
+	{
+		switch (type)
+		{
+			case POW:
+				sb.append("{");
+				base.toLatex(sb);
+				sb.append("}^{");
+				v.toLatex(sb);
+				sb.append("}");
+				break;
+			case ABS:
+				sb.append("\\left|");
+				v.toLatex(sb);
+				sb.append("\\right|");
+				break;
+			default:
+				sb.append(type.latexRep());
+				sb.append("{\\left(");
+				v.toLatex(sb);
+				sb.append("\\right)}");
+		}
+		return sb;
+	}
 
 	@Override
 	public double eval(double x, double y, double a, double b, double t) throws EvaluationException

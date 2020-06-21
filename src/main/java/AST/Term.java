@@ -27,6 +27,30 @@ public class Term extends Node
 
 		return sb;
 	}
+	@Override
+	public StringBuilder toLatex(StringBuilder sb)
+	{
+		switch (op)
+		{
+			case '*':
+				sb.append("{\\left(");
+				a.toLatex(sb);
+				sb.append("\\right)\\left(");
+				b.toLatex(sb);
+				sb.append("\\right)}");
+				break;
+			case '/':
+				sb.append("\\frac{");
+				a.toLatex(sb);
+				sb.append("}{");
+				b.toLatex(sb);
+				sb.append("}");
+				break;
+			default:
+				throw new UnsupportedOperationException();
+		}
+		return sb;
+	}
 
 	@Override
 	public double eval(double x, double y, double a, double b, double t) throws EvaluationException

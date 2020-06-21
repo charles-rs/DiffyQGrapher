@@ -28,6 +28,16 @@ public class Expression extends Node
 		sb.append(")");
 		return sb;
 	}
+	@Override
+	public StringBuilder toLatex(StringBuilder sb)
+	{
+		sb.append("\\left(");
+		a.toLatex(sb);
+		sb.append(op);
+		b.toLatex(sb);
+		sb.append("\\right)");
+		return sb;
+	}
 
 	@Override
 	public double eval(double x, double y, double a, double b, double t) throws EvaluationException

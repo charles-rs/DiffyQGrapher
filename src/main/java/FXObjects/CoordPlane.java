@@ -33,16 +33,34 @@ import java.io.IOException;
  */
 public abstract class CoordPlane extends Pane
 {
-
-
-	private Line xAxis, yAxis;
-	private Rectangle border;
+	/**
+	 * line objects for the axes
+	 */
+	private final Line xAxis, yAxis;
+	/**
+	 * border of the plane. changes colour for selection
+	 */
+	private final Rectangle border;
+	/**
+	 * the bufferedimage we draw everything on
+	 */
 	protected final BufferedImage canv;
+	/**
+	 * the image object for rendering
+	 */
 	private WritableImage fxImg;
+	/**
+	 * imageview to display the image
+	 */
 	protected ImageView vw;
+	/**
+	 * graphics2d object for drawing on canv
+	 */
 	protected Graphics2D g;
+	/**
+	 * red dot the displays when a thread is doing a hard task
+	 */
 	protected Circle loading;
-
 	/**
 	 * the canvas where everything is drawn
 	 */
@@ -55,7 +73,7 @@ public abstract class CoordPlane extends Pane
 	/**
 	 * stores the initial bounds for resetting
 	 */
-	private double initZoom [];
+	private final double initZoom [];
 	/**
 	 * this is just and alias for c.getGraphicsContext2D() since we use it a lot
 	 */
@@ -71,7 +89,7 @@ public abstract class CoordPlane extends Pane
 	/**
 	 * The rectangle object that is shown during zooming
 	 */
-	protected Rectangle zoomBox;
+	protected final Rectangle zoomBox;
 
 
 	/**

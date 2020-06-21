@@ -59,6 +59,11 @@ public class Value extends Node
 		}
 		return sb;
 	}
+	@Override
+	public StringBuilder toLatex(StringBuilder sb)
+	{
+		return prettyPrint(sb);
+	}
 
 	@Override
 	public double eval(double x, double y, double a, double b, double t) throws EvaluationException

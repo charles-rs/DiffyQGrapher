@@ -61,4 +61,13 @@ public class Deriv extends Node
 			return this.sig == ((Deriv) other).sig;
 		} else return false;
 	}
+
+	@Override
+	public StringBuilder toLatex(StringBuilder sb)
+	{
+		sb.append("\\dfrac{d");
+		sb.append(sig);
+		sb.append("}{dt} =");
+		return sb;
+	}
 }
