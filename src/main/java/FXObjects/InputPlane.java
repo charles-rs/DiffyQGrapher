@@ -434,11 +434,11 @@ public class InputPlane extends CoordPlane
 				else second = bifHelp(first[0], first[1], first[2], first[3] + yInc, dx, dy, tr, derivative, 'b');
 				double firstEval = L.eval(first, t);
 				double secondEval = L.eval(second, t);
-				if(firstEval == 0D || firstEval == -0D)
-					degenHopf.add(new Point2D(first[2], first[3]));
-				else if (secondEval == 0D || secondEval == -0D)
-					degenHopf.add(new Point2D(second[2], second[3]));
-				else if (Math.signum(firstEval) != Math.signum(secondEval))
+//				if(firstEval == 0D || firstEval == -0D)
+//					degenHopf.add(new Point2D(first[2], first[3]));
+//				else if (secondEval == 0D || secondEval == -0D)
+//					degenHopf.add(new Point2D(second[2], second[3]));
+				if (Math.signum(firstEval) != Math.signum(secondEval))
 				{
 					Point2D prev = new Point2D(first[2], first[3]);
 					Point2D next = new Point2D(second[2], second[3]);
@@ -466,11 +466,11 @@ public class InputPlane extends CoordPlane
 				if (second == null) break;
 				double firstEval = L.eval(first, t);
 				double secondEval = L.eval(second, t);
-				if(firstEval == 0D || firstEval == -0D)
-					degenHopf.add(new Point2D(first[2], first[3]));
-				else if (secondEval == 0D || secondEval == -0D)
-					degenHopf.add(new Point2D(second[2], second[3]));
-				else if (Math.signum(firstEval) != Math.signum(secondEval))
+//				if(firstEval == 0D || firstEval == -0D)
+//					degenHopf.add(new Point2D(first[2], first[3]));
+//				else if (secondEval == 0D || secondEval == -0D)
+//					degenHopf.add(new Point2D(second[2], second[3]));
+				if (Math.signum(firstEval) != Math.signum(secondEval))
 				{
 					Point2D prev = new Point2D(first[2], first[3]);
 					Point2D next = new Point2D(second[2], second[3]);

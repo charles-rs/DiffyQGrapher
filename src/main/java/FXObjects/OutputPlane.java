@@ -909,7 +909,8 @@ public class OutputPlane extends CoordPlane
 	}
 	private double minDist(final sepStart sep, final Point2D other, final double at, final double bt, boolean firstTry) throws RootNotFound
 	{
-		boolean shortcut = true;
+		boolean shortcut = false;
+		double mins [] = new double[5];
 		double min = Double.MAX_VALUE;
 //		System.out.println(sep.getStart(.01));
 		Evaluator eval1 = EvaluatorFactory.getEvaluator(evalType, dx, dy);
@@ -944,12 +945,13 @@ public class OutputPlane extends CoordPlane
 			}
 		}
 		Point2D next = eval.next();
+		int i = 0;
 		boolean approaching = false;
 //		approaching = !sep.saddle.point.equals(other);
 //		LinkedList<Point2D> record = new LinkedList<>();
 //		if(!firstTry)
 //			eval.initialise(sep.getStart(factor * (xMax - xMin)/c.getWidth()), 0, at, bt, -in);
-		while(inBoundsSaddle(prev) && eval.getT() < 25 && !Thread.interrupted())
+		while(inBoundsSaddle(prev) && eval.getT() < 100 && !Thread.interrupted() && i < 4)
 //		while (next.distance(other) < prev.distance(other) || !approaching)
 		{
 //			System.out.println(prev);
@@ -968,11 +970,17 @@ public class OutputPlane extends CoordPlane
 			{
 				if(shortcut) return prev.distance(other);
 				approaching = false;
+				i++;
 			}
 			if(approaching)
 			{
 				double d = next.distance(other);
-				if(d < min) min = d;
+
+				if(d < min)
+				{
+					min = d;
+					mins[i] = d;
+				}
 			}
 
 
@@ -1011,6 +1019,8 @@ public class OutputPlane extends CoordPlane
 		}
 //		System.out.println("mindistprnt: \nfound: " + prev + "\nother: " + other + "\nstart: " + sep.saddle.point +
 //				"\na: " + a + "\nb: " + b + "\n-----------------------");
+//		for(int n = 0; n < i; n++)
+//			if (mins[n] < min) min = mins[n];
 		return min;
 	}
 	private void assertSaddle(final sepStart s1, final sepStart s2) throws RootNotFound

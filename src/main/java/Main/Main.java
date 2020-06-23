@@ -110,8 +110,9 @@ public class Main extends Application
 		MenuItem saddleBif = new MenuItem("Saddle Node Bifurcation");
 		MenuItem hopfBif = new MenuItem("Hopf Bifurcation");
 		MenuItem sdlConBif = new MenuItem("Saddle Connection Bifurcation");
+		MenuItem cycleBif = new MenuItem("Semi-stable Limit Cycle Bifurcation");
 		MenuItem setSaddleBounds = new MenuItem("Set Saddle Connection Bounds");
-		bifurcation.getItems().addAll(saddleBif, hopfBif, sdlConBif, setSaddleBounds);
+		bifurcation.getItems().addAll(saddleBif, hopfBif, sdlConBif, cycleBif, setSaddleBounds);
 		////////////////////////////////////////////////////////
 		bar.getMenus().addAll(file, options, view, draw, bifurcation, help);
 
@@ -389,6 +390,10 @@ public class Main extends Application
 		sdlConBif.setOnAction((e) ->
 		{
 			outPlane.clickMode = ClickModeType.SELECTSEP;
+		});
+		cycleBif.setOnAction(e ->
+		{
+			outPlane.clickMode = ClickModeType.SEMISTABLE;
 		});
 		quit.setOnAction(e ->
 		{
