@@ -82,6 +82,11 @@ public abstract class Evaluator
 		initialise(p.getX(), p.getY(), t, a, b, inc);
 	}
 
+	public void initialise(Point2D p, double t, double a, double b)
+	{
+		initialise(p, t, a, b, this.getInc());
+	}
+
 	public void resetT()
 	{
 		this.t = 0;

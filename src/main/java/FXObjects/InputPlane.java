@@ -67,10 +67,12 @@ public class InputPlane extends CoordPlane
 	private Color hopfBifColor = Color.DARKRED;
 	Color homoSaddleConColor = Color.PURPLE;
 	Color heteroSaddleConColor = Color.GREEN;
+	Color semiStableColor = Color.TURQUOISE;
 	java.awt.Color awtSaddleBifColor = fromFXColor(saddleBifColor);
 	java.awt.Color awtHopfBifColor = fromFXColor(hopfBifColor);
 	java.awt.Color awtHomoSaddleConColor = fromFXColor(homoSaddleConColor);
 	java.awt.Color awtHeteroSaddleConColor = fromFXColor(heteroSaddleConColor);
+	java.awt.Color awtSemiStableColor = fromFXColor(semiStableColor);
 	/**
 	 * Lists to store all of the bifurcations
 	 */

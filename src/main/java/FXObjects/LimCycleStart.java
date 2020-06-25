@@ -15,7 +15,6 @@ public class LimCycleStart
 
 	public Point2D refLine [] = new Point2D [2];
 
-	public boolean dispose = false;
 	/**
 	 * whether to solve in the positive or negative direction
 	 */
