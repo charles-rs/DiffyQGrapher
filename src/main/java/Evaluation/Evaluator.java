@@ -51,6 +51,39 @@ public abstract class Evaluator
 	abstract public Point2D next();
 
 	/**
+	 * Advances the evaluator the given number of steps, returning the point it lands on
+	 * @param steps the number of steps to advance. Treats negative numbers as 0
+	 * @return the point that is given as a result of evaluating 'steps' steps
+	 */
+	public Point2D advance (int steps)
+	{
+		Point2D temp = this.getCurrent();
+		for(int i = 0; i < steps; i++)
+		{
+			temp = this.next();
+		}
+		return temp;
+	}
+
+
+	/**
+	 * Jumps the evaluator to the provided point so that evaluation can continue therefrom
+	 * @param pt the point to jump to
+	 */
+	public void movePoint(Point2D pt)
+	{
+		this.x = pt.getX();
+		this.y = pt.getY();
+	}
+
+	/**
+	 * flips the increment of the evaluator
+	 */
+	public void negate()
+	{
+		this.inc = -this.inc;
+	}
+	/**
 	 * Initialises the evaluator with certain important information
 	 * @param x the starting x
 	 * @param y the starting y

@@ -9,6 +9,7 @@ import Events.SourceOrSinkSelected;
 import Exceptions.EvaluationException;
 import Exceptions.RootNotFound;
 import javafx.application.Platform;
+import javafx.beans.property.DoubleProperty;
 import javafx.geometry.Insets;
 import javafx.geometry.Point2D;
 import javafx.scene.Node;
@@ -497,13 +498,10 @@ public class OutputPlane extends CoordPlane
 
 		System.out.println("def didn't get here....");
 		unstbl = new LimCycleStart(p2, false, lnSt, lnNd);
-//		drawGraphBack(new InitCond(stbl.st), false, '+', awtAttrLimCycleColor);
-//		drawGraphBack(new InitCond(unstbl.st), false, '-', awtRepLimCycleColor);
-//		render();
-		renderSemiStable(stbl, unstbl, new Point2D(a, b), true);
+		renderSemiStable(lnSt, lnNd, new Point2D(a, b), true);
 	}
 
-	public void renderSemiStable(LimCycleStart l1, LimCycleStart l2, Point2D start, boolean add)
+	public void renderSemiStable(Point2D lnSt, Point2D lnNd, Point2D start, boolean add)
 	{
 		double aInc = 1D * (in.xMax.get() - in.xMin.get()) / in.getWidth();
 		double bInc = 1D * (in.yMax.get() - in.yMin.get()) / in.getHeight();
@@ -511,134 +509,58 @@ public class OutputPlane extends CoordPlane
 		Point2D prev;
 		Point2D next;
 		Point2D temp;
-		Point2D st;
+		Point2D st = null;
 		Point2D diff;
-		//This variable helps deal with switching isA. On the first rootNotFound switch it, but if that doesn't fix it
-		//just go ahead and fail.
-		boolean justThrew = false;
+		int throwCount = 0;
 		//This one lets us skip a point, if for whatever reason we can't find a connection at one increment, skip over
 		//a single point, but not more than once
 		boolean justFailed = true;
-		boolean isA = false;
-		try
-		{
-			st = semiStable(l1, l2, isA, start.getX(), start.getY());
-			if (add)
-			{
-				//TODO make it add
-//				in.saddleCons.add(new SaddleCon(st, s1, s2));
-				add = false;
-			}
-		} catch (RootNotFound r)
+		int code = 0;
+		for(int i = 0; i < 4; i++)
 		{
 			try
 			{
-				isA = !isA;
-				st = semiStable(l1, l2, isA, start.getX(), start.getY());
-				if (add)
-				{
-					//TODO make it add
-//					in.saddleCons.add(new SaddleCon(st, s1, s2));
-					add = false;
-				}
-			} catch (RootNotFound r1)
-			{
-				return;
-			}
+				st = semiStable(lnSt, lnNd, start.getX(), start.getY(), i);
+				code = i;
+				break;
+			} catch (RootNotFound ignored) {}
 		}
+		if(st == null)
+			return;
 		System.out.println("yay");
 		System.out.println(st);
+		boolean isA;
 		for (int i = 0; i < 2; i++)
 		{
 			prev = st;
 			while (in.inBounds(prev.getX(), prev.getY()) && !Thread.interrupted())
 			{
-
+				isA = (code & 1) == 1;
 				if (isA) temp = new Point2D(prev.getX() + otherInc, prev.getY() + bInc);
 				else temp = new Point2D(prev.getX() + aInc, prev.getY() + otherInc);
 				try
 				{
-					next = semiStable(l1, l2, isA, temp.getX(), temp.getY());
-//						System.out.println(i);
-//						if(next.subtract(prev).getY()/next.subtract(prev).getX() < .5)
-//						{
-//							for(int ix = (int) Math.round(prev.getX()); ix < Math.round(next.getX()); ix++)
-//							{
-//
-//							}
-//						} else
-//						{
-//
-//						}
-//						in.drawLine(prev, next, in.saddleCanvas);
+					next = semiStable(lnSt, lnNd, temp.getX(), temp.getY(), code);
 					in.drawLine(prev, next, in.awtSemiStableColor);
 					Platform.runLater(in::render);
-//						in.render();
-//
-//						sg.drawLine(
-//								(int) normToScrX(prev.getX()),
-//								(int) normToScrY(prev.getY()),
-//								(int) normToScrX(next.getX()),
-//								(int) normToScrY(next.getY()));
-//						in.saddleImageView.setImage(SwingFXUtils.toFXImage(in.saddleImageBuf, null));
 					diff = next.subtract(prev);
-//					if(isA)
-//					{
-//						if(diff.getX() == 0D || diff.getY()/diff.getX() > .5)
-//							isA = false;
-//					} else
-//					{
-//						if(diff.getY() == 0D || diff.getX()/diff.getY() > .5)
-//							isA = true;
-//					}
-
-//					if(isA)
-//					{
-//						if(diff.getX() < .1 * inc)
-//						{
-//							isA = false;
-//							otherInc = 0;
-//						}
-//						else
-//							otherInc = aInc * (diff.getY()/diff.getX());
-//					} else
-//					{
-//						if(diff.getY() < .1 * inc)
-//						{
-//							isA = true;
-//							otherInc = 0;
-//						}
-//						else
-//							otherInc = bInc * (diff.getX()/diff.getY());
-//					}
 
 					prev = next;
 					System.out.println(prev);
 					System.out.println(isA);
-					justThrew = false;
+					throwCount = 0;
 				} catch (RootNotFound r)
 				{
-					System.out.println("off the scrn? " + r.offTheScreen);
-					if (r.offTheScreen)
-					{
-						System.out.println("did the thing");
-						break;
-					}
+
 					if (prev.distance(st) < Math.min(aInc, bInc)) break;
-					if (justThrew)
+					if (throwCount >= 4)
 					{
-//						if(justFailed)
-						{
-							System.out.println("breaking");
-							break;
-//						} else
-//						{
-//							justFailed = true;
-						}
+						System.out.println("breaking");
+						break;
 					} else
 					{
-						isA = !isA;
-						justThrew = true;
+						code = (code + 1) % 4;
+						throwCount++;
 					}
 				}
 			}
@@ -651,76 +573,116 @@ public class OutputPlane extends CoordPlane
 		in.render();
 	}
 
-	private Point2D semiStable(LimCycleStart l1, LimCycleStart l2, boolean isA, double a, double b) throws RootNotFound
+	/**
+	 * Finds a semistable limit cycle bifurcation with the provided start info
+	 * @param lnSt
+	 * @param lnNd
+	 * @param a
+	 * @param b
+	 * @param code least significant bit is isA, 2nd least is lookPpos
+	 * @return
+	 * @throws RootNotFound
+	 */
+	private Point2D semiStable(Point2D lnSt, Point2D lnNd, double a, double b, int code) throws RootNotFound
 	{
-		double incT;
-		boolean flipped = false;
+		boolean isA, lookPos;
+		isA = (code & 1) == 1;
+		lookPos = (code & 2) == 2;
+		double finA = Double.MAX_VALUE, finB = Double.MAX_VALUE;
+		double tol, incA, incB;
 		if(isA)
 		{
-			incT = (in.xMax.get() - in.xMin.get())/800;
+			tol = (in.xMax.get() - in.xMin.get())/2048D;
+			if(lookPos)
+				incA = tol * 32D;
+			else incA = - tol * 32D;
+			incB = 0D;
+			finA = a + 2 * incA;
+
 		} else
 		{
-			incT = (in.yMax.get() - in.yMin.get())/800;
+			tol = (in.yMax.get() - in.yMin.get())/2048D;
+			incA = 0D;
+			if(lookPos)
+				incB = tol * 32D;
+			else incB = - tol * 32D;
+			finB = b + 2 * incB;
 		}
-		while(l1.st.distance(l2.st) > inc/100 && !Thread.interrupted())
+		boolean current = hasLimCycle(lnSt, lnNd, a, b);
+		while(Math.max(Math.abs(incA), Math.abs(incB)) > tol)
 		{
-
-			LimCycleStart temp1, temp2;
-			if(isA)
-				a += incT;
-			else
-				b += incT;
-			try
+			System.out.println("a: " + a + "\nb: " + b);
+			if(hasLimCycle(lnSt, lnNd, a + incA, b + incB) == current)
 			{
-				temp1 = updateLimCycle(l1, a, b);
-				temp2 = updateLimCycle(l2, a, b);
-				System.out.println("Dist: " + l1.st.distance((l2.st)));
-				System.out.println("Start1: " + l1.st);
-				System.out.println("(a, b): (" + a + ", " + b + ")");
-				System.out.println("inc: " + incT);
-				if(temp1.st.distance(temp2.st) > l1.st.distance(l2.st))
-				{
-					if(!flipped)
-					{
-						System.out.println("flipping");
-						incT = -incT;
-						flipped = true;
-					} else throw new RootNotFound(true);
-				} else
-				{
-					l1 = temp1;
-					l2 = temp2;
-				}
-			} catch (RootNotFound r)
-			{
-				if(!r.offTheScreen)
-				{
-					if (isA)
-					{
-						a -= incT;
-					} else
-					{
-						b -= incT;
-					}
-					incT = incT / 10;
-					System.out.println("WENT OFF");
-				}
-//				else throw new RootNotFound();
-			}
-			/*
-			if(isA)
-			{
-				if( incT < (in.xMax.get() - in.xMin.get())/200000)
-					throw new RootNotFound();
+				a += incA;
+				b += incB;
 			} else
 			{
-				if(incT < (in.yMax.get() - in.yMin.get())/200000)
-					throw new RootNotFound();
-			}*/
-
+				incA /= 2D;
+				incB /= 2D;
+			}
+			if(a > finA || b > finB)
+				throw new RootNotFound();
 		}
-		System.out.println("found one!");
+		if(!current)
+		{
+			a += incA;
+			b += incB;
+		}
+		Point2D p1 = null, p2 = null;
+		Evaluator e1, e2;
+		e1 = EvaluatorFactory.getEvaluator(evalType, dx, dy);
+		e2 = EvaluatorFactory.getEvaluator(evalType, dx, dy);
+		e1.initialise(lnSt, 0, a, b, inc);
+		e2.initialise(lnNd, 0, a, b, -inc);
+		try
+		{
+			getNextIsectLn(e1, lnSt, lnNd);
+		} catch (RootNotFound r)
+		{
+			e1.negate();
+			e2.negate();
+		}
+		for(int i = 0; i < 20; i++)
+		{
+			p1 = getNextIsectLn(e1, lnSt, lnNd);
+			p2 = getNextIsectLn(e2, lnSt, lnNd);
+		}
+		if(p1.distance(p2) > .2 * lnSt.distance(lnNd))
+			throw new RootNotFound();
 		return new Point2D(a, b);
+	}
+
+	private boolean hasLimCycle(Point2D lnSt, Point2D lnNd, double a, double b)
+	{
+		try
+		{
+			Evaluator eval = EvaluatorFactory.getEvaluator(evalType, dx, dy);
+			eval.initialise(lnSt, 0, a, b, inc);
+			try
+			{
+				eval.next();
+				getNextIsectLn(eval, lnSt, lnNd);
+			} catch (RootNotFound r)
+			{
+				eval.initialise(lnSt, 0, a, b, -inc);
+				eval.next();
+				getNextIsectLn(eval, lnSt, lnNd);
+			}
+			Point2D pOld, pNew;
+			pNew = lnSt;
+			for(int i = 0; i < 20; i++)
+			{
+				pOld = pNew;
+				pNew = getNextIsectLn(eval, lnSt, lnNd);
+				if(pOld.distance(pNew) < inc/1000)
+					break;
+			}
+			return true;
+		} catch (RootNotFound r)
+		{
+			return false;
+		}
 	}
 
 
@@ -735,6 +697,7 @@ public class OutputPlane extends CoordPlane
 		{
 			eval.initialise(lc.st, 0, a, b, -inc);
 		}
+		eval.advance(2);
 		Point2D p1 = lc.st;
 		Point2D p2 = getNextIsectLn(eval, lc.refLine[0], lc.refLine[1]);
 		while(p2.distance(p1) > inc/1000 && !Thread.interrupted())
@@ -743,15 +706,14 @@ public class OutputPlane extends CoordPlane
 			p1 = p2;
 			p2 = getNextIsectLn(eval, lc.refLine[0], lc.refLine[1]);
 		}
+		System.out.println("updated\nold start: " + lc.st + "\nnew start: " + p2);
 		return new LimCycleStart(p2, lc.isPositive, lc.refLine[0], lc.refLine[1]);
 	}
 
 
 	private void updateLimCycles()
 	{
-		try
-		{
-			limCycleUpdater.join();
+			limCycleUpdater.interrupt();
 			limCycleUpdater = new Thread(() ->
 			{
 				Platform.runLater(() -> loading.setVisible(true));
@@ -775,10 +737,6 @@ public class OutputPlane extends CoordPlane
 				Platform.runLater(() -> loading.setVisible(false));
 			});
 			limCycleUpdater.start();
-		} catch (InterruptedException i)
-		{
-			System.out.println("uh oh...");
-		}
 	}
 	private void drawLimCycle(LimCycleStart lc)
 	{
@@ -790,7 +748,7 @@ public class OutputPlane extends CoordPlane
 				drawGraphBack(new InitCond(lc.st), false, '+', awtAttrLimCycleColor);
 			} else
 			{
-				drawGraphBack(new InitCond(lc.st), false, '+', awtRepLimCycleColor);
+				drawGraphBack(new InitCond(lc.st), false, '-', awtRepLimCycleColor);
 			}
 			g.setStroke(new BasicStroke(1));
 		}
@@ -929,6 +887,7 @@ public class OutputPlane extends CoordPlane
 	 */
 	private Point2D getNextIsectLn(Evaluator eval, Point2D st, Point2D nd) throws RootNotFound
 	{
+		eval.resetT();
 		Point2D p1 = eval.getCurrent();
 		Point2D p2 = eval.next();
 		double tInc = eval.getInc();
@@ -2262,5 +2221,78 @@ public class OutputPlane extends CoordPlane
 				scrToNorm(new Point2D(cycleLine.getEndX(), cycleLine.getEndY())),
 				p1, p2);
 	}
+	/*
+	private Point2D semiStable(LimCycleStart l1, LimCycleStart l2, boolean isA, double a, double b) throws RootNotFound
+	{
+		double incT;
+		boolean flipped = false;
+		if(isA)
+		{
+			incT = (in.xMax.get() - in.xMin.get())/800;
+		} else
+		{
+			incT = (in.yMax.get() - in.yMin.get())/800;
+		}
+		while(l1.st.distance(l2.st) > inc/100 && !Thread.interrupted())
+		{
+
+			LimCycleStart temp1, temp2;
+			if(isA)
+				a += incT;
+			else
+				b += incT;
+			try
+			{
+				temp1 = updateLimCycle(l1, a, b);
+				temp2 = updateLimCycle(l2, a, b);
+				System.out.println("Dist: " + l1.st.distance((l2.st)));
+				System.out.println("Start1: " + l1.st);
+				System.out.println("(a, b): (" + a + ", " + b + ")");
+				System.out.println("inc: " + incT);
+				if(temp1.st.distance(temp2.st) > l1.st.distance(l2.st))
+				{
+					if(!flipped)
+					{
+						System.out.println("flipping");
+						incT = -incT;
+						flipped = true;
+					} else throw new RootNotFound(true);
+				} else
+				{
+					l1 = temp1;
+					l2 = temp2;
+				}
+			} catch (RootNotFound r)
+			{
+				if(!r.offTheScreen)
+				{
+					if (isA)
+					{
+						a -= incT;
+					} else
+					{
+						b -= incT;
+					}
+					incT = incT / 10;
+					System.out.println("WENT OFF");
+				}
+//				else throw new RootNotFound();
+			}
+
+			if(isA)
+			{
+				if( incT < (in.xMax.get() - in.xMin.get())/200000)
+					throw new RootNotFound();
+			} else
+			{
+				if(incT < (in.yMax.get() - in.yMin.get())/200000)
+					throw new RootNotFound();
+			}
+
+}
+		System.out.println("found one!");
+				return new Point2D(a, b);
+				}
+	 */
 
 }
