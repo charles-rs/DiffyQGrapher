@@ -403,19 +403,23 @@ public class OutputPlane extends CoordPlane
 						limCycStep = 2;
 						break;
 					case 2:
-						try
+						new Thread(() ->
 						{
-							findSemiStable(pt,
-									scrToNorm(new Point2D(cycleLine.getStartX(), cycleLine.getStartY())),
-									scrToNorm(new Point2D(cycleLine.getEndX(), cycleLine.getEndY())), a, b, true);
-						} catch (RootNotFound ignored) {
-							System.out.println("shit went wrong");
-						} finally
-						{
-							limCycStep = 0;
-							clickMode = ClickModeType.DRAWPATH;
-							cycleLine.setVisible(false);
-						}
+							try
+							{
+								findSemiStable(pt,
+										scrToNorm(new Point2D(cycleLine.getStartX(), cycleLine.getStartY())),
+										scrToNorm(new Point2D(cycleLine.getEndX(), cycleLine.getEndY())), a, b, true);
+							} catch (RootNotFound ignored)
+							{
+								System.out.println("shit went wrong");
+							} finally
+							{
+								limCycStep = 0;
+								clickMode = ClickModeType.DRAWPATH;
+								cycleLine.setVisible(false);
+							}
+						}).start();
 						//do shit
 				}
 		}
@@ -611,7 +615,7 @@ public class OutputPlane extends CoordPlane
 		boolean current = hasLimCycle(lnSt, lnNd, a, b);
 		while(Math.max(Math.abs(incA), Math.abs(incB)) > tol)
 		{
-			System.out.println("a: " + a + "\nb: " + b);
+			System.out.println("a: " + a + "\nb: " + b + "\nisA: " + isA + "\nlookPos: " + lookPos);
 			if(hasLimCycle(lnSt, lnNd, a + incA, b + incB) == current)
 			{
 				a += incA;
@@ -622,7 +626,10 @@ public class OutputPlane extends CoordPlane
 				incB /= 2D;
 			}
 			if(a > finA || b > finB)
+			{
+				System.out.println("went out of bounds");
 				throw new RootNotFound();
+			}
 		}
 		if(!current)
 		{
@@ -640,16 +647,27 @@ public class OutputPlane extends CoordPlane
 			getNextIsectLn(e1, lnSt, lnNd);
 		} catch (RootNotFound r)
 		{
+			System.out.println("negating");
 			e1.negate();
 			e2.negate();
 		}
-		for(int i = 0; i < 20; i++)
+		try
 		{
-			p1 = getNextIsectLn(e1, lnSt, lnNd);
-			p2 = getNextIsectLn(e2, lnSt, lnNd);
+			for (int i = 0; i < 20; i++)
+			{
+				p1 = getNextIsectLn(e1, lnSt, lnNd);
+				p2 = getNextIsectLn(e2, lnSt, lnNd);
+			}
+		} catch (RootNotFound r)
+		{
+			System.out.println("oh no....");
 		}
-		if(p1.distance(p2) > .2 * lnSt.distance(lnNd))
-			throw new RootNotFound();
+//		if(p1.distance(p2) > .2 * lnSt.distance(lnNd))
+//		{
+//			System.out.println("wrong end");
+//			throw new RootNotFound();
+//		}
+		System.out.println("returning");
 		return new Point2D(a, b);
 	}
 
