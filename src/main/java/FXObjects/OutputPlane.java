@@ -544,7 +544,9 @@ public class OutputPlane extends CoordPlane
 				else temp = new Point2D(prev.getX() + aInc, prev.getY() + otherInc);
 				try
 				{
+					System.out.println("abt to calc");
 					next = semiStable(lnSt, lnNd, temp.getX(), temp.getY(), code);
+					System.out.println("found it");
 					in.drawLine(prev, next, in.awtSemiStableColor);
 					Platform.runLater(in::render);
 					diff = next.subtract(prev);
@@ -593,24 +595,29 @@ public class OutputPlane extends CoordPlane
 		isA = (code & 1) == 1;
 		lookPos = (code & 2) == 2;
 		double finA = Double.MAX_VALUE, finB = Double.MAX_VALUE;
+		if(!lookPos)
+		{
+			finA = -finA;
+			finB = -finB;
+		}
 		double tol, incA, incB;
 		if(isA)
 		{
 			tol = (in.xMax.get() - in.xMin.get())/2048D;
 			if(lookPos)
-				incA = tol * 32D;
-			else incA = - tol * 32D;
+				incA = tol * 16D;
+			else incA = - tol * 16D;
 			incB = 0D;
-			finA = a + 2 * incA;
+			finA = a + 8 * incA;
 
 		} else
 		{
 			tol = (in.yMax.get() - in.yMin.get())/2048D;
 			incA = 0D;
 			if(lookPos)
-				incB = tol * 32D;
-			else incB = - tol * 32D;
-			finB = b + 2 * incB;
+				incB = tol * 16D;
+			else incB = - tol * 16D;
+			finB = b + 8 * incB;
 		}
 		boolean current = hasLimCycle(lnSt, lnNd, a, b);
 		while(Math.max(Math.abs(incA), Math.abs(incB)) > tol)
@@ -625,7 +632,8 @@ public class OutputPlane extends CoordPlane
 				incA /= 2D;
 				incB /= 2D;
 			}
-			if(a > finA || b > finB)
+			System.out.println("made it thru");
+			if(lookPos && (a > finA || b > finB) || !lookPos && (a < finA || b < finB))
 			{
 				System.out.println("went out of bounds");
 				throw new RootNotFound();
@@ -640,8 +648,10 @@ public class OutputPlane extends CoordPlane
 		Evaluator e1, e2;
 		e1 = EvaluatorFactory.getEvaluator(evalType, dx, dy);
 		e2 = EvaluatorFactory.getEvaluator(evalType, dx, dy);
-		e1.initialise(lnSt, 0, a, b, inc);
-		e2.initialise(lnNd, 0, a, b, -inc);
+		e1.initialise(lnSt, 0, a, b, -inc);
+		e2.initialise(lnNd, 0, a, b, inc);
+		e1.next();
+		e2.next();
 		try
 		{
 			getNextIsectLn(e1, lnSt, lnNd);
@@ -650,6 +660,8 @@ public class OutputPlane extends CoordPlane
 			System.out.println("negating");
 			e1.negate();
 			e2.negate();
+			e1.advance(4);
+			e2.advance(4);
 		}
 		try
 		{
@@ -749,6 +761,7 @@ public class OutputPlane extends CoordPlane
 				for (LimCycleStart lc : temp)
 				{
 					drawLimCycle(lc);
+					render();
 				}
 				if (!Thread.interrupted())
 					render();
@@ -910,7 +923,7 @@ public class OutputPlane extends CoordPlane
 		Point2D p2 = eval.next();
 		double tInc = eval.getInc();
 		//TODO maybe add another setting for limcycle bounds
-		while (eval.getT() < 200)
+		while (Math.abs(eval.getT()) < 200)
 		{
 			try
 			{
