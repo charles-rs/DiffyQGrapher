@@ -1,12 +1,9 @@
 package FXObjects;
 
-import AST.Deriv;
-import AST.Derivative;
 import AST.Maths;
 import AST.Node;
 import Exceptions.EvaluationException;
 import javafx.application.Platform;
-import javafx.event.EventHandler;
 import javafx.geometry.Insets;
 import javafx.geometry.Point2D;
 import javafx.geometry.Pos;
@@ -17,7 +14,6 @@ import javafx.scene.control.TextField;
 import javafx.scene.input.KeyCode;
 import javafx.scene.input.KeyEvent;
 import javafx.scene.input.MouseEvent;
-import javafx.scene.layout.AnchorPane;
 import javafx.scene.layout.StackPane;
 import javafx.scene.layout.VBox;
 import javafx.scene.paint.Color;
@@ -81,6 +77,7 @@ public class InputPlane extends CoordPlane
 	List<SaddleCon> saddleCons;
 	List<Point2D> degenSaddleCons;
 	List<Point2D> degenHopf;
+	List<SemiStableStart> semiStables;
 	/**
 	 * a separate thread that deals with drawing difficult bifurcations so as not to lock up the program
 	 */
@@ -122,6 +119,7 @@ public class InputPlane extends CoordPlane
 		degenSaddleCons = new ArrayList<>();
 		pentlist = new ArrayList<>();
 		degenHopf = new ArrayList<>();
+		semiStables = new ArrayList<>();
 		saddleCanvas.setVisible(true);
 		pt = new Circle();
 		pt.setRadius(2);
@@ -587,6 +585,7 @@ public class InputPlane extends CoordPlane
 		}
 		drawDegenHopf();
 		drawSaddleCons();
+		drawSemiStables();
 		drawDegenSaddleCons();
 		render();
 	}
@@ -635,6 +634,23 @@ public class InputPlane extends CoordPlane
 			artist.start();
 		}
 		drawDegenSaddleCons();
+	}
+
+	public void drawSemiStables()
+	{
+		for(SemiStableStart s : semiStables)
+		{
+			artist = new Thread(() ->
+			{
+				Platform.runLater(() -> loading.setVisible(true));
+				synchronized (this)
+				{
+					op.renderSemiStable(s.lnSt, s.lnNd, s.start, false);
+				}
+				Platform.runLater(() -> loading.setVisible(false));
+			});
+			artist.start();
+		}
 	}
 
 	/**

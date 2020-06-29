@@ -400,115 +400,38 @@ public class OutputPlane extends CoordPlane
 						cycleLine.setEndX(e.getX());
 						cycleLine.setEndY(e.getY());
 						cycleLine.setVisible(true);
-						limCycStep = 2;
-						break;
-					case 2:
-						new Thread(() ->
+						in.artist = new Thread(() ->
 						{
 							try
 							{
-								findSemiStable(pt,
-										scrToNorm(new Point2D(cycleLine.getStartX(), cycleLine.getStartY())),
-										scrToNorm(new Point2D(cycleLine.getEndX(), cycleLine.getEndY())), a, b, true);
-							} catch (RootNotFound ignored)
-							{
-								System.out.println("shit went wrong");
+								Platform.runLater(() -> in.loading.setVisible(true));
+								synchronized (in)
+								{
+									renderSemiStable(
+											scrToNorm(new Point2D(cycleLine.getStartX(), cycleLine.getStartY())),
+											scrToNorm(new Point2D(cycleLine.getEndX(), cycleLine.getEndY())),
+											new Point2D(a, b), true);
+								}
+								Platform.runLater(() -> in.loading.setVisible(false));
 							} finally
 							{
-								limCycStep = 0;
-								clickMode = ClickModeType.DRAWPATH;
+
 								cycleLine.setVisible(false);
 							}
-						}).start();
-						//do shit
+						});
+						in.artist.start();
+						limCycStep = 0;
+						clickMode = ClickModeType.DRAWPATH;
 				}
 		}
 
 	}
-	void findSemiStable(Point2D start, Point2D lnSt, Point2D lnNd, double a, double b, boolean add) throws RootNotFound
-	{
-		System.out.println(lnSt);
-		System.out.println(lnNd);
-		Evaluator eval = EvaluatorFactory.getEvaluator(evalType, dx, dy);
-		eval.initialise(start, 0, a, b, inc);
-		LimCycleStart stbl, unstbl;
-		Point2D isectStbl = null, isectUnstbl = null;
-		Point2D p1 = start;
-		Point2D p2 = eval.next();
-		while (eval.getT() < 100 && !Thread.interrupted())
-		{
-			try
-			{
-				isectStbl = getIntersection(p1, p2, lnSt, lnNd);
-				break;
-			} catch (RootNotFound r)
-			{
-				p1 = p2;
-				p2 = eval.next();
-			}
-		}
-		eval.initialise(start,0, a, b, -inc);
-		p1 = start;
-		p2 = eval.next();
-		while(eval.getT() < 100 && !Thread.interrupted())
-		{
-			try
-			{
-				isectUnstbl = getIntersection(p1, p2, lnSt, lnNd);
-				break;
-			} catch (RootNotFound r)
-			{
-				p1 = p2;
-				p2 = eval.next();
-			}
-		}
-		System.out.println("Initialised both");
-		if(isectStbl == null || isectUnstbl == null)
-			throw new RootNotFound();
-		p1 = isectStbl;
-		eval.initialise(isectStbl, 0, a, b, inc);
-		p2 = getNextIsectLn(eval, lnSt, lnNd);
-		while(p1.distance(p2) > inc/1000 && !Thread.interrupted())
-		{
-			p1 = p2;
-			p2 = getNextIsectLn(eval, lnSt, lnNd);
-			eval.resetT();
-		}
-		System.out.println("hopefully i get here");
-		stbl = new LimCycleStart(p2, true, lnSt, lnNd);
-		p1 = isectUnstbl;
-		eval.initialise(isectUnstbl, 0, a, b, -inc);
-		try
-		{
-			p2 = getNextIsectLn(eval, lnSt, lnNd);
-		} catch (RootNotFound r)
-		{
-			System.out.println(isectUnstbl);
-		}
-		while(p1.distance(p2) > inc/1000 && !Thread.interrupted())
-		{
-			p1 = p2;
-			try
-			{
-				p2 = getNextIsectLn(eval, lnSt, lnNd);
-				eval.resetT();
-			} catch (RootNotFound r)
-			{
-				System.out.println("well it went wrong at " + eval.getT());
-				System.out.println("with the inc of: " + eval.getInc());
-				throw new RootNotFound();
-			}
-		}
 
-		System.out.println("def didn't get here....");
-		unstbl = new LimCycleStart(p2, false, lnSt, lnNd);
-		renderSemiStable(lnSt, lnNd, new Point2D(a, b), true);
-	}
 
 	public void renderSemiStable(Point2D lnSt, Point2D lnNd, Point2D start, boolean add)
 	{
-		double aInc = 1D * (in.xMax.get() - in.xMin.get()) / in.getWidth();
-		double bInc = 1D * (in.yMax.get() - in.yMin.get()) / in.getHeight();
+		double aInc = 5D * (in.xMax.get() - in.xMin.get()) / in.getWidth();
+		double bInc = 5D * (in.yMax.get() - in.yMin.get()) / in.getHeight();
 		double otherInc = 0D;
 		Point2D prev;
 		Point2D next;
@@ -516,9 +439,6 @@ public class OutputPlane extends CoordPlane
 		Point2D st = null;
 		Point2D diff;
 		int throwCount = 0;
-		//This one lets us skip a point, if for whatever reason we can't find a connection at one increment, skip over
-		//a single point, but not more than once
-		boolean justFailed = true;
 		int code = 0;
 		for(int i = 0; i < 4; i++)
 		{
@@ -534,6 +454,10 @@ public class OutputPlane extends CoordPlane
 		System.out.println("yay");
 		System.out.println(st);
 		boolean isA;
+		if(add)
+		{
+			in.semiStables.add(new SemiStableStart(lnSt, lnNd, st));
+		}
 		for (int i = 0; i < 2; i++)
 		{
 			prev = st;
@@ -544,12 +468,29 @@ public class OutputPlane extends CoordPlane
 				else temp = new Point2D(prev.getX() + aInc, prev.getY() + otherInc);
 				try
 				{
-					System.out.println("abt to calc");
+					System.out.println("i: " + i);
 					next = semiStable(lnSt, lnNd, temp.getX(), temp.getY(), code);
 					System.out.println("found it");
 					in.drawLine(prev, next, in.awtSemiStableColor);
 					Platform.runLater(in::render);
 					diff = next.subtract(prev);
+
+					if(isA)
+					{
+						if(Math.abs(diff.getY()/diff.getX()) < 1D)
+							isA = false;
+					} else
+					{
+						if(Math.abs(diff.getY()/diff.getX()) > 1D)
+							isA = true;
+					}
+					if(isA)
+					{
+						otherInc = bInc * diff.getX()/diff.getY();
+					} else
+					{
+						otherInc = aInc * diff.getY()/diff.getX();
+					}
 
 					prev = next;
 					System.out.println(prev);
@@ -572,6 +513,7 @@ public class OutputPlane extends CoordPlane
 			}
 			aInc = -aInc;
 			bInc = -bInc;
+			code = (code + 2) % 4;
 		}
 		in.gc.setStroke(Color.BLACK);
 
@@ -585,7 +527,7 @@ public class OutputPlane extends CoordPlane
 	 * @param lnNd
 	 * @param a
 	 * @param b
-	 * @param code least significant bit is isA, 2nd least is lookPpos
+	 * @param code least significant bit is isA, 2nd least is lookPos
 	 * @return
 	 * @throws RootNotFound
 	 */
@@ -622,7 +564,6 @@ public class OutputPlane extends CoordPlane
 		boolean current = hasLimCycle(lnSt, lnNd, a, b);
 		while(Math.max(Math.abs(incA), Math.abs(incB)) > tol)
 		{
-			System.out.println("a: " + a + "\nb: " + b + "\nisA: " + isA + "\nlookPos: " + lookPos);
 			if(hasLimCycle(lnSt, lnNd, a + incA, b + incB) == current)
 			{
 				a += incA;
@@ -632,7 +573,6 @@ public class OutputPlane extends CoordPlane
 				incA /= 2D;
 				incB /= 2D;
 			}
-			System.out.println("made it thru");
 			if(lookPos && (a > finA || b > finB) || !lookPos && (a < finA || b < finB))
 			{
 				System.out.println("went out of bounds");
@@ -643,6 +583,11 @@ public class OutputPlane extends CoordPlane
 		{
 			a += incA;
 			b += incB;
+		}
+		if(!hasLimCycle(lnSt, lnNd, a, b))
+		{
+			System.out.println("what the actual fuck");
+			throw new RootNotFound();
 		}
 		Point2D p1 = null, p2 = null;
 		Evaluator e1, e2;
@@ -672,7 +617,8 @@ public class OutputPlane extends CoordPlane
 			}
 		} catch (RootNotFound r)
 		{
-			System.out.println("oh no....");
+			System.out.println("problem.");
+			throw new RootNotFound();
 		}
 //		if(p1.distance(p2) > .2 * lnSt.distance(lnNd))
 //		{
@@ -736,7 +682,6 @@ public class OutputPlane extends CoordPlane
 			p1 = p2;
 			p2 = getNextIsectLn(eval, lc.refLine[0], lc.refLine[1]);
 		}
-		System.out.println("updated\nold start: " + lc.st + "\nnew start: " + p2);
 		return new LimCycleStart(p2, lc.isPositive, lc.refLine[0], lc.refLine[1]);
 	}
 
@@ -753,16 +698,13 @@ public class OutputPlane extends CoordPlane
 					try
 					{
 						temp.add(updateLimCycle(lc, a, b));
+						drawLimCycle(lc);
+						render();
 					} catch (RootNotFound ignored)
 					{
 					}
 				}
 				limCycles = temp;
-				for (LimCycleStart lc : temp)
-				{
-					drawLimCycle(lc);
-					render();
-				}
 				if (!Thread.interrupted())
 					render();
 				Platform.runLater(() -> loading.setVisible(false));
@@ -838,8 +780,6 @@ public class OutputPlane extends CoordPlane
 				return false;
 			}
 		}
-		double d1, d2;
-		d2 = p2.distance(p1);
 		boolean haveFlipped = false;
 		try
 		{
@@ -851,14 +791,7 @@ public class OutputPlane extends CoordPlane
 					p2 = getNextIsectLn(eval, lnSt, lnNd);
 					if (Math.abs(eval.getT()) < 3 * Math.abs(eval.getInc()))
 						p2 = getNextIsectLn(eval, lnSt, lnNd);
-					System.out.println(eval.getT());
 					eval.resetT();
-					d1 = d2;
-					d2 = p2.distance(p1);
-					System.out.println("D1: " + d1);
-					System.out.println("P1: " + p1);
-					System.out.println("D2: " + d2);
-					System.out.println("P2: " + p2);
 					if (p1.distance(p2) < inc / 10000)
 					{
 						synchronized (g)
@@ -875,8 +808,6 @@ public class OutputPlane extends CoordPlane
 							render();
 						}
 						cycleLine.setVisible(false);
-//						Point2D st = scrToNorm(new Point2D(cycleLine.getStartX(), cycleLine.getStartY()));
-//						Point2D nd = scrToNorm(new Point2D(cycleLine.getEndX(), cycleLine.getEndY()));
 						if(add)
 						{
 							limCycles.add(new LimCycleStart(p2, eval.getInc(), lnSt, lnNd));
@@ -896,10 +827,6 @@ public class OutputPlane extends CoordPlane
 			}
 		} catch (RootNotFound ignored)
 		{
-//			g.setColor(java.awt.Color.RED);
-//			g.fillOval(imgNormToScrX(p2.getX()) - 5, imgNormToScrY(p2.getY()) - 5, 10, 10);
-//			render();
-			System.out.println("issue 2");
 			if(add)
 			{
 				cycleLine.setVisible(false);
@@ -2246,6 +2173,7 @@ public class OutputPlane extends CoordPlane
 		throw new RootNotFound();
 	}
 
+	@Deprecated
 	private Point2D getIntersectionCycleLine(Point2D p1, Point2D p2) throws RootNotFound
 	{
 		return getIntersection(scrToNorm(new Point2D(cycleLine.getStartX(), cycleLine.getStartY())),
@@ -2325,5 +2253,85 @@ public class OutputPlane extends CoordPlane
 				return new Point2D(a, b);
 				}
 	 */
+	@Deprecated
+	void findSemiStable(Point2D start, Point2D lnSt, Point2D lnNd, double a, double b, boolean add) throws RootNotFound
+	{
+		System.out.println(lnSt);
+		System.out.println(lnNd);
+		Evaluator eval = EvaluatorFactory.getEvaluator(evalType, dx, dy);
+		eval.initialise(start, 0, a, b, inc);
+		LimCycleStart stbl, unstbl;
+		Point2D isectStbl = null, isectUnstbl = null;
+		Point2D p1 = start;
+		Point2D p2 = eval.next();
+		while (eval.getT() < 100 && !Thread.interrupted())
+		{
+			try
+			{
+				isectStbl = getIntersection(p1, p2, lnSt, lnNd);
+				break;
+			} catch (RootNotFound r)
+			{
+				p1 = p2;
+				p2 = eval.next();
+			}
+		}
+		eval.initialise(start,0, a, b, -inc);
+		p1 = start;
+		p2 = eval.next();
+		while(eval.getT() < 100 && !Thread.interrupted())
+		{
+			try
+			{
+				isectUnstbl = getIntersection(p1, p2, lnSt, lnNd);
+				break;
+			} catch (RootNotFound r)
+			{
+				p1 = p2;
+				p2 = eval.next();
+			}
+		}
+		System.out.println("Initialised both");
+		if(isectStbl == null || isectUnstbl == null)
+			throw new RootNotFound();
+		p1 = isectStbl;
+		eval.initialise(isectStbl, 0, a, b, inc);
+		p2 = getNextIsectLn(eval, lnSt, lnNd);
+		while(p1.distance(p2) > inc/1000 && !Thread.interrupted())
+		{
+			p1 = p2;
+			p2 = getNextIsectLn(eval, lnSt, lnNd);
+			eval.resetT();
+		}
+		System.out.println("hopefully i get here");
+		stbl = new LimCycleStart(p2, true, lnSt, lnNd);
+		p1 = isectUnstbl;
+		eval.initialise(isectUnstbl, 0, a, b, -inc);
+		try
+		{
+			p2 = getNextIsectLn(eval, lnSt, lnNd);
+		} catch (RootNotFound r)
+		{
+			System.out.println(isectUnstbl);
+		}
+		while(p1.distance(p2) > inc/1000 && !Thread.interrupted())
+		{
+			p1 = p2;
+			try
+			{
+				p2 = getNextIsectLn(eval, lnSt, lnNd);
+				eval.resetT();
+			} catch (RootNotFound r)
+			{
+				System.out.println("well it went wrong at " + eval.getT());
+				System.out.println("with the inc of: " + eval.getInc());
+				throw new RootNotFound();
+			}
+		}
+
+		System.out.println("def didn't get here....");
+		unstbl = new LimCycleStart(p2, false, lnSt, lnNd);
+		renderSemiStable(lnSt, lnNd, new Point2D(a, b), true);
+	}
 
 }
