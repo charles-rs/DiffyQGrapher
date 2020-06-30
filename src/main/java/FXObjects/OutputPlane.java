@@ -562,7 +562,7 @@ public class OutputPlane extends CoordPlane
 			finB = b + 8 * incB;
 		}
 		boolean current = hasLimCycle(lnSt, lnNd, a, b);
-		while(Math.max(Math.abs(incA), Math.abs(incB)) > tol)
+		while(Math.max(Math.abs(incA), Math.abs(incB)) > tol && !Thread.interrupted())
 		{
 			if(hasLimCycle(lnSt, lnNd, a + incA, b + incB) == current)
 			{
@@ -633,25 +633,35 @@ public class OutputPlane extends CoordPlane
 	{
 		try
 		{
-			Evaluator eval = EvaluatorFactory.getEvaluator(evalType, dx, dy);
-			eval.initialise(lnSt, 0, a, b, inc);
+			Evaluator e1 = EvaluatorFactory.getEvaluator(evalType, dx, dy);
+			Evaluator e2 = EvaluatorFactory.getEvaluator(evalType, dx, dy);
+			e1.initialise(lnSt, 0, a, b, inc);
+			e1.initialise(lnNd, 0, a, b, -inc);
 			try
 			{
-				eval.next();
-				getNextIsectLn(eval, lnSt, lnNd);
+				e2.next();
+				e1.next();
+				getNextIsectLn(e1, lnSt, lnNd);
+				getNextIsectLn(e2, lnSt, lnNd);
 			} catch (RootNotFound r)
 			{
-				eval.initialise(lnSt, 0, a, b, -inc);
-				eval.next();
-				getNextIsectLn(eval, lnSt, lnNd);
+				e1.initialise(lnSt, 0, a, b, -inc);
+				e2.initialise(lnNd, 0, a, b, inc);
+				e1.next();
+				e2.next();
+				getNextIsectLn(e1, lnSt, lnNd);
+				getNextIsectLn(e2, lnSt, lnNd);
 			}
-			Point2D pOld, pNew;
-			pNew = lnSt;
+			Point2D pOld1, pNew1, pOld2, pNew2;
+			pNew1 = lnSt;
+			pNew2 = lnNd;
 			for(int i = 0; i < 20; i++)
 			{
-				pOld = pNew;
-				pNew = getNextIsectLn(eval, lnSt, lnNd);
-				if(pOld.distance(pNew) < inc/1000)
+				pOld1 = pNew1;
+				pOld2 = pNew2;
+				pNew1 = getNextIsectLn(e1, lnSt, lnNd);
+				pNew2 = getNextIsectLn(e2, lnSt, lnNd);
+				if(pOld1.distance(pNew1) < inc/1000 && pOld2.distance(pNew2) < inc/1000)
 					break;
 			}
 			return true;
