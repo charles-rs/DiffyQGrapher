@@ -561,14 +561,18 @@ public class OutputPlane extends CoordPlane
 			else incB = - tol * 16D;
 			finB = b + 8 * incB;
 		}
-		boolean current = hasLimCycle(lnSt, lnNd, a, b);
+		int current = hasLimCycle(lnSt, lnNd, a, b);
+		System.out.println("made it here?");
+		if(current != 0 && current != 2) throw new RootNotFound();
 		while(Math.max(Math.abs(incA), Math.abs(incB)) > tol && !Thread.interrupted())
 		{
-			if(hasLimCycle(lnSt, lnNd, a + incA, b + incB) == current)
+			System.out.println("a: " + a + "\nb: " + b);
+			int cd = hasLimCycle(lnSt, lnNd, a + incA, b + incB);
+			if(cd == current)
 			{
 				a += incA;
 				b += incB;
-			} else
+			} else if (cd != 0 && cd != 1) throw new RootNotFound(); else
 			{
 				incA /= 2D;
 				incB /= 2D;
@@ -579,12 +583,12 @@ public class OutputPlane extends CoordPlane
 				throw new RootNotFound();
 			}
 		}
-		if(!current)
+		if(current == 0)
 		{
 			a += incA;
 			b += incB;
 		}
-		if(!hasLimCycle(lnSt, lnNd, a, b))
+		if(hasLimCycle(lnSt, lnNd, a, b) == 0)
 		{
 			System.out.println("what the actual fuck");
 			throw new RootNotFound();
@@ -629,46 +633,69 @@ public class OutputPlane extends CoordPlane
 		return new Point2D(a, b);
 	}
 
-	private boolean hasLimCycle(Point2D lnSt, Point2D lnNd, double a, double b)
+	private int hasLimCycle(Point2D lnSt, Point2D lnNd, double a, double b)
 	{
+		System.out.println("starting");
+		Evaluator e1 = EvaluatorFactory.getEvaluator(evalType, dx, dy);
+		Evaluator e2 = EvaluatorFactory.getEvaluator(evalType, dx, dy);
+		e1.initialise(lnSt, 0, a, b, inc);
+		e1.initialise(lnNd, 0, a, b, -inc);
 		try
 		{
-			Evaluator e1 = EvaluatorFactory.getEvaluator(evalType, dx, dy);
-			Evaluator e2 = EvaluatorFactory.getEvaluator(evalType, dx, dy);
-			e1.initialise(lnSt, 0, a, b, inc);
-			e1.initialise(lnNd, 0, a, b, -inc);
+			e1.next();
+			getNextIsectLn(e1, lnSt, lnNd);
+		} catch (RootNotFound r)
+		{
+			e1.initialise(lnSt, 0, a, b, -inc);
+			e1.next();
 			try
 			{
-				e2.next();
-				e1.next();
 				getNextIsectLn(e1, lnSt, lnNd);
-				getNextIsectLn(e2, lnSt, lnNd);
-			} catch (RootNotFound r)
+			} catch (RootNotFound r1)
 			{
-				e1.initialise(lnSt, 0, a, b, -inc);
-				e2.initialise(lnNd, 0, a, b, inc);
-				e1.next();
-				e2.next();
-				getNextIsectLn(e1, lnSt, lnNd);
-				getNextIsectLn(e2, lnSt, lnNd);
+				return -1;
 			}
-			Point2D pOld1, pNew1, pOld2, pNew2;
-			pNew1 = lnSt;
-			pNew2 = lnNd;
-			for(int i = 0; i < 20; i++)
+		}
+		try
+		{
+			e2.next();
+			getNextIsectLn(e2, lnSt, lnNd);
+			System.out.println("ok well what about here?");
+		} catch (RootNotFound r)
+		{
+			e2.initialise(lnNd, 0, a, b, inc);
+			e2.next();
+			try
+			{
+				System.out.println("got here perhaps?");
+				getNextIsectLn(e2, lnSt, lnNd);
+			} catch (RootNotFound r1)
+			{
+				return -1;
+			}
+		}
+		System.out.println("got here");
+		Point2D pOld1, pNew1, pOld2, pNew2;
+		pNew1 = lnSt;
+		pNew2 = lnNd;
+		try
+		{
+			for (int i = 0; i < 20; i++)
 			{
 				pOld1 = pNew1;
 				pOld2 = pNew2;
 				pNew1 = getNextIsectLn(e1, lnSt, lnNd);
 				pNew2 = getNextIsectLn(e2, lnSt, lnNd);
-				if(pOld1.distance(pNew1) < inc/1000 && pOld2.distance(pNew2) < inc/1000)
+				if (pOld1.distance(pNew1) < inc / 1000 && pOld2.distance(pNew2) < inc / 1000)
 					break;
 			}
-			return true;
 		} catch (RootNotFound r)
 		{
-			return false;
+			return 0;
 		}
+		if(Math.signum(e1.getInc()) == Math.signum(e2.getInc()))
+			return 1;
+		else return 2;
 	}
 
 
@@ -860,11 +887,10 @@ public class OutputPlane extends CoordPlane
 		Point2D p2 = eval.next();
 		double tInc = eval.getInc();
 		//TODO maybe add another setting for limcycle bounds
-		while (Math.abs(eval.getT()) < 200)
+		while (Math.abs(eval.getT()) < 80)
 		{
 			try
 			{
-
 				return getIntersection(p1, p2, st, nd);
 			} catch (RootNotFound r)
 			{
@@ -875,11 +901,13 @@ public class OutputPlane extends CoordPlane
 			try
 			{
 				temp = critical(p2);
-			} catch (RootNotFound ignored) {}
+			} catch (RootNotFound ignored) {System.out.println("WTF");}
 			if(temp != null)
 			{
-				if (tInc > 0 && temp.type.isSink() || tInc < 0 && temp.type.isSource())
+//				System.out.println("point: " + p2 + "\nroot: " + temp.point + "\ninc: " + tInc);
+				if ((tInc >= 0 && temp.type.isSink()) || (tInc <= 0 && temp.type.isSource()))
 				{
+//					System.out.println("testing");
 					if (p2.distance(temp.point) < inc / 10) throw new RootNotFound();
 				}
 			}
