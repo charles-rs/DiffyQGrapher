@@ -102,9 +102,10 @@ public class Main extends Application
 		MenuItem noMorePentagram = new MenuItem("Remove Pentagram");
 		MenuItem editPentagram = new MenuItem("Edit Pentagram");
 		MenuItem limCycle = new MenuItem("Limit Cycle");
+		MenuItem basin = new MenuItem("Basin");
 		draw.getItems().addAll(separatrices, horizIso, vertIso, new SeparatorMenuItem(),
 				pentagram, noMorePentagram, editPentagram, new SeparatorMenuItem(),
-				limCycle);
+				limCycle, basin);
 
 
 		MenuItem saddleBif = new MenuItem("Saddle Node Bifurcation");
@@ -240,7 +241,6 @@ public class Main extends Application
 					try
 					{
 						Derivative temp = Parser.Parser.parseDerivative(tokyBoi);
-						System.out.println(temp.prettyPrint(new StringBuilder()));
 						switch (temp.getType())
 						{
 							case 'y':
@@ -377,6 +377,10 @@ public class Main extends Application
 		limCycle.setOnAction(e ->
 		{
 			outPlane.clickMode = ClickModeType.FINDLIMCYCLE;
+		});
+		basin.setOnAction(e ->
+		{
+			outPlane.clickMode = ClickModeType.DRAWBASIN;
 		});
 		saddleBif.setOnAction((e) ->
 		{

@@ -157,6 +157,7 @@ public class OutputPlane extends CoordPlane
 			}
 		});
 		loading.toFront();
+
 	}
 
 
@@ -178,7 +179,7 @@ public class OutputPlane extends CoordPlane
 	@Override
 	protected void updateForZoom()
 	{
-		inc = ((xMax.get() - xMin.get())/c.getWidth() + (yMax.get() - yMin.get())/c.getHeight())/2;
+		inc = ((xMax.get() - xMin.get())/1024 + (yMax.get() - yMin.get())/1024)/2;
 	}
 
 	public void clearObjects()
@@ -258,6 +259,10 @@ public class OutputPlane extends CoordPlane
 				isoclines.add(temp);
 				drawIso(temp);
 				render();
+				break;
+			case DRAWBASIN:
+				new Thread(() -> this.drawBasin(pt)).start();
+				clickMode = ClickModeType.DRAWPATH;
 				break;
 			case SELECTSADDLE:
 				try
@@ -458,7 +463,7 @@ public class OutputPlane extends CoordPlane
 		{
 			in.semiStables.add(new SemiStableStart(lnSt, lnNd, st));
 		}
-		for (int i = 0; i < 2; i++)
+		for (int i = 0; i < 3; i++)
 		{
 			prev = st;
 			while (in.inBounds(prev.getX(), prev.getY()) && !Thread.interrupted())
@@ -470,7 +475,6 @@ public class OutputPlane extends CoordPlane
 				{
 					System.out.println("i: " + i);
 					next = semiStable(lnSt, lnNd, temp.getX(), temp.getY(), code);
-					System.out.println("found it");
 					in.drawLine(prev, next, in.awtSemiStableColor);
 					Platform.runLater(in::render);
 					diff = next.subtract(prev);
@@ -562,8 +566,11 @@ public class OutputPlane extends CoordPlane
 			finB = b + 8 * incB;
 		}
 		int current = hasLimCycle(lnSt, lnNd, a, b);
-		System.out.println("made it here?");
-		if(current != 0 && current != 2) throw new RootNotFound();
+		if(current != 0 && current != 2)
+		{
+			System.out.println("bad initial state");
+			throw new RootNotFound();
+		}
 		while(Math.max(Math.abs(incA), Math.abs(incB)) > tol && !Thread.interrupted())
 		{
 			System.out.println("a: " + a + "\nb: " + b);
@@ -635,7 +642,6 @@ public class OutputPlane extends CoordPlane
 
 	private int hasLimCycle(Point2D lnSt, Point2D lnNd, double a, double b)
 	{
-		System.out.println("starting");
 		Evaluator e1 = EvaluatorFactory.getEvaluator(evalType, dx, dy);
 		Evaluator e2 = EvaluatorFactory.getEvaluator(evalType, dx, dy);
 		e1.initialise(lnSt, 0, a, b, inc);
@@ -660,14 +666,12 @@ public class OutputPlane extends CoordPlane
 		{
 			e2.next();
 			getNextIsectLn(e2, lnSt, lnNd);
-			System.out.println("ok well what about here?");
 		} catch (RootNotFound r)
 		{
 			e2.initialise(lnNd, 0, a, b, inc);
 			e2.next();
 			try
 			{
-				System.out.println("got here perhaps?");
 				getNextIsectLn(e2, lnSt, lnNd);
 			} catch (RootNotFound r1)
 			{
@@ -901,7 +905,7 @@ public class OutputPlane extends CoordPlane
 			try
 			{
 				temp = critical(p2);
-			} catch (RootNotFound ignored) {System.out.println("WTF");}
+			} catch (RootNotFound ignored) {}
 			if(temp != null)
 			{
 //				System.out.println("point: " + p2 + "\nroot: " + temp.point + "\ninc: " + tInc);
@@ -955,6 +959,48 @@ public class OutputPlane extends CoordPlane
 			}
 		}
 		throw new RootNotFound();*/
+	}
+	public void drawBasin(Point2D st)
+	{
+		Evaluator eval = EvaluatorFactory.getEvaluator(evalType, dx, dy);
+		Point2D crit;
+		System.out.println("got here");
+		try
+		{
+			crit = critical(st).point;
+		} catch (RootNotFound r)
+		{
+			System.out.println("haha no");
+			return;
+		}
+		java.awt.Color col = new java.awt.Color(((crit.hashCode()) & ((~0) >>> 8)) | (1 << 30), true);
+
+		double x = xMin.get();
+		double y = yMin.get();
+		while(x < xMax.get())
+		{
+			while(y < yMax.get())
+			{
+				eval.initialise(x, y, t, a, b, inc);
+				while(inBoundsSaddle(eval.getCurrent()) && eval.getT() < 100)
+				{
+					if(eval.next().distance(crit) < inc) break;
+				}
+				if(eval.next().distance(crit) < inc)
+				{
+					synchronized (g)
+					{
+						g.setColor(col);
+						g.fillRect(imgNormToScrX(x), imgNormToScrY(y), 2, 2);
+					}
+					drawLine(eval.getCurrent(), eval.getCurrent(), col);
+				}
+				y += (yMax.get() - yMin.get())/512;
+			}
+			y = yMin.get();
+			x += (xMax.get() - xMin.get())/512;
+			render();
+		}
 	}
 
 	

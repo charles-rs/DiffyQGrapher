@@ -213,6 +213,9 @@ public class Parser
 				return new Value(ValueTypes.X);
 			case Y:
 				return new Value(ValueTypes.Y);
+			case R:
+				return Maths.add(new Function(new Value(ValueTypes.X), new Value(2D)),
+						new Function(new Value(ValueTypes.Y), new Value(2D)));
 			case LPAREN:
 				Node temp1 =  parseExpression(t);
 				consume(t, TokenType.RPAREN);

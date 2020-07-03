@@ -61,6 +61,7 @@ public enum TokenType
 	T(TokenCategory.CONSTANT, "t"),
 	X(TokenCategory.CONSTANT, "x"),
 	Y(TokenCategory.CONSTANT, "y"),
+	R(TokenCategory.CONSTANT, "r"),
 	//TODO: MAYBE ADD MORE CONSTANTS
 
 	DY(TokenCategory.OTHER, "dy"),
