@@ -386,9 +386,7 @@ public class InputPlane extends CoordPlane
 		v20 = dy.diff('x').diff('x').div(2).div(yDiv);
 		v11 = dy.diff('x').diff('y').div(yDiv);
 		v02 = dy.diff('y').diff('y').div(2).div(yDiv);
-		v30 = dy.diff('x').diff('x').diff('x').div(6).div(yDiv);
 		v21 = dy.diff('x').diff('x').diff('y').div(2).div(yDiv);
-		v12 = dy.diff('x').diff('y').diff('y').div(2).div(yDiv);
 		v03 = dy.diff('y').diff('y').diff('y').div(2).div(yDiv);
 
 		Node L = m30.add(m12).add(v21).add(v03).sub(m20.mul(m11)).add(v11.mul(v02)).sub(m02.mul(v02).mul(2)).sub(m02.mul(m11)).add(m20.mul(v20).mul(2)).add(v11.mul(v20)).collapse();

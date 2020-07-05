@@ -9,7 +9,6 @@ import Events.SourceOrSinkSelected;
 import Exceptions.EvaluationException;
 import Exceptions.RootNotFound;
 import javafx.application.Platform;
-import javafx.beans.property.DoubleProperty;
 import javafx.geometry.Insets;
 import javafx.geometry.Point2D;
 import javafx.scene.Node;
@@ -35,6 +34,9 @@ import java.io.*;
 import java.util.ArrayList;
 import java.util.LinkedList;
 import java.util.List;
+import java.util.concurrent.ArrayBlockingQueue;
+import java.util.concurrent.BlockingQueue;
+import java.util.concurrent.atomic.AtomicInteger;
 
 
 public class OutputPlane extends CoordPlane
@@ -58,7 +60,7 @@ public class OutputPlane extends CoordPlane
 	private final List<sepStart> selectedSeps;
 	private List<LimCycleStart> limCycles;
 	double inc = .01;
-	private volatile double a, b;
+	volatile double a, b;
 	private Derivative dx, dy;
 	public EvalType evalType;
 	public ClickModeType clickMode = ClickModeType.DRAWPATH;
@@ -194,7 +196,6 @@ public class OutputPlane extends CoordPlane
 	public void updateA(double a)
 	{
 		this.a = a;
-
 		draw();
 	}
 
@@ -960,6 +961,8 @@ public class OutputPlane extends CoordPlane
 		}
 		throw new RootNotFound();*/
 	}
+	volatile AtomicInteger doneAdding = new AtomicInteger(0);
+	volatile double noSolsPos = Double.MAX_VALUE, noSolsNeg = -Double.MAX_VALUE;
 	public void drawBasin(Point2D st)
 	{
 		Evaluator eval = EvaluatorFactory.getEvaluator(evalType, dx, dy);
@@ -973,34 +976,34 @@ public class OutputPlane extends CoordPlane
 			System.out.println("haha no");
 			return;
 		}
-		java.awt.Color col = new java.awt.Color(((crit.hashCode()) & ((~0) >>> 8)) | (1 << 30), true);
+		
 
-		double x = xMin.get();
-		double y = yMin.get();
-		while(x < xMax.get())
-		{
-			while(y < yMax.get())
-			{
-				eval.initialise(x, y, t, a, b, inc);
-				while(inBoundsSaddle(eval.getCurrent()) && eval.getT() < 100)
-				{
-					if(eval.next().distance(crit) < inc) break;
-				}
-				if(eval.next().distance(crit) < inc)
-				{
-					synchronized (g)
-					{
-						g.setColor(col);
-						g.fillRect(imgNormToScrX(x), imgNormToScrY(y), 2, 2);
-					}
-					drawLine(eval.getCurrent(), eval.getCurrent(), col);
-				}
-				y += (yMax.get() - yMin.get())/512;
-			}
-			y = yMin.get();
-			x += (xMax.get() - xMin.get())/512;
-			render();
-		}
+
+
+//		double x = xMin.get();
+//		double y = yMin.get();
+//		while(x < xMax.get())
+//		{
+//			while(y < yMax.get())
+//			{
+//				eval.initialise(x, y, t, a, b, inc);
+//				while(inBoundsSaddle(eval.getCurrent()) && eval.getT() < 100)
+//				{
+//					if(eval.next().distance(crit) < inc) break;
+//				}
+//				if(eval.next().distance(crit) < inc)
+//				{
+//					synchronized (g)
+//					{
+//						g.setColor(col);
+//						g.fillRect(imgNormToScrX(x), imgNormToScrY(y), 2, 2);
+//					}
+//				}
+//				y += (yMax.get() - yMin.get())/512;
+//			}
+//			y = yMin.get();
+//			x += (xMax.get() - xMin.get())/512;
+
 	}
 
 	
@@ -1290,7 +1293,7 @@ public class OutputPlane extends CoordPlane
 	 * @param p the piont in question
 	 * @return whether or not it's in bounds
 	 */
-	private boolean inBoundsSaddle(Point2D p)
+	boolean inBoundsSaddle(Point2D p)
 	{
 		if(p != null)
 			return inBoundsSaddle(p.getX(), p.getY());
