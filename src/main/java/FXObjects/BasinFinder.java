@@ -80,9 +80,9 @@ public class BasinFinder extends Thread
 		o = _o;
 		crit = _crit;
 		s = Side.LEFT;
-		inc = (o.yMax.get() - o.yMin.get())/512D;
-		right = crit.getY();
-		left = crit.getY() - inc;
+		inc = (o.xMax.get() - o.xMin.get())/512D;
+		right = crit.getX();
+		left = crit.getX() - inc;
 		col = new java.awt.Color(((crit.hashCode()) & ((~0) >>> 8)) | (1 << 30), true);
 	}
 
@@ -98,6 +98,7 @@ public class BasinFinder extends Thread
 				{
 					temp = left;
 					left += inc;
+					if(left > o.xMax.get()) doneRight.set(true);
 				}
 				if(!doneRight.get()) s = Side.RIGHT;
 				break;
@@ -106,6 +107,7 @@ public class BasinFinder extends Thread
 				{
 					temp = right;
 					right -= inc;
+					if(right < o.xMin.get()) doneLeft.set(true);
 				}
 				if(!doneLeft.get()) s = Side.LEFT;
 				break;

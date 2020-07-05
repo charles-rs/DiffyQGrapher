@@ -262,7 +262,7 @@ public class OutputPlane extends CoordPlane
 				render();
 				break;
 			case DRAWBASIN:
-				new Thread(() -> this.drawBasin(pt)).start();
+				drawBasin(pt);
 				clickMode = ClickModeType.DRAWPATH;
 				break;
 			case SELECTSADDLE:
@@ -961,8 +961,6 @@ public class OutputPlane extends CoordPlane
 		}
 		throw new RootNotFound();*/
 	}
-	volatile AtomicInteger doneAdding = new AtomicInteger(0);
-	volatile double noSolsPos = Double.MAX_VALUE, noSolsNeg = -Double.MAX_VALUE;
 	public void drawBasin(Point2D st)
 	{
 		Evaluator eval = EvaluatorFactory.getEvaluator(evalType, dx, dy);
@@ -976,7 +974,12 @@ public class OutputPlane extends CoordPlane
 			System.out.println("haha no");
 			return;
 		}
-		
+		BasinFinder.init(this, crit);
+		for(int i = 0; i < 8; i++)
+		{
+			new BasinFinder().start();
+		}
+
 
 
 
