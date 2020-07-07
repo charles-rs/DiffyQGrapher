@@ -33,7 +33,7 @@ public class BasinFinder extends Thread
 				XAS = getNextX();
 				x = XAS.x;
 				foundAny = false;
-				double incY = (o.yMax.get() - o.yMin.get())/512D; //TODO change 512 to var
+				double incY = (o.yMax.get() - o.yMin.get())/o.canv.getHeight(); //TODO change 512 to var
 				for (double y = o.yMin.get(); y < o.yMax.get(); y += incY)
 				{
 					e.initialise(x, y, o.getT(), o.a, o.b, inc);
@@ -45,7 +45,7 @@ public class BasinFinder extends Thread
 							synchronized (o.g)
 							{
 								o.g.setColor(col);
-								o.g.fillRect(o.imgNormToScrX(x), o.imgNormToScrY(y), 2, 2);
+								o.g.fillRect(o.imgNormToScrX(x), o.imgNormToScrY(y), 1, 1);
 							}
 							break;
 						}
@@ -80,9 +80,9 @@ public class BasinFinder extends Thread
 		o = _o;
 		crit = _crit;
 		s = Side.LEFT;
-		inc = (o.xMax.get() - o.xMin.get())/512D;
+		inc = (o.xMax.get() - o.xMin.get())/o.canv.getWidth();
 		right = crit.getX();
-		left = crit.getX() - inc;
+		left = crit.getX() - 1 *  inc;
 		col = new java.awt.Color(((crit.hashCode()) & ((~0) >>> 8)) | (1 << 30), true);
 	}
 
@@ -97,8 +97,8 @@ public class BasinFinder extends Thread
 				synchronized (left)
 				{
 					temp = left;
-					left += inc;
-					if(left > o.xMax.get()) doneRight.set(true);
+					left -= inc;
+					if(left < o.xMin.get()) doneLeft.set(true);
 				}
 				if(!doneRight.get()) s = Side.RIGHT;
 				break;
@@ -106,8 +106,8 @@ public class BasinFinder extends Thread
 				synchronized (right)
 				{
 					temp = right;
-					right -= inc;
-					if(right < o.xMin.get()) doneLeft.set(true);
+					right += inc;
+					if(right > o.xMax.get()) doneRight.set(true);
 				}
 				if(!doneLeft.get()) s = Side.LEFT;
 				break;
@@ -121,7 +121,7 @@ public class BasinFinder extends Thread
 	{
 		LEFT,RIGHT;
 	}
-	static class xAndSide
+	private static class xAndSide
 	{
 		double x;
 		Side s;

@@ -56,7 +56,7 @@ public abstract class CoordPlane extends Pane
 	/**
 	 * graphics2d object for drawing on canv
 	 */
-	protected Graphics2D g;
+	protected final Graphics2D g;
 	/**
 	 * red dot the displays when a thread is doing a hard task
 	 */
@@ -566,11 +566,14 @@ public abstract class CoordPlane extends Pane
 	protected void drawLine(double x1, double y1, double x2, double y2, java.awt.Color color)
 	{
 //		gc.strokeLine(normToScrX(x1), normToScrY(y1), normToScrX(x2), normToScrY(y2));
-		synchronized (g)
+		Platform.runLater(() ->
 		{
-			g.setColor(color);
-			g.drawLine(imgNormToScrX(x1), imgNormToScrY(y1), imgNormToScrX(x2), imgNormToScrY(y2));
-		}
+			synchronized (g)
+			{
+				g.setColor(color);
+				g.drawLine(imgNormToScrX(x1), imgNormToScrY(y1), imgNormToScrX(x2), imgNormToScrY(y2));
+			}
+		});
 
 	}
 

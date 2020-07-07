@@ -3,7 +3,7 @@ package Main;
 import AST.Derivative;
 import Evaluation.EvalType;
 import Events.SaddleSelected;
-import Events.SourceOrSinkSelected;
+import Events.HopfPointSelected;
 import Exceptions.SyntaxError;
 import FXObjects.*;
 import Parser.Tokenizer;
@@ -389,7 +389,7 @@ public class Main extends Application
 		});
 		hopfBif.setOnAction((e) ->
 		{
-			outPlane.clickMode = ClickModeType.SELECTSOURCEORSINK;
+			outPlane.clickMode = ClickModeType.SELECTHOPFPOINT;
 		});
 		sdlConBif.setOnAction((e) ->
 		{
@@ -435,10 +435,10 @@ public class Main extends Application
 					inPlane.saddleBif(((SaddleSelected) e).pt);
 				outPlane.clickMode = ClickModeType.DRAWPATH;
 			}
-			if(e instanceof SourceOrSinkSelected)
+			if(e instanceof HopfPointSelected)
 			{
-				if(((SourceOrSinkSelected) e).pt != null)
-					inPlane.hopfBif(((SourceOrSinkSelected) e).pt);
+				if(((HopfPointSelected) e).pt != null)
+					inPlane.hopfBif(((HopfPointSelected) e).pt);
 				outPlane.clickMode = ClickModeType.DRAWPATH;
 			}
 		};

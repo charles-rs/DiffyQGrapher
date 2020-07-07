@@ -5,15 +5,18 @@ import AST.Maths;
 import AST.Value;
 import Evaluation.*;
 import Events.SaddleSelected;
-import Events.SourceOrSinkSelected;
+import Events.HopfPointSelected;
 import Exceptions.EvaluationException;
 import Exceptions.RootNotFound;
 import javafx.application.Platform;
+import javafx.embed.swing.SwingFXUtils;
 import javafx.geometry.Insets;
 import javafx.geometry.Point2D;
 import javafx.scene.Node;
 import javafx.scene.control.Label;
 import javafx.scene.control.TextField;
+import javafx.scene.image.ImageView;
+import javafx.scene.image.WritableImage;
 import javafx.scene.input.KeyCode;
 import javafx.scene.input.MouseEvent;
 import javafx.scene.layout.Border;
@@ -36,7 +39,6 @@ import java.util.LinkedList;
 import java.util.List;
 import java.util.concurrent.ArrayBlockingQueue;
 import java.util.concurrent.BlockingQueue;
-import java.util.concurrent.atomic.AtomicInteger;
 
 
 public class OutputPlane extends CoordPlane
@@ -52,6 +54,7 @@ public class OutputPlane extends CoordPlane
 	private double t = 0;
 	private final List<InitCond> initials;
 	private final List<InitCond> isoclines;
+	private final List<SolutionArtist> artistArmy;
 	private List<CriticalPoint> criticalPoints;
 	private List<Point2D> selectedCritPoints;
 	private final List<Point2D> horizIsos;
@@ -77,7 +80,7 @@ public class OutputPlane extends CoordPlane
 	private Color attrLimCycleColor = Color.GREEN;
 	private Color repLimCycleColor = Color.MAGENTA;
 
-	private java.awt.Color awtSolutionColor = fromFXColor(solutionColor);
+	java.awt.Color awtSolutionColor = fromFXColor(solutionColor);
 	private java.awt.Color awtIsoclineColor = fromFXColor(isoclineColor);
 	private java.awt.Color awtHorizIsoColor = fromFXColor(horizIsoColor);
 	private java.awt.Color awtVertIsoColor = fromFXColor(vertIsoColor);
@@ -87,6 +90,12 @@ public class OutputPlane extends CoordPlane
 	private java.awt.Color awtAttrLimCycleColor = fromFXColor(attrLimCycleColor);
 	private java.awt.Color awtRepLimCycleColor = fromFXColor(repLimCycleColor);
 
+
+	private ImageView basinVw;
+	private WritableImage basinFXImg;
+	private BufferedImage basinImg;
+	final Graphics2D basinG;
+
 	public InputPlane in;
 
 	private Thread limCycleArtist = new Thread(), limCycleUpdater = new Thread();
@@ -95,8 +104,13 @@ public class OutputPlane extends CoordPlane
 	{
 		super(side);
 
+		basinImg = new BufferedImage(canv.getWidth(), canv.getHeight(), BufferedImage.TYPE_INT_ARGB);
+		basinG = basinImg.createGraphics();
+		basinVw = new ImageView();
+		basinVw.fitWidthProperty().bind(this.widthProperty());
+		basinVw.fitHeightProperty().bind(this.heightProperty());
 		cycleLine = new Line();
-		this.getChildren().add(cycleLine);
+		this.getChildren().addAll(cycleLine, basinVw);
 		cycleLine.setVisible(false);
 
 		dSaddleXMax = this.xMax.get();
@@ -113,6 +127,8 @@ public class OutputPlane extends CoordPlane
 		horizIsos = new ArrayList<>();
 		vertIsos = new ArrayList<>();
 		selectedCritPoints = new ArrayList<>();
+		artistArmy = new ArrayList<>(8);
+		for(int i = 0; i < 8; i++) artistArmy.add(new SolutionArtist());
 		selectedSeps = new ArrayList<>(2);
 		draw();
 //		render();
@@ -182,6 +198,13 @@ public class OutputPlane extends CoordPlane
 	protected void updateForZoom()
 	{
 		inc = ((xMax.get() - xMin.get())/1024 + (yMax.get() - yMin.get())/1024)/2;
+//		synchronized (basinG)
+//		{
+//			basinG.setColor(new java.awt.Color(255, 255, 255, 255));
+//			basinG.clearRect(0, 0, basinImg.getWidth(), basinImg.getHeight());
+//		}
+		basinImg = new BufferedImage(canv.getWidth(), canv.getHeight(), BufferedImage.TYPE_INT_ARGB);
+		renderBasins();
 	}
 
 	public void clearObjects()
@@ -203,6 +226,18 @@ public class OutputPlane extends CoordPlane
 	{
 		this.b = b;
 		draw();
+	}
+	void renderBasins()
+	{
+		Platform.runLater(() ->
+		{
+			synchronized (basinImg)
+			{
+				basinFXImg = SwingFXUtils.toFXImage(basinImg, null);
+			}
+			basinVw.setImage(basinFXImg);
+
+		});
 	}
 
 	public void updateDX(Derivative temp)
@@ -236,6 +271,8 @@ public class OutputPlane extends CoordPlane
 					CriticalPoint root = EvaluatorFactory.getBestEvaluator(dx, dy).findCritical(pt, a, b, t);
 					criticalPoints.add(root);
 					labelCritical(root);
+					if(drawSep && root.type == CritPointTypes.SADDLE)
+						drawSep(root);
 //					drawGraphs();
 					render();
 				} catch (RootNotFound r)
@@ -277,11 +314,11 @@ public class OutputPlane extends CoordPlane
 				{
 				}
 				break;
-			case SELECTSOURCEORSINK:
+			case SELECTHOPFPOINT:
 				try
 				{
-					Point2D p = getSourceOrSink(pt);
-					fireEvent(new SourceOrSinkSelected(p));
+					Point2D p = getPointForHopf(pt);
+					fireEvent(new HopfPointSelected(p));
 					selectedCritPoints.add(p);
 					drawSelectedCritPoints();
 					render();
@@ -436,8 +473,8 @@ public class OutputPlane extends CoordPlane
 
 	public void renderSemiStable(Point2D lnSt, Point2D lnNd, Point2D start, boolean add)
 	{
-		double aInc = 5D * (in.xMax.get() - in.xMin.get()) / in.getWidth();
-		double bInc = 5D * (in.yMax.get() - in.yMin.get()) / in.getHeight();
+		double aInc = 2D * (in.xMax.get() - in.xMin.get()) / in.getWidth();
+		double bInc = 2D * (in.yMax.get() - in.yMin.get()) / in.getHeight();
 		double otherInc = 0D;
 		Point2D prev;
 		Point2D next;
@@ -528,13 +565,13 @@ public class OutputPlane extends CoordPlane
 
 	/**
 	 * Finds a semistable limit cycle bifurcation with the provided start info
-	 * @param lnSt
-	 * @param lnNd
-	 * @param a
-	 * @param b
+	 * @param lnSt the start of the transverse line
+	 * @param lnNd the end of the transverse line
+	 * @param a the a value
+	 * @param b the b value
 	 * @param code least significant bit is isA, 2nd least is lookPos
-	 * @return
-	 * @throws RootNotFound
+	 * @return a point in the parameter space with a semistable limit cycle bifurcation
+	 * @throws RootNotFound if no semistable limit cycle is found
 	 */
 	private Point2D semiStable(Point2D lnSt, Point2D lnNd, double a, double b, int code) throws RootNotFound
 	{
@@ -931,82 +968,32 @@ public class OutputPlane extends CoordPlane
 		return getNextIsectLn(eval,
 				scrToNorm(new Point2D(cycleLine.getStartX(), cycleLine.getStartY())),
 				scrToNorm(new Point2D(cycleLine.getEndX(), cycleLine.getEndY())));
-		/*Point2D p1 = eval.getCurrent();
-		Point2D p2 = eval.next();
-		double tInc = eval.getInc();
-		//TODO maybe add another setting for limcycle bounds
-		while (inBoundsSaddle(p2) && eval.getT() < 100)
-		{
-			try
-			{
-
-				return getIntersectionCycleLine(p1, p2);
-			} catch (RootNotFound r)
-			{
-				p1 = p2;
-				p2 = eval.next();
-			}
-			CriticalPoint temp = null;
-			try
-			{
-				temp = critical(p2);
-			} catch (RootNotFound ignored) {}
-			if(temp != null)
-			{
-				if (tInc > 0 && temp.type.isSink() || tInc < 0 && temp.type.isSource())
-				{
-					if (p2.distance(temp.point) < inc / 10) throw new RootNotFound();
-				}
-			}
-		}
-		throw new RootNotFound();*/
 	}
+
+	/**
+	 * draws the basin for the point that is the critical point starting at st.
+	 * does nothing if it doesn't solve to a sink.
+	 * @param st the starting point for finding the basin
+	 */
 	public void drawBasin(Point2D st)
 	{
-		Evaluator eval = EvaluatorFactory.getEvaluator(evalType, dx, dy);
 		Point2D crit;
-		System.out.println("got here");
 		try
 		{
-			crit = critical(st).point;
+			CriticalPoint temp = critical(st);
+			if(!temp.type.isSink()) return;
+			crit = temp.point;
 		} catch (RootNotFound r)
 		{
 			System.out.println("haha no");
 			return;
 		}
 		BasinFinder.init(this, crit);
+
 		for(int i = 0; i < 8; i++)
 		{
 			new BasinFinder().start();
 		}
-
-
-
-
-//		double x = xMin.get();
-//		double y = yMin.get();
-//		while(x < xMax.get())
-//		{
-//			while(y < yMax.get())
-//			{
-//				eval.initialise(x, y, t, a, b, inc);
-//				while(inBoundsSaddle(eval.getCurrent()) && eval.getT() < 100)
-//				{
-//					if(eval.next().distance(crit) < inc) break;
-//				}
-//				if(eval.next().distance(crit) < inc)
-//				{
-//					synchronized (g)
-//					{
-//						g.setColor(col);
-//						g.fillRect(imgNormToScrX(x), imgNormToScrY(y), 2, 2);
-//					}
-//				}
-//				y += (yMax.get() - yMin.get())/512;
-//			}
-//			y = yMin.get();
-//			x += (xMax.get() - xMin.get())/512;
-
 	}
 
 	
@@ -1638,11 +1625,12 @@ public class OutputPlane extends CoordPlane
 				(p.getY() - ln[0].getY()) * (ln[1].getX() - ln[0].getX());
 	}
 
-	private Point2D getSourceOrSink(Point2D start) throws RootNotFound
+	private Point2D getPointForHopf(Point2D start) throws RootNotFound
 	{
 		CriticalPoint temp = critical(start);
 		if (temp.type != CritPointTypes.NODESOURCE && temp.type != CritPointTypes.SPIRALSOURCE &&
-				temp.type != CritPointTypes.NODESINK && temp.type != CritPointTypes.SPIRALSINK)
+				temp.type != CritPointTypes.NODESINK && temp.type != CritPointTypes.SPIRALSINK &&
+				temp.type != CritPointTypes.CENTER)
 			throw new RootNotFound();
 		else return temp.point;
 	}
@@ -1731,10 +1719,24 @@ public class OutputPlane extends CoordPlane
 		{
 			n.setVisible(false);
 		}
+
 		needsReset.clear();
-		for (InitCond i : initials)
+		if(initials.size() > 0)
 		{
-			drawGraph(i, true, awtSolutionColor);
+			BlockingQueue<InitCond> q = new ArrayBlockingQueue<>(initials.size());
+			for (SolutionArtist s : artistArmy)
+			{
+				if (s != null)
+					s.interrupt();
+			}
+			//			drawGraph(i, true, awtSolutionColor);
+			q.addAll(initials);
+			SolutionArtist.init(this, q);
+			for (SolutionArtist s : artistArmy)
+			{
+				s = new SolutionArtist();
+				s.start();
+			}
 		}
 		for (CriticalPoint p : criticalPoints)
 		{
@@ -1744,8 +1746,9 @@ public class OutputPlane extends CoordPlane
 		gc.setStroke(Color.BLACK);
 	}
 
-	private void drawGraph(InitCond init, boolean arrow, java.awt.Color color)
+	void drawGraph(InitCond init, boolean arrow, java.awt.Color color)
 	{
+		System.out.println(Thread.currentThread());
 		drawGraphBack(init, arrow, '1', color);
 	}
 
@@ -1757,13 +1760,13 @@ public class OutputPlane extends CoordPlane
 		t = init.t;
 		Evaluator eval = EvaluatorFactory.getEvaluator(evalType, dx, dy);
 		Point2D initialDir = eval.evaluate(x, y, a, b, t, inc);
-		if (arrow) drawArrow(x, y, initialDir.getX(), initialDir.getY());
+		if (arrow) drawArrow(x, y, initialDir.getX(), initialDir.getY(), color);
 		Point2D prev;
 		Point2D next;
 		eval.initialise(x, y, t, a, b, inc);
 		prev = new Point2D(x, y);
 		if (dir != '-')
-			while (eval.getT() < 100 + t)
+			while (eval.getT() < 100 + t && !Thread.interrupted())
 			{
 				next = eval.next();
 				if (inBounds(prev) || inBounds(next))
@@ -1773,15 +1776,11 @@ public class OutputPlane extends CoordPlane
 		eval.initialise(x, y, t, a, b, -inc);
 		prev = new Point2D(x, y);
 		if (dir != '+')
-			while (eval.getT() > t - 100)
+			while (eval.getT() > t - 100 && !Thread.interrupted())
 			{
 				next = eval.next();
 				if (inBounds(prev) || inBounds(next))
-					synchronized (gc)
-					{
-						drawLine(prev, next, color);
-						//gc.strokeLine(normToScrX(prev.getX()), normToScrY(prev.getY()), normToScrX(next.getX()), normToScrY(next.getY()));
-					}
+					drawLine(prev, next, color);
 				prev = next;
 			}
 
@@ -1980,7 +1979,7 @@ public class OutputPlane extends CoordPlane
 	}
 
 
-	private void drawArrow(double x, double y, double dx, double dy)
+	private void drawArrow(double x, double y, double dx, double dy, java.awt.Color color)
 	{
 		double angle = (Math.atan(-dy / dx));
 		if (dx < 0) angle += Math.PI;
@@ -1993,18 +1992,28 @@ public class OutputPlane extends CoordPlane
 //		gc.restore();
 		int xScr = imgNormToScrX(x);
 		int yScr = imgNormToScrY(y);
-		AffineTransform saveAt = g.getTransform();
-		g.rotate(angle, xScr, yScr);
-		g.drawLine(xScr, yScr, xScr - 10, yScr + 6);
-		g.drawLine(xScr, yScr, xScr - 10, yScr - 6);
-		g.setTransform(saveAt);
+		double finalAngle = angle;
+		Platform.runLater(() ->
+		{
+			synchronized (g)
+			{
+				g.setColor(color);
+				AffineTransform saveAt = g.getTransform();
+				g.rotate(finalAngle, xScr, yScr);
+				g.drawLine(xScr, yScr, xScr - 10, yScr + 6);
+				g.drawLine(xScr, yScr, xScr - 10, yScr - 6);
+				g.setTransform(saveAt);
+			}
+		});
 
 	}
 
 	public void drawSeparatrices()
 	{
 		drawSep = true;
-		draw();
+		for(CriticalPoint c : criticalPoints)
+			drawSep(c);
+		render();
 	}
 
 	@Override
@@ -2164,26 +2173,6 @@ public class OutputPlane extends CoordPlane
 		} catch (IOException | NullPointerException oof)
 		{
 			return false;
-		}
-	}
-
-
-	private static class InitCond
-	{
-		public double x, y, t;
-
-		public InitCond(double x, double y, double t)
-		{
-			this.x = x;
-			this.y = y;
-			this.t = t;
-		}
-
-		public InitCond(Point2D p)
-		{
-			this.t = t;
-			this.x = p.getX();
-			this.y = p.getY();
 		}
 	}
 
