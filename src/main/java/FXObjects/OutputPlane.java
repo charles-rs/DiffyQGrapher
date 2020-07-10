@@ -8,6 +8,9 @@ import Events.SaddleSelected;
 import Events.HopfPointSelected;
 import Exceptions.EvaluationException;
 import Exceptions.RootNotFound;
+import PathGenerators.Generator;
+import PathGenerators.GeneratorFactory;
+import PathGenerators.SpiralGenerator;
 import javafx.application.Platform;
 import javafx.embed.swing.SwingFXUtils;
 import javafx.geometry.Insets;
@@ -37,8 +40,6 @@ import java.io.*;
 import java.util.ArrayList;
 import java.util.LinkedList;
 import java.util.List;
-import java.util.concurrent.ArrayBlockingQueue;
-import java.util.concurrent.BlockingQueue;
 
 
 public class OutputPlane extends CoordPlane
@@ -54,7 +55,7 @@ public class OutputPlane extends CoordPlane
 	private double t = 0;
 	private final List<InitCond> initials;
 	private final List<InitCond> isoclines;
-	private final List<SolutionArtist> artistArmy;
+//	private final List<SolutionArtist> artistArmy;
 	private List<CriticalPoint> criticalPoints;
 	private List<Point2D> selectedCritPoints;
 	private final List<Point2D> horizIsos;
@@ -98,7 +99,7 @@ public class OutputPlane extends CoordPlane
 
 	public InputPlane in;
 
-	private Thread limCycleArtist = new Thread(), limCycleUpdater = new Thread();
+	private Thread limCycleArtist = new Thread(), limCycleUpdater = new Thread(), solutionArtist = new Thread();
 
 	public OutputPlane(double side, TextField tField)
 	{
@@ -127,8 +128,8 @@ public class OutputPlane extends CoordPlane
 		horizIsos = new ArrayList<>();
 		vertIsos = new ArrayList<>();
 		selectedCritPoints = new ArrayList<>();
-		artistArmy = new ArrayList<>(8);
-		for(int i = 0; i < 8; i++) artistArmy.add(new SolutionArtist());
+//		artistArmy = new ArrayList<>(8);
+//		for(int i = 0; i < 8; i++) artistArmy.add(new SolutionArtist());
 		selectedSeps = new ArrayList<>(2);
 		draw();
 //		render();
@@ -176,6 +177,18 @@ public class OutputPlane extends CoordPlane
 		});
 		loading.toFront();
 
+
+
+		/*double px = (((this.xMax.get() - this.xMin.get()) + (this.yMax.get() - this.yMin.get()))/2)/
+				(1024);
+		SpiralGenerator s = new SpiralGenerator(px, new Point2D(1, 1), px);
+		for(int i = 0; i < 1000; i++)
+		{
+			drawLine(s.getCurrent(), s.next(), java.awt.Color.GREEN);
+			drawLine(s.getCurrent(), s.next(), java.awt.Color.RED);
+			drawLine(s.getCurrent(), s.next(), java.awt.Color.BLUE);
+		}
+		render();*/
 	}
 
 
@@ -197,7 +210,7 @@ public class OutputPlane extends CoordPlane
 	@Override
 	protected void updateForZoom()
 	{
-		inc = ((xMax.get() - xMin.get())/1024 + (yMax.get() - yMin.get())/1024)/2;
+		inc = ((xMax.get() - xMin.get())/512 + (yMax.get() - yMin.get())/512)/2;
 //		synchronized (basinG)
 //		{
 //			basinG.setColor(new java.awt.Color(255, 255, 255, 255));
@@ -219,13 +232,14 @@ public class OutputPlane extends CoordPlane
 	public void updateA(double a)
 	{
 		this.a = a;
-		draw();
+
+		Platform.runLater(this::draw);
 	}
 
 	public void updateB(double b)
 	{
 		this.b = b;
-		draw();
+		Platform.runLater(this::draw);
 	}
 	void renderBasins()
 	{
@@ -483,7 +497,7 @@ public class OutputPlane extends CoordPlane
 		Point2D diff;
 		int throwCount = 0;
 		int code = 0;
-		for(int i = 0; i < 4; i++)
+		/*for(int i = 0; i < 4; i++)
 		{
 			try
 			{
@@ -493,7 +507,14 @@ public class OutputPlane extends CoordPlane
 			} catch (RootNotFound ignored) {}
 		}
 		if(st == null)
+			return;*/
+		try
+		{
+			st = semiStableSpiral(lnSt, lnNd, a, b);
+		} catch (RootNotFound r)
+		{
 			return;
+		}
 		System.out.println("yay");
 		System.out.println(st);
 		boolean isA;
@@ -513,7 +534,7 @@ public class OutputPlane extends CoordPlane
 				{
 					System.out.println("i: " + i);
 					next = semiStable(lnSt, lnNd, temp.getX(), temp.getY(), code);
-					in.drawLine(prev, next, in.awtSemiStableColor);
+					in.drawLine(prev, next, in.awtSemiStableColor, 3);
 					Platform.runLater(in::render);
 					diff = next.subtract(prev);
 
@@ -562,7 +583,44 @@ public class OutputPlane extends CoordPlane
 		Platform.runLater(this::draw);
 		in.render();
 	}
+	private Point2D semiStableSpiral(Point2D lnSt, Point2D lnNd, double a, double b) throws RootNotFound
+	{
+		double px = ((this.xMax.get() - this.xMin.get() + this.yMax.get() - this.yMin.get())/2) /
+				((canv.getWidth() + canv.getHeight())/2D);
+		Point2D p = new Point2D(a, b);
+		int current = hasLimCycle(lnSt, lnNd, p);
+		if(current != 0 && current != 2)
+		{
+			System.out.println("bad init state spiral");
+			throw new RootNotFound();
+		}
+		System.out.println("p1: " + p);
+		Generator s = GeneratorFactory.getSpiralGenerator(px, p);
+		Point2D pOld = p;
+		p = s.next();
+		System.out.println("p2: " + p);
+		int cd;
+		System.out.println("made it here?");
 
+		while(!Thread.interrupted() && s.distanceFromStart() < 15 * px)
+		{
+			System.out.println("Point: " + p);
+			cd = hasLimCycle(lnSt, lnNd, p);
+			if(cd != current && (cd == 2 || cd == 0))
+			{
+				break;
+			} else
+			{
+				pOld = p;
+				p = s.next();
+			}
+		}
+		System.out.println("px: " + px);
+		System.out.println("dist: " + s.distanceFromStart());
+		return p.midpoint(pOld);
+
+
+	}
 	/**
 	 * Finds a semistable limit cycle bifurcation with the provided start info
 	 * @param lnSt the start of the transverse line
@@ -676,6 +734,11 @@ public class OutputPlane extends CoordPlane
 //		}
 		System.out.println("returning");
 		return new Point2D(a, b);
+	}
+
+	private int hasLimCycle(Point2D lnSt, Point2D lnNd, Point2D params)
+	{
+		return hasLimCycle(lnSt, lnNd, params.getX(), params.getY());
 	}
 
 	private int hasLimCycle(Point2D lnSt, Point2D lnNd, double a, double b)
@@ -1146,8 +1209,7 @@ public class OutputPlane extends CoordPlane
 //						{
 //
 //						}
-//						in.drawLine(prev, next, in.saddleCanvas);
-						in.drawLine(prev, next, tempCol);
+						in.drawLine(prev, next, tempCol, 3);
 						Platform.runLater(in::render);
 //						in.render();
 //
@@ -1712,7 +1774,6 @@ public class OutputPlane extends CoordPlane
 
 	private void drawGraphs()
 	{
-		gc.setStroke(solutionColor);
 
 
 		for (Node n : needsReset)
@@ -1721,7 +1782,7 @@ public class OutputPlane extends CoordPlane
 		}
 
 		needsReset.clear();
-		if(initials.size() > 0)
+		/*if(initials.size() > 0)
 		{
 			BlockingQueue<InitCond> q = new ArrayBlockingQueue<>(initials.size());
 			for (SolutionArtist s : artistArmy)
@@ -1729,7 +1790,6 @@ public class OutputPlane extends CoordPlane
 				if (s != null)
 					s.interrupt();
 			}
-			//			drawGraph(i, true, awtSolutionColor);
 			q.addAll(initials);
 			SolutionArtist.init(this, q);
 			for (SolutionArtist s : artistArmy)
@@ -1737,13 +1797,17 @@ public class OutputPlane extends CoordPlane
 				s = new SolutionArtist();
 				s.start();
 			}
+		}*/
+		for(InitCond i : initials)
+		{
+			if(Thread.interrupted()) return;
+			drawGraph(i, true, awtSolutionColor);
 		}
 		for (CriticalPoint p : criticalPoints)
 		{
-			labelCritical(p);
+			if(Thread.interrupted()) return;
+			Platform.runLater(() -> labelCritical(p));
 		}
-
-		gc.setStroke(Color.BLACK);
 	}
 
 	void drawGraph(InitCond init, boolean arrow, java.awt.Color color)
@@ -1752,7 +1816,7 @@ public class OutputPlane extends CoordPlane
 		drawGraphBack(init, arrow, '1', color);
 	}
 
-	private void drawGraphBack(InitCond init, boolean arrow, char dir, java.awt.Color color)
+	private void drawGraphBack(InitCond init, boolean arrow, char dir, java.awt.Color color, float width)
 	{
 		double x, y;
 		x = init.x;
@@ -1766,24 +1830,37 @@ public class OutputPlane extends CoordPlane
 		eval.initialise(x, y, t, a, b, inc);
 		prev = new Point2D(x, y);
 		if (dir != '-')
-			while (eval.getT() < 100 + t && !Thread.interrupted())
+			while (eval.getT() < 100 + t)
 			{
+				if(Thread.interrupted())
+				{
+					return;
+				}
 				next = eval.next();
 				if (inBounds(prev) || inBounds(next))
-						drawLine(prev, next, color);
+					drawLine(prev, next, color, width);
 				prev = next;
 			}
 		eval.initialise(x, y, t, a, b, -inc);
 		prev = new Point2D(x, y);
 		if (dir != '+')
-			while (eval.getT() > t - 100 && !Thread.interrupted())
+			while (eval.getT() > t - 100)
 			{
+				if(Thread.interrupted())
+				{
+					return;
+				}
 				next = eval.next();
 				if (inBounds(prev) || inBounds(next))
-					drawLine(prev, next, color);
+					drawLine(prev, next, color, width);
 				prev = next;
 			}
 
+	}
+
+	private void drawGraphBack(InitCond init, boolean arrow, char dir, java.awt.Color color)
+	{
+		drawGraphBack(init, arrow, dir, color, 1);
 	}
 
 	private void drawIsoclines()
@@ -2097,41 +2174,43 @@ public class OutputPlane extends CoordPlane
 	}
 
 	@Override
-	public void draw()
+	public synchronized void draw()
 	{
-		super.draw();
-		updateCritical();
-		drawGraphs();
-		drawIsoclines();
-		if (drawSep)
+		solutionArtist.interrupt();
+		solutionArtist = new Thread(() ->
 		{
-			for (CriticalPoint c : criticalPoints)
+			super.draw();
+			updateCritical();
+			drawGraphs();
+			drawIsoclines();
+			if (drawSep)
 			{
-				drawSep(c);
-			}
+				for (CriticalPoint c : criticalPoints)
+				{
+					drawSep(c);
+				}
 
-		}
-		drawSelectedCritPoints();
-		gc.setLineWidth(2);
-		g.setStroke(new BasicStroke(2));
-		double inc = 2 * (xMax.get() - xMin.get())/this.getWidth();
-		for (sepStart s : selectedSeps)
-		{
-			if (!s.posEig())
-			{
-				gc.setStroke(stblSeparatrixColor);
-				drawGraphBack(new InitCond(s.getStart(inc).getX(), s.getStart(inc).getY(), 0), false, '-', awtStblSeparatrixColor);
-			} else
-			{
-				gc.setStroke(unstblSeparatrixColor);
-				drawGraphBack(new InitCond(s.getStart(inc).getX(), s.getStart(inc).getY(), 0), false, '+', awtUnstblSeparatrixColor);
 			}
-		}
-		g.setStroke(new BasicStroke(1));
-		gc.setLineWidth(1);
-		gc.setStroke(Color.BLACK);
-		render();
-		updateLimCycles();
+			drawSelectedCritPoints();
+			double inc = 2 * (xMax.get() - xMin.get()) / this.getWidth();
+			for (sepStart s : selectedSeps)
+			{
+				synchronized (g)
+				{
+					if (!s.posEig())
+					{
+						drawGraphBack(new InitCond(s.getStart(inc).getX(), s.getStart(inc).getY(), 0), false, '-', awtStblSeparatrixColor, 2);
+
+					} else
+					{
+						drawGraphBack(new InitCond(s.getStart(inc).getX(), s.getStart(inc).getY(), 0), false, '+', awtUnstblSeparatrixColor, 2);
+					}
+				}
+			}
+			render();
+			updateLimCycles();
+		});
+		solutionArtist.start();
 	}
 	@Override
 	public boolean writePNG(File f)

@@ -658,15 +658,12 @@ public class InputPlane extends CoordPlane
 //	dy/dt = y^2 - x
 	public void drawDegenSaddleCons()
 	{
-		gc.setStroke(homoSaddleConColor);
 		g.setColor(awtHomoSaddleConColor);
 		for(Point2D p : degenSaddleCons)
 		{
-			gc.strokeOval(normToScrX(p.getX()) - 3, normToScrY(p.getY()) - 3, 6, 6);
 			g.drawOval(imgNormToScrX(p.getX()) - 6, imgNormToScrY(p.getY()) - 6, 12, 12);
 
 		}
-		gc.setStroke(Color.BLACK);
 	}
 
 	private void drawDegenHopf()

@@ -336,26 +336,12 @@ public abstract class CoordPlane extends Pane
 	{
 		if(this == selected)
 		{
-//			gc.setFill(Color.BLUE);
-			g.setColor(java.awt.Color.BLUE);
 			border.setStroke(Color.BLUE);
 		}
 		else
 		{
-			g.setColor(java.awt.Color.BLACK);
 			border.setStroke(Color.BLACK);
 		}
-//		gc.fillRect(0,0,2,c.getHeight());
-//		gc.fillRect(0,0,c.getWidth(),2);
-//		gc.fillRect(0, c.getHeight() - 2, c.getWidth(), 2);
-//		gc.fillRect(c.getWidth() - 2, 0, 2, c.getHeight());
-
-//		g.fillRect(0, 0, 2, canv.getHeight());
-//		g.fillRect(0, 0, canv.getWidth(), 2);
-//		g.fillRect(0, canv.getHeight() - 2, canv.getWidth(), 2);
-//		g.fillRect(canv.getWidth() - 2, 0, 2, canv.getHeight());
-
-//		if(this == selected) gc.setFill(Color.BLACK);
 	}
 
 	/**
@@ -410,13 +396,6 @@ public abstract class CoordPlane extends Pane
 			stryMax = stryMax.substring(0, 8);
 		} catch (StringIndexOutOfBoundsException ignored) {}
 
-//		gc.clearRect(0, 0, c.getWidth(), c.getHeight());
-//		gc.strokeLine(0, normToScrY(0), c.getWidth(), normToScrY(0));
-//		gc.strokeLine(normToScrX(0), 0, normToScrX(0), c.getHeight());
-//		gc.fillText(strxMin, 2, c.getHeight()/2 - 2);
-//		gc.fillText(stryMin, c.getWidth()/2 + 2, c.getHeight() - 2);
-//		gc.fillText(stryMax, c.getWidth()/2 + 2, 12);
-//		gc.fillText(strxMax, c.getWidth() - 7 * strxMax.length(), c.getHeight()/2 - 4);
 
 		synchronized (g)
 		{
@@ -565,16 +544,24 @@ public abstract class CoordPlane extends Pane
 	 */
 	protected void drawLine(double x1, double y1, double x2, double y2, java.awt.Color color)
 	{
-//		gc.strokeLine(normToScrX(x1), normToScrY(y1), normToScrX(x2), normToScrY(y2));
+		drawLine(x1, y1, x2, y2, color, 1);
+	}
+
+	protected void drawLine(double x1, double y1, double x2, double y2, java.awt.Color color, float width)
+	{
 		Platform.runLater(() ->
 		{
 			synchronized (g)
 			{
+				g.setStroke(new BasicStroke(width));
 				g.setColor(color);
 				g.drawLine(imgNormToScrX(x1), imgNormToScrY(y1), imgNormToScrX(x2), imgNormToScrY(y2));
 			}
 		});
-
+	}
+	protected void drawLine(Point2D p1, Point2D p2, java.awt.Color color, float width)
+	{
+		drawLine(p1.getX(), p1.getY(), p2.getX(), p2.getY(), color, width);
 	}
 
 	/**
@@ -587,6 +574,7 @@ public abstract class CoordPlane extends Pane
 	{
 		drawLine(p1.getX(), p1.getY(), p2.getX(), p2.getY(), color);
 	}
+
 
 	/**
 	 * Draws a line with mathematical coordinates on another canvas
