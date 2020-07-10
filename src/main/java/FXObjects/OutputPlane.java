@@ -8,9 +8,7 @@ import Events.SaddleSelected;
 import Events.HopfPointSelected;
 import Exceptions.EvaluationException;
 import Exceptions.RootNotFound;
-import PathGenerators.Generator;
-import PathGenerators.GeneratorFactory;
-import PathGenerators.SpiralGenerator;
+import PathGenerators.*;
 import javafx.application.Platform;
 import javafx.embed.swing.SwingFXUtils;
 import javafx.geometry.Insets;
@@ -38,7 +36,6 @@ import java.awt.geom.AffineTransform;
 import java.awt.image.BufferedImage;
 import java.io.*;
 import java.util.ArrayList;
-import java.util.LinkedList;
 import java.util.List;
 
 
@@ -181,13 +178,17 @@ public class OutputPlane extends CoordPlane
 
 		/*double px = (((this.xMax.get() - this.xMin.get()) + (this.yMax.get() - this.yMin.get()))/2)/
 				(1024);
-		SpiralGenerator s = new SpiralGenerator(px, new Point2D(1, 1), px);
-		for(int i = 0; i < 1000; i++)
+		LoopGenerator s = GeneratorFactory.getCircleLoopGenerator(px, new Point2D(1, 1), 1D);
+		System.out.println(s.getCurrent());
+		while(!s.completed())
 		{
 			drawLine(s.getCurrent(), s.next(), java.awt.Color.GREEN);
 			drawLine(s.getCurrent(), s.next(), java.awt.Color.RED);
 			drawLine(s.getCurrent(), s.next(), java.awt.Color.BLUE);
+			s.next();
+
 		}
+		System.out.println(s.getCurrent());
 		render();*/
 	}
 
@@ -435,7 +436,7 @@ public class OutputPlane extends CoordPlane
 							Platform.runLater(() -> loading.setVisible(true));
 								drawNewLimCycle(pt,
 										scrToNorm(new Point2D(cycleLine.getStartX(), cycleLine.getStartY())),
-										scrToNorm(new Point2D(cycleLine.getEndX(), cycleLine.getEndY())), true);
+										scrToNorm(new Point2D(cycleLine.getEndX(), cycleLine.getEndY())), false);
 							Platform.runLater(() -> loading.setVisible(false));
 						});
 
@@ -497,6 +498,7 @@ public class OutputPlane extends CoordPlane
 		Point2D diff;
 		int throwCount = 0;
 		int code = 0;
+
 		/*for(int i = 0; i < 4; i++)
 		{
 			try
@@ -517,23 +519,47 @@ public class OutputPlane extends CoordPlane
 		}
 		System.out.println("yay");
 		System.out.println(st);
+		Point2D sides [];
+		try
+		{
+			sides = semiStableLoop(lnSt, lnNd, st, LoopType.CIRCLE);
+		} catch (RootNotFound r)
+		{
+			System.out.println("oops, circle didn't work");
+			return;
+		}
+		System.out.println("yay!!!");
+		System.out.println("no1: " + sides[0] + "\nno2: " + sides[1]);
 		boolean isA;
 		if(add)
 		{
 			in.semiStables.add(new SemiStableStart(lnSt, lnNd, st));
 		}
-		for (int i = 0; i < 3; i++)
+		for (int i = 0; i < 2; i++)
 		{
 			prev = st;
+			next = sides[i];
+			in.drawLine(prev, next, in.awtSemiStableColor, 3);
+			Platform.runLater(in::render);
+			diff = next.subtract(prev);
+
 			while (in.inBounds(prev.getX(), prev.getY()) && !Thread.interrupted())
 			{
 				isA = (code & 1) == 1;
+				if(isA)
+				{
+					otherInc = bInc * diff.getX()/diff.getY();
+				} else
+				{
+					otherInc = aInc * diff.getY()/diff.getX();
+				}
 				if (isA) temp = new Point2D(prev.getX() + otherInc, prev.getY() + bInc);
 				else temp = new Point2D(prev.getX() + aInc, prev.getY() + otherInc);
 				try
 				{
 					System.out.println("i: " + i);
-					next = semiStable(lnSt, lnNd, temp.getX(), temp.getY(), code);
+//					next = semiStable(lnSt, lnNd, temp.getX(), temp.getY(), code);
+					next = semiStableSpiral(lnSt, lnNd, temp.getX(), temp.getY());
 					in.drawLine(prev, next, in.awtSemiStableColor, 3);
 					Platform.runLater(in::render);
 					diff = next.subtract(prev);
@@ -547,13 +573,6 @@ public class OutputPlane extends CoordPlane
 						if(Math.abs(diff.getY()/diff.getX()) > 1D)
 							isA = true;
 					}
-					if(isA)
-					{
-						otherInc = bInc * diff.getX()/diff.getY();
-					} else
-					{
-						otherInc = aInc * diff.getY()/diff.getX();
-					}
 
 					prev = next;
 					System.out.println(prev);
@@ -563,7 +582,7 @@ public class OutputPlane extends CoordPlane
 				{
 
 					if (prev.distance(st) < Math.min(aInc, bInc)) break;
-					if (throwCount >= 4)
+					if (throwCount >= 2)
 					{
 						System.out.println("breaking");
 						break;
@@ -583,10 +602,40 @@ public class OutputPlane extends CoordPlane
 		Platform.runLater(this::draw);
 		in.render();
 	}
+	private Point2D semiStableLoop(Point2D lnSt, Point2D lnNd, Point2D center, LoopType lty) [] throws RootNotFound
+	{
+		double px = ((in.xMax.get() - in.xMin.get() + in.yMax.get() - in.yMin.get())/2) /
+				((in.getWidth() + in.getHeight())/2D);
+		LoopGenerator gen = GeneratorFactory.getLoopGenerator(lty, px/5, center, 10);
+		int cd1 = hasLimCycle(lnSt, lnNd, gen.getCurrent());
+		int cd2;
+		Point2D temp [] = new Point2D[2];
+		int currentVal = 0;
+		assertCode(cd1);
+		while(!gen.completed())
+		{
+			cd2 = hasLimCycle(lnSt, lnNd, gen.next());
+			if(cd2 != cd1 && (cd2 == 2 || cd2 == 0))
+			{
+				temp[currentVal] = gen.getCurrent();
+				currentVal++;
+				if(currentVal > 1) break;
+			} else
+			{
+				gen.next();
+			}
+		}
+		if(currentVal < 1) throw new RootNotFound();
+		return temp;
+	}
+	private void assertCode(int cd) throws RootNotFound
+	{
+		if(cd != 0 && cd != 2) throw new RootNotFound();
+	}
 	private Point2D semiStableSpiral(Point2D lnSt, Point2D lnNd, double a, double b) throws RootNotFound
 	{
-		double px = ((this.xMax.get() - this.xMin.get() + this.yMax.get() - this.yMin.get())/2) /
-				((canv.getWidth() + canv.getHeight())/2D);
+		double px = ((in.xMax.get() - in.xMin.get() + in.yMax.get() - in.yMin.get())/2) /
+				((in.canv.getWidth() + in.canv.getHeight())/2D);
 		Point2D p = new Point2D(a, b);
 		int current = hasLimCycle(lnSt, lnNd, p);
 		if(current != 0 && current != 2)
@@ -853,22 +902,30 @@ public class OutputPlane extends CoordPlane
 			});
 			limCycleUpdater.start();
 	}
+
+	/**
+	 * draws a limit cycle based on a starting point and a direction
+	 * @param lc the starting point and direction for the limit cycle
+	 */
 	private void drawLimCycle(LimCycleStart lc)
 	{
-		synchronized (g)
+		if (lc.isPositive)
 		{
-			g.setStroke(new BasicStroke(3));
-			if (lc.isPositive)
-			{
-				drawGraphBack(new InitCond(lc.st), false, '+', awtAttrLimCycleColor);
-			} else
-			{
-				drawGraphBack(new InitCond(lc.st), false, '-', awtRepLimCycleColor);
-			}
-			g.setStroke(new BasicStroke(1));
+			drawGraphBack(new InitCond(lc.st), false, '+', awtAttrLimCycleColor, 3);
+		} else
+		{
+			drawGraphBack(new InitCond(lc.st), false, '-', awtRepLimCycleColor, 3);
 		}
 	}
 
+	/**
+	 * finds a new limit cycle and draws it based on the provided information
+	 * @param start the point to start looking at
+	 * @param lnSt one end of the transversal
+	 * @param lnNd the other end of the transversal
+	 * @param add whether or not to add it to the list of limit cycles
+	 * @return whether or not a limit cycle was found
+	 */
 	private boolean drawNewLimCycle(Point2D start, Point2D lnSt, Point2D lnNd, boolean add)
 	{
 		//get to the line
@@ -936,15 +993,10 @@ public class OutputPlane extends CoordPlane
 					eval.resetT();
 					if (p1.distance(p2) < inc / 10000)
 					{
-						synchronized (g)
-						{
-							g.setStroke(new BasicStroke(4));
-							if (eval.getInc() > 0)
-								drawGraphBack(new InitCond(p2), false, '+', awtAttrLimCycleColor);
-							else
-								drawGraphBack(new InitCond(p2), false, '-', awtRepLimCycleColor);
-							g.setStroke(new BasicStroke(1));
-						}
+						if (eval.getInc() > 0)
+							drawGraphBack(new InitCond(p2), false, '+', awtAttrLimCycleColor, 4);
+						else
+							drawGraphBack(new InitCond(p2), false, '-', awtRepLimCycleColor, 4);
 						synchronized (canv)
 						{
 							render();
@@ -1715,9 +1767,10 @@ public class OutputPlane extends CoordPlane
 
 	private void updateCritical()
 	{
-		List<CriticalPoint> temp = new LinkedList<>();
+		List<CriticalPoint> temp = new ArrayList<>();
 		for (CriticalPoint c : criticalPoints)
 		{
+			if(Thread.interrupted()) return;
 			try
 			{
 				temp.add(critical(c.point));
@@ -1726,9 +1779,10 @@ public class OutputPlane extends CoordPlane
 			}
 		}
 		criticalPoints = temp;
-		List<Point2D> temp1 = new LinkedList<>();
+		List<Point2D> temp1 = new ArrayList<>();
 		for (Point2D c : selectedCritPoints)
 		{
+			if(Thread.interrupted()) return;
 			try
 			{
 				temp1.add(critical(c).point);
@@ -2187,6 +2241,7 @@ public class OutputPlane extends CoordPlane
 			{
 				for (CriticalPoint c : criticalPoints)
 				{
+					if(Thread.interrupted()) return;
 					drawSep(c);
 				}
 
@@ -2195,6 +2250,7 @@ public class OutputPlane extends CoordPlane
 			double inc = 2 * (xMax.get() - xMin.get()) / this.getWidth();
 			for (sepStart s : selectedSeps)
 			{
+				if(Thread.interrupted()) return;
 				synchronized (g)
 				{
 					if (!s.posEig())
@@ -2208,7 +2264,7 @@ public class OutputPlane extends CoordPlane
 				}
 			}
 			render();
-			updateLimCycles();
+//			updateLimCycles();
 		});
 		solutionArtist.start();
 	}

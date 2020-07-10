@@ -349,7 +349,9 @@ public abstract class CoordPlane extends Pane
 	 */
 	public void draw()
 	{
+		if(Thread.interrupted()) return;
 		drawAxes();
+		if(Thread.interrupted()) return;
 		drawBorders();
 	}
 
@@ -549,6 +551,7 @@ public abstract class CoordPlane extends Pane
 
 	protected void drawLine(double x1, double y1, double x2, double y2, java.awt.Color color, float width)
 	{
+		if(!Thread.interrupted())
 		Platform.runLater(() ->
 		{
 			synchronized (g)
