@@ -2,6 +2,8 @@ package PathGenerators;
 
 import javafx.geometry.Point2D;
 
+import javax.annotation.Nullable;
+
 /**
  * Factory class for path generators
  */
@@ -16,7 +18,7 @@ public class GeneratorFactory
 	public static Generator getSpiralGenerator(double px, Point2D start)
 	{
 		if(start == null) start = Point2D.ZERO;
-		return new SpiralGenerator(px, start, px);
+		return new SpiralGenerator(px/2, start, px/2);
 	}
 
 	/**
@@ -40,7 +42,7 @@ public class GeneratorFactory
 	 */
 	public static LoopGenerator getCircleLoopGenerator(double px, Point2D center, double radius)
 	{
-		return new CircleLoopGenerator(px, center, radius);
+		return new CircleLoopGenerator(px/2, center, radius);
 	}
 
 	/**
@@ -69,7 +71,7 @@ public class GeneratorFactory
 		switch (l)
 		{
 			case CIRCLE:
-				return  new CircleLoopGenerator(px, center, radius);
+				return  new CircleLoopGenerator(px/2, center, radius);
 			default:
 				throw new IllegalArgumentException();
 		}
@@ -85,6 +87,59 @@ public class GeneratorFactory
 	public static LoopGenerator getLoopGenerator(LoopType l, double px, Point2D center, int pxRad)
 	{
 		return getLoopGenerator(l, px, center, px * pxRad);
+	}
+
+	/**
+	 * Gets a finite path generator with the provided information
+	 * @param ty the type of finite path generator
+	 * @param px the size of one pixel
+	 * @param center the center point
+	 * @param maxDist the max distance from the start for a spiral generator (thrown out for other types
+	 * @return the new finite path generator
+	 */
+	public static FinitePathGenerator getFinitePathGenerator(
+			FinitePathType ty, double px, Point2D center,
+			double maxDist, @Nullable Point2D old)
+	{
+		switch (ty)
+		{
+			case ARC:
+				Point2D diff = center.subtract(old);
+				double th = Math.atan(diff.getY()/diff.getX());
+				return getArcGenerator(px, center, 3 * px, th-Math.PI/2, th+Math.PI/2);
+			case SPIRAL:
+				return getFiniteSpiralGenerator(px, center, maxDist);
+			default:
+				throw new IllegalArgumentException();
+		}
+	}
+
+	/**
+	 * Creates a new finite Archimedean spiral generator
+	 * @param px the size of one pixel
+	 * @param center the center point
+	 * @param maxD the distance from the center at which to stop
+	 * @return the new spiral generator
+	 */
+	public static FinitePathGenerator getFiniteSpiralGenerator(double px, Point2D center, double maxD)
+	{
+		return new FiniteSpiralGenerator(px/2, center, px/2, maxD);
+	}
+
+	/**
+	 * Constructs a new arc generator with the provided params
+	 * @param px the size of one pixel
+	 * @param center the center point
+	 * @param radius the radius of the arc
+	 * @param thetaStart the starting angle
+	 * @param thetaEnd the ending angle
+	 * @return the new arc generator
+	 * @implNote theta is always incremented anticlockwise
+	 */
+	public static FinitePathGenerator getArcGenerator(
+			double px, Point2D center, double radius, double thetaStart, double thetaEnd)
+	{
+		return new ArcGenerator(px/2, center, radius, thetaStart, thetaEnd);
 	}
 
 

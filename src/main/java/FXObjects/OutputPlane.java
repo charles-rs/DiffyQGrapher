@@ -30,6 +30,7 @@ import javafx.scene.text.Text;
 import org.ejml.simple.SimpleMatrix;
 
 
+import javax.annotation.Nullable;
 import javax.imageio.ImageIO;
 import java.awt.*;
 import java.awt.geom.AffineTransform;
@@ -178,14 +179,14 @@ public class OutputPlane extends CoordPlane
 
 		/*double px = (((this.xMax.get() - this.xMin.get()) + (this.yMax.get() - this.yMin.get()))/2)/
 				(1024);
-		LoopGenerator s = GeneratorFactory.getCircleLoopGenerator(px, new Point2D(1, 1), 1D);
+		FinitePathGenerator s = GeneratorFactory.getFinitePathGenerator(FinitePathType.ARC, px, new Point2D(1, 1), 1D, new Point2D(0, 0));
 		System.out.println(s.getCurrent());
-		while(!s.completed())
+		while(!s.done())
 		{
 			drawLine(s.getCurrent(), s.next(), java.awt.Color.GREEN);
 			drawLine(s.getCurrent(), s.next(), java.awt.Color.RED);
 			drawLine(s.getCurrent(), s.next(), java.awt.Color.BLUE);
-			s.next();
+			System.out.println(s.next());
 
 		}
 		System.out.println(s.getCurrent());
@@ -512,7 +513,7 @@ public class OutputPlane extends CoordPlane
 			return;*/
 		try
 		{
-			st = semiStableSpiral(lnSt, lnNd, a, b);
+			st = semiStableFinitePath(lnSt, lnNd, a, b, FinitePathType.SPIRAL, null);
 		} catch (RootNotFound r)
 		{
 			return;
@@ -559,7 +560,7 @@ public class OutputPlane extends CoordPlane
 				{
 					System.out.println("i: " + i);
 //					next = semiStable(lnSt, lnNd, temp.getX(), temp.getY(), code);
-					next = semiStableSpiral(lnSt, lnNd, temp.getX(), temp.getY());
+					next = semiStableFinitePath(lnSt, lnNd, temp.getX(), temp.getY(), FinitePathType.ARC, prev);
 					in.drawLine(prev, next, in.awtSemiStableColor, 3);
 					Platform.runLater(in::render);
 					diff = next.subtract(prev);
@@ -632,7 +633,8 @@ public class OutputPlane extends CoordPlane
 	{
 		if(cd != 0 && cd != 2) throw new RootNotFound();
 	}
-	private Point2D semiStableSpiral(Point2D lnSt, Point2D lnNd, double a, double b) throws RootNotFound
+	private Point2D semiStableFinitePath(Point2D lnSt, Point2D lnNd, double a, double b,
+										 FinitePathType finitePathType, @Nullable Point2D prev) throws RootNotFound
 	{
 		double px = ((in.xMax.get() - in.xMin.get() + in.yMax.get() - in.yMin.get())/2) /
 				((in.canv.getWidth() + in.canv.getHeight())/2D);
@@ -644,14 +646,14 @@ public class OutputPlane extends CoordPlane
 			throw new RootNotFound();
 		}
 		System.out.println("p1: " + p);
-		Generator s = GeneratorFactory.getSpiralGenerator(px, p);
+		FinitePathGenerator s = GeneratorFactory.getFinitePathGenerator(finitePathType, px, p, 15 * px, prev);
 		Point2D pOld = p;
 		p = s.next();
 		System.out.println("p2: " + p);
 		int cd;
 		System.out.println("made it here?");
 
-		while(!Thread.interrupted() && s.distanceFromStart() < 15 * px)
+		while(!Thread.interrupted() && !s.done())
 		{
 			System.out.println("Point: " + p);
 			cd = hasLimCycle(lnSt, lnNd, p);
@@ -828,7 +830,6 @@ public class OutputPlane extends CoordPlane
 				return -1;
 			}
 		}
-		System.out.println("got here");
 		Point2D pOld1, pNew1, pOld2, pNew2;
 		pNew1 = lnSt;
 		pNew2 = lnNd;
