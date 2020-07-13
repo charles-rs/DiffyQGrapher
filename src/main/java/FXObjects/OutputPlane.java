@@ -496,6 +496,7 @@ public class OutputPlane extends CoordPlane
 		double bInc = 2D * (in.yMax.get() - in.yMin.get()) / in.getHeight();
 		double otherInc = 0D;
 		Point2D prev;
+		Point2D prevOld;
 		Point2D next;
 		Point2D temp;
 		Point2D st = null;
@@ -546,7 +547,8 @@ public class OutputPlane extends CoordPlane
 			in.drawLine(prev, next, in.awtSemiStableColor, 3);
 			Platform.runLater(in::render);
 			diff = next.subtract(prev);
-
+			prevOld = st;
+			prev = next;
 			while (in.inBounds(prev.getX(), prev.getY()) && !Thread.interrupted())
 			{
 				isA = (code & 1) == 1;
@@ -563,7 +565,9 @@ public class OutputPlane extends CoordPlane
 				{
 					System.out.println("i: " + i);
 //					next = semiStable(lnSt, lnNd, temp.getX(), temp.getY(), code);
-					next = semiStableFinitePath(lnSt, lnNd, temp.getX(), temp.getY(), FinitePathType.ARC, prev);
+					next = semiStableFinitePath(lnSt, lnNd, prev.getX(), prev.getY(), FinitePathType.ARC, prevOld);
+//					next = semiStableMidpointPath(lnSt, lnNd, prev, prevOld);
+					System.out.println("Point1: " + prevOld + "\nPoint2: " + prev + "\nPoint3: " + next);
 					in.drawLine(prev, next, in.awtSemiStableColor, 3);
 					Platform.runLater(in::render);
 					diff = next.subtract(prev);
@@ -577,7 +581,7 @@ public class OutputPlane extends CoordPlane
 						if(Math.abs(diff.getY()/diff.getX()) > 1D)
 							isA = true;
 					}
-
+					prevOld = prev;
 					prev = next;
 					System.out.println(prev);
 					System.out.println(isA);
@@ -610,7 +614,7 @@ public class OutputPlane extends CoordPlane
 	{
 		double px = ((in.xMax.get() - in.xMin.get() + in.yMax.get() - in.yMin.get())/2) /
 				((in.getWidth() + in.getHeight())/2D);
-		LoopGenerator gen = GeneratorFactory.getLoopGenerator(lty, px/5, center, 10);
+		LoopGenerator gen = GeneratorFactory.getLoopGenerator(lty, px/5, center, 20);
 		int cd1 = hasLimCycle(lnSt, lnNd, gen.getCurrent());
 		int cd2;
 		Point2D temp [] = new Point2D[2];
@@ -618,7 +622,10 @@ public class OutputPlane extends CoordPlane
 		assertCode(cd1);
 		while(!gen.completed())
 		{
-			cd2 = hasLimCycle(lnSt, lnNd, gen.next());
+			Point2D prev = gen.getCurrent();
+			Point2D next = gen.next();
+			in.drawLine(prev, next, in.awtHeteroSaddleConColor);
+			cd2 = hasLimCycle(lnSt, lnNd, next);
 			if(cd2 != cd1 && (cd2 == 2 || cd2 == 0))
 			{
 				temp[currentVal] = gen.getCurrent();
@@ -626,7 +633,9 @@ public class OutputPlane extends CoordPlane
 				if(currentVal > 1) break;
 			} else
 			{
-				gen.next();
+				prev = gen.getCurrent();
+				next = gen.next();
+				in.drawLine(prev, next, in.awtHeteroSaddleConColor);
 			}
 		}
 		if(currentVal < 1) throw new RootNotFound();
@@ -636,6 +645,41 @@ public class OutputPlane extends CoordPlane
 	{
 		if(cd != 0 && cd != 2) throw new RootNotFound();
 	}
+	private Point2D semiStableMidpointPath(Point2D lnSt, Point2D lnNd, Point2D prev1, Point2D prev2) throws RootNotFound
+	{
+		double px = ((in.xMax.get() - in.xMin.get() + in.yMax.get() - in.yMin.get())/2) /
+				((in.canv.getWidth() + in.canv.getHeight())/2D);
+		MidpointPathGenerator gen = GeneratorFactory.getMidpointArcGenerator(px, prev1, prev2);
+		int cdLeft, cdRight, cdCenter;
+		while(!gen.done())
+		{
+			cdLeft = hasLimCycle(lnSt, lnNd, gen.getCurrent().left);
+			cdRight = hasLimCycle(lnSt, lnNd, gen.getCurrent().right);
+			cdCenter = hasLimCycle(lnSt, lnNd, gen.getCurrent().center);
+			if(cdCenter != 0 && cdCenter != 2) break;
+			if(cdLeft == 0 || cdLeft == 2)
+			{
+				if(cdLeft == cdRight)
+				{
+					System.out.println("no variation");
+					System.out.println("left: " + gen.getCurrent().left + "\nright: " + gen.getCurrent().right);
+					throw new RootNotFound();
+				}
+				else if (cdRight == 0 || cdRight == 2)
+				{
+					if(cdLeft == cdCenter)
+						gen.getNext(Side.RIGHT);
+					else gen.getNext(Side.LEFT);
+				}
+			}
+		}
+		if(!gen.done())
+		{
+			System.out.println("defaulting out");
+			return semiStableFinitePath(lnSt, lnNd, prev1.getX(), prev1.getY(), FinitePathType.ARC, prev2);
+		}
+		else return gen.getCurrentPoint();
+	}
 	private Point2D semiStableFinitePath(Point2D lnSt, Point2D lnNd, double a, double b,
 										 FinitePathType finitePathType, @Nullable Point2D prev) throws RootNotFound
 	{
@@ -643,7 +687,7 @@ public class OutputPlane extends CoordPlane
 				((in.canv.getWidth() + in.canv.getHeight())/2D);
 		Point2D p = new Point2D(a, b);
 		int current = hasLimCycle(lnSt, lnNd, p);
-		if(current != 0 && current != 2)
+		if(current != 0 && current != 2 && finitePathType == FinitePathType.SPIRAL)
 		{
 			System.out.println("bad init state spiral");
 			throw new RootNotFound();
