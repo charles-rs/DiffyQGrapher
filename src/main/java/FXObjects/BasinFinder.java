@@ -33,13 +33,13 @@ public class BasinFinder extends Thread
 				XAS = getNextX();
 				x = XAS.x;
 				foundAny = false;
-				double incY = (o.yMax.get() - o.yMin.get())/o.canv.getHeight(); //TODO change 512 to var
+				double incY = (o.yMax.get() - o.yMin.get())/o.canv.getHeight();
 				for (double y = o.yMin.get(); y < o.yMax.get(); y += incY)
 				{
 					e.initialise(x, y, o.getT(), o.a, o.b, inc);
-					while (o.inBoundsSaddle(e.getCurrent()) && e.getT() < 100)
+					while (o.inBoundsSaddle(e.getCurrent()) && e.getT() < 100 + o.getT() && e.getT() >= o.getT() - 100)
 					{
-						if (e.next().distance(crit) < inc)
+						if (e.next().distance(crit) < Math.abs(inc))
 						{
 							foundAny = true;
 							synchronized (o.g)
@@ -49,8 +49,9 @@ public class BasinFinder extends Thread
 							}
 							break;
 						}
+						if(e.getCurrent().distance(e.next()) < Math.abs(inc/10000)) break;
 					}
-					}
+				}
 				o.render();
 				if(!foundAny)
 				{
@@ -73,7 +74,7 @@ public class BasinFinder extends Thread
 
 	}
 
-	public static void init(OutputPlane _o, Point2D _crit)
+	public static void init(OutputPlane _o, Point2D _crit, boolean posDir)
 	{
 		doneLeft = new AtomicBoolean(false);
 		doneRight = new AtomicBoolean(false);
@@ -81,6 +82,7 @@ public class BasinFinder extends Thread
 		crit = _crit;
 		s = Side.LEFT;
 		inc = (o.xMax.get() - o.xMin.get())/o.canv.getWidth();
+		if(!posDir) inc *= -1;
 		right = crit.getX();
 		left = crit.getX() - 1 *  inc;
 		col = new java.awt.Color(((crit.hashCode()) & ((~0) >>> 8)) | (1 << 30), true);

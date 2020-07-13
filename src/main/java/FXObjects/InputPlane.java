@@ -683,6 +683,7 @@ public class InputPlane extends CoordPlane
 		saddleCons.clear();
 		degenSaddleCons.clear();
 		degenHopf.clear();
+		semiStables.clear();
 		for(Pentagram p : pentlist)
 		{
 			this.getChildren().remove(p);

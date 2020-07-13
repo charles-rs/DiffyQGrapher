@@ -318,6 +318,9 @@ public class OutputPlane extends CoordPlane
 				drawBasin(pt);
 				clickMode = ClickModeType.DRAWPATH;
 				break;
+			case DRAWCOBASIN:
+				drawCoBasin(pt);
+				clickMode = ClickModeType.DRAWPATH;
 			case SELECTSADDLE:
 				try
 				{
@@ -657,6 +660,7 @@ public class OutputPlane extends CoordPlane
 		{
 			System.out.println("Point: " + p);
 			cd = hasLimCycle(lnSt, lnNd, p);
+			System.out.println("num cycles: " + cd);
 			if(cd != current && (cd == 2 || cd == 0))
 			{
 				break;
@@ -1104,11 +1108,36 @@ public class OutputPlane extends CoordPlane
 			System.out.println("haha no");
 			return;
 		}
-		BasinFinder.init(this, crit);
+		BasinFinder.init(this, crit, true);
 
 		for(int i = 0; i < 8; i++)
 		{
 			new BasinFinder().start();
+		}
+	}
+	/**
+	 * draws the cobasin for the point that is the critical point starting at st.
+	 * does nothing if it doesn't solve to a source.
+	 * @param st the starting point for finding the cobasin
+	 */
+	public void drawCoBasin(Point2D st)
+	{
+		Point2D crit;
+		try
+		{
+			CriticalPoint temp = critical(st);
+			if(!temp.type.isSource()) return;
+			crit = temp.point;
+		} catch (RootNotFound r)
+		{
+			return;
+		}
+		BasinFinder.init(this, crit, false);
+		{
+			for(int i = 0; i < 8; i++)
+			{
+				new BasinFinder().start();
+			}
 		}
 	}
 

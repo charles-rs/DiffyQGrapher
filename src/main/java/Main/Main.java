@@ -103,9 +103,10 @@ public class Main extends Application
 		MenuItem editPentagram = new MenuItem("Edit Pentagram");
 		MenuItem limCycle = new MenuItem("Limit Cycle");
 		MenuItem basin = new MenuItem("Basin");
+		MenuItem coBasin = new MenuItem("Cobasin");
 		draw.getItems().addAll(separatrices, horizIso, vertIso, new SeparatorMenuItem(),
 				pentagram, noMorePentagram, editPentagram, new SeparatorMenuItem(),
-				limCycle, basin);
+				limCycle, basin, coBasin);
 
 
 		MenuItem saddleBif = new MenuItem("Saddle Node Bifurcation");
@@ -381,6 +382,10 @@ public class Main extends Application
 		basin.setOnAction(e ->
 		{
 			outPlane.clickMode = ClickModeType.DRAWBASIN;
+		});
+		coBasin.setOnAction(e ->
+		{
+			outPlane.clickMode = ClickModeType.DRAWCOBASIN;
 		});
 		saddleBif.setOnAction((e) ->
 		{
