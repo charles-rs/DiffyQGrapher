@@ -145,13 +145,14 @@ public class GeneratorFactory
 	public static MidpointPathGenerator getMidpointArcGenerator(
 			double px, Point2D center, double thetaLeft, double thetaRight)
 	{
-		return new MidpointArcGenerator(center, px/2, thetaLeft, thetaRight, px * 4);
+		return new MidpointArcGenerator(center, px/2, thetaLeft, thetaRight, px * 8);
 	}
 	public static MidpointPathGenerator getMidpointArcGenerator(
 			double px, Point2D center, Point2D old)
 	{
 		Point2D diff = center.subtract(old);
 		double th = Math.atan(diff.getY()/diff.getX());
+		th = Math.toRadians(diff.angle(1, 0));
 		System.out.println("calculated theta: " + th);
 		System.out.println("diff: " + diff);
 		return getMidpointArcGenerator(px, center, th + Math.PI/2, th - Math.PI/2);

@@ -31,4 +31,15 @@ public interface MidpointPathGenerator
 	 * @return whether or not the calculation is done
 	 */
 	boolean done();
+
+	/**
+	 * refines the current generator closer to the center. Used if the endpoints are giving issue
+	 */
+	void refine();
+
+	/**
+	 * refines the current generator based on a particular side
+	 * @param s the side to lean towards
+	 */
+	void refine(Side s);
 }

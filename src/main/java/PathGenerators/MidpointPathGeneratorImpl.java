@@ -35,4 +35,5 @@ public abstract class MidpointPathGeneratorImpl implements MidpointPathGenerator
 	{
 		return current.left.distance(current.center) < precision;
 	}
+
 }

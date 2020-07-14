@@ -565,9 +565,9 @@ public class OutputPlane extends CoordPlane
 				{
 					System.out.println("i: " + i);
 //					next = semiStable(lnSt, lnNd, temp.getX(), temp.getY(), code);
-					next = semiStableFinitePath(lnSt, lnNd, prev.getX(), prev.getY(), FinitePathType.ARC, prevOld);
-//					next = semiStableMidpointPath(lnSt, lnNd, prev, prevOld);
-					System.out.println("Point1: " + prevOld + "\nPoint2: " + prev + "\nPoint3: " + next);
+//					next = semiStableFinitePath(lnSt, lnNd, prev.getX(), prev.getY(), FinitePathType.ARC, prevOld);
+					next = semiStableMidpointPath(lnSt, lnNd, prev, prevOld);
+//					System.out.println("Point1: " + prevOld + "\nPoint2: " + prev + "\nPoint3: " + next);
 					in.drawLine(prev, next, in.awtSemiStableColor, 3);
 					Platform.runLater(in::render);
 					diff = next.subtract(prev);
@@ -651,8 +651,9 @@ public class OutputPlane extends CoordPlane
 				((in.canv.getWidth() + in.canv.getHeight())/2D);
 		MidpointPathGenerator gen = GeneratorFactory.getMidpointArcGenerator(px, prev1, prev2);
 		int cdLeft, cdRight, cdCenter;
-		while(!gen.done())
+		while(!gen.done() && !Thread.interrupted())
 		{
+			System.out.println("current point: " + gen.getCurrentPoint());
 			cdLeft = hasLimCycle(lnSt, lnNd, gen.getCurrent().left);
 			cdRight = hasLimCycle(lnSt, lnNd, gen.getCurrent().right);
 			cdCenter = hasLimCycle(lnSt, lnNd, gen.getCurrent().center);
@@ -670,8 +671,8 @@ public class OutputPlane extends CoordPlane
 					if(cdLeft == cdCenter)
 						gen.getNext(Side.RIGHT);
 					else gen.getNext(Side.LEFT);
-				}
-			}
+				} else gen.refine(Side.LEFT);
+			} else gen.refine(Side.RIGHT);
 		}
 		if(!gen.done())
 		{
