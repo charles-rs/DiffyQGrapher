@@ -1,5 +1,8 @@
 package PathGenerators;
 
+
+import javafx.geometry.Point2D;
+
 public interface LoopGenerator extends Generator
 {
 	/**
@@ -13,4 +16,12 @@ public interface LoopGenerator extends Generator
 	 * @return whether the generator has rounded a loop
 	 */
 	boolean completed();
+
+	/**
+	 * advances the current loop generator by one quarter turn
+	 * @return the point after the advance
+	 */
+	Point2D advanceOneQuarter();
+
+
 }

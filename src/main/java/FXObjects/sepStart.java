@@ -110,6 +110,12 @@ public class sepStart implements Cloneable
 
 	}
 
+	public double getInc(double inc)
+	{
+		if(this.posEig()) return inc;
+		else return -inc;
+	}
+
 	/**
 	 * Flips the direction of the separatrix. Note: separatrices are immutable, so returns a new one
 	 * @param other the separatrix to flip

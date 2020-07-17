@@ -47,4 +47,9 @@ public class ArcGenerator extends FinitePathGeneratorImpl
 		}
 		return current;
 	}
+
+	public double getTheta()
+	{
+		return theta;
+	}
 }

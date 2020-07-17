@@ -28,4 +28,13 @@ public class CircleLoopGenerator extends LoopGeneratorImpl
 		current = new Point2D(r * Math.cos(theta), r * Math.sin(theta)).add(center);
 		return current;
 	}
+
+	@Override
+	public Point2D advanceOneQuarter()
+	{
+		theta += Math.PI/2;
+		current = new Point2D(r * Math.cos(theta), r * Math.sin(theta)).add(center);
+		return current;
+	}
+
 }

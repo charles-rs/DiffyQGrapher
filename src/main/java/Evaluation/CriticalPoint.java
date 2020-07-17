@@ -7,7 +7,7 @@ import org.ejml.simple.SimpleMatrix;
 /**
  * Class to represent critical points. Keeps track of where they are
  */
-public class CriticalPoint
+public class CriticalPoint implements Cloneable
 {
 	public Point2D point;
 	public CritPointTypes type;
@@ -27,5 +27,10 @@ public class CriticalPoint
 					matrix.getEigenVector(1).set(matrix.getEigenVector(1).negative());
 			}
 		} catch (NullPointerException ignored) {}
+	}
+	@Override
+	public CriticalPoint clone()
+	{
+		return new CriticalPoint(point, type, matrix);
 	}
 }

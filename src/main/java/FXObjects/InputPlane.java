@@ -625,7 +625,7 @@ public class InputPlane extends CoordPlane
 				Platform.runLater(() -> loading.setVisible(true));
 				synchronized (this)
 				{
-					op.renderSaddleCon(sad.pt, sad.s1, sad.s2, false);
+					op.renderSaddleCon(sad.pt, sad.s1, sad.s2, false, sad.transversal);
 				}
 				Platform.runLater(() -> loading.setVisible(false));
 			});

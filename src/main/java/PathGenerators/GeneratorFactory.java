@@ -105,8 +105,10 @@ public class GeneratorFactory
 		{
 			case ARC:
 				Point2D diff = center.subtract(old);
-				double th = Math.atan(diff.getY()/diff.getX());
-				return getArcGenerator(px, center, 3 * px, th-Math.PI/2, th+Math.PI/2);
+				double th = Math.atan2(diff.getY(), diff.getX());
+				System.out.println("calculated theta: " + th);
+				System.out.println("diff: " + diff);
+				return getArcGenerator(px, center, 8 * px, th -  Math.PI/2, th + Math.PI/2);
 			case SPIRAL:
 				return getFiniteSpiralGenerator(px, center, maxDist);
 			default:
@@ -123,7 +125,7 @@ public class GeneratorFactory
 	 */
 	public static FinitePathGenerator getFiniteSpiralGenerator(double px, Point2D center, double maxD)
 	{
-		return new FiniteSpiralGenerator(px/2, center, 2 * px, maxD);
+		return new FiniteSpiralGenerator(px/2, center, 5 * px, maxD);
 	}
 
 	/**
@@ -151,8 +153,7 @@ public class GeneratorFactory
 			double px, Point2D center, Point2D old)
 	{
 		Point2D diff = center.subtract(old);
-		double th = Math.atan(diff.getY()/diff.getX());
-		th = Math.toRadians(diff.angle(1, 0));
+		double th = Math.atan2(diff.getY(), diff.getX());
 		System.out.println("calculated theta: " + th);
 		System.out.println("diff: " + diff);
 		return getMidpointArcGenerator(px, center, th + Math.PI/2, th - Math.PI/2);

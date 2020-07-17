@@ -6,6 +6,7 @@ import AST.Value;
 import Evaluation.*;
 import Events.SaddleSelected;
 import Events.HopfPointSelected;
+import Exceptions.BadSaddleTransversalException;
 import Exceptions.EvaluationException;
 import Exceptions.RootNotFound;
 import PathGenerators.*;
@@ -25,6 +26,7 @@ import javafx.scene.layout.BorderStroke;
 import javafx.scene.layout.BorderStrokeStyle;
 import javafx.scene.layout.BorderWidths;
 import javafx.scene.paint.Color;
+import javafx.scene.shape.Circle;
 import javafx.scene.shape.Line;
 import javafx.scene.text.Text;
 import org.ejml.simple.SimpleMatrix;
@@ -378,47 +380,72 @@ public class OutputPlane extends CoordPlane
 						draw();
 						if (selectedSeps.size() == 2)
 						{
-							//
-							try
+
+							if(selectedSeps.get(0).saddle.point.distance(selectedSeps.get(1).saddle.point) < inc/100)
 							{
-								PrintWriter f = new PrintWriter(new File("output.text"));
-								synchronized (selectedSeps)
-								{
-									for (sepStart s :selectedSeps)
-									{
-										f.println("Sepstart: ");
-										f.println("is positive direction: " + s.posDir());
-										f.println("Saddle pt: " + s.saddle.point);
-										f.println("Start pt: " + s.getStart(.01));
-									}
-								}
-								f.close();
-							} catch (FileNotFoundException ignored) {}
-
-
-							in.artist = new Thread(() ->
+								clickMode = ClickModeType.SELECTHOMOCENTER;
+							} else
 							{
-								Platform.runLater(() -> in.loading.setVisible(true));
-								synchronized (selectedSeps)
+								try
 								{
-									synchronized (in)
+									SaddleConTransversal transversal = new SaddleConTransversal(selectedSeps.get(0).saddle, selectedSeps.get(1).saddle);
+									in.artist = new Thread(() ->
 									{
-										renderSaddleCon(new Point2D(a, b), selectedSeps.get(0), selectedSeps.get(1), true);
-										selectedSeps.clear();
-									}
-								}
-								Platform.runLater(() -> in.loading.setVisible(false));
-							});
-							in.artist.start();
+										Platform.runLater(() -> in.loading.setVisible(true));
+										synchronized (selectedSeps)
+										{
+											synchronized (in)
+											{
+												renderSaddleCon(new Point2D(a, b), selectedSeps.get(0), selectedSeps.get(1), true, transversal);
+												selectedSeps.clear();
+											}
+										}
+										Platform.runLater(() -> in.loading.setVisible(false));
+									});
+									in.artist.start();
 
-							selectedCritPoints.clear();
-							clickMode = ClickModeType.DRAWPATH;
+
+								} catch (BadSaddleTransversalException ignored) {}
+
+								selectedCritPoints.clear();
+								clickMode = ClickModeType.DRAWPATH;
+							}
+
 						}
 					}
 				} catch (RootNotFound ignored)
 				{
 				}
 				break;
+			case SELECTHOMOCENTER:
+				try
+				{
+					CriticalPoint center = critical(pt);
+					try
+					{
+						SaddleConTransversal transversal = new SaddleConTransversal(selectedSeps.get(0).saddle, center);
+						in.artist = new Thread(() ->
+						{
+							Platform.runLater(() -> in.loading.setVisible(true));
+							synchronized (selectedSeps)
+							{
+								synchronized (in)
+								{
+									renderSaddleCon(new Point2D(a, b), selectedSeps.get(0), selectedSeps.get(1), true, transversal);
+									selectedSeps.clear();
+								}
+							}
+							Platform.runLater(() -> in.loading.setVisible(false));
+						});
+						in.artist.start();
+
+					} catch (BadSaddleTransversalException ignored)
+					{
+					}
+
+					selectedCritPoints.clear();
+					clickMode = ClickModeType.DRAWPATH;
+				} catch (RootNotFound ignored) {}
 			case FINDLIMCYCLE:
 				switch (limCycStep)
 				{
@@ -540,6 +567,21 @@ public class OutputPlane extends CoordPlane
 		{
 			in.semiStables.add(new SemiStableStart(lnSt, lnNd, st));
 		}
+		SemiStableHelper.init(this, Thread.currentThread(), lnSt, lnNd);
+		SemiStableHelper s1, s2;
+		s1 = new SemiStableHelper(st, sides[0]);
+		s2 = new SemiStableHelper(st, sides[1]);
+		s1.start();
+		s2.start();
+		try
+		{
+			s1.join();
+		} catch (InterruptedException ignored) {}
+		try
+		{
+			s2.join();
+		} catch (InterruptedException ignored) {}
+		/*
 		for (int i = 0; i < 2; i++)
 		{
 			prev = st;
@@ -607,7 +649,7 @@ public class OutputPlane extends CoordPlane
 		}
 		in.gc.setStroke(Color.BLACK);
 
-		Platform.runLater(this::draw);
+		Platform.runLater(this::draw);*/
 		in.render();
 	}
 	private Point2D semiStableLoop(Point2D lnSt, Point2D lnNd, Point2D center, LoopType lty) [] throws RootNotFound
@@ -615,27 +657,28 @@ public class OutputPlane extends CoordPlane
 		double px = ((in.xMax.get() - in.xMin.get() + in.yMax.get() - in.yMin.get())/2) /
 				((in.getWidth() + in.getHeight())/2D);
 		LoopGenerator gen = GeneratorFactory.getLoopGenerator(lty, px/5, center, 20);
-		int cd1 = hasLimCycle(lnSt, lnNd, gen.getCurrent());
-		int cd2;
+		int cd1;
+		int cd2 = hasLimCycle(lnSt, lnNd, gen.getCurrent());;
 		Point2D temp [] = new Point2D[2];
 		int currentVal = 0;
-		assertCode(cd1);
-		while(!gen.completed())
+		assertCode(cd2);
+		while(!gen.completed() && !Thread.interrupted())
 		{
+			System.out.println(gen.getCurrent());
 			Point2D prev = gen.getCurrent();
 			Point2D next = gen.next();
-			in.drawLine(prev, next, in.awtHeteroSaddleConColor);
+			cd1 = cd2;
 			cd2 = hasLimCycle(lnSt, lnNd, next);
 			if(cd2 != cd1 && (cd2 == 2 || cd2 == 0))
 			{
 				temp[currentVal] = gen.getCurrent();
+				gen.advanceOneQuarter();
 				currentVal++;
 				if(currentVal > 1) break;
-			} else
+			} //else
 			{
 				prev = gen.getCurrent();
 				next = gen.next();
-				in.drawLine(prev, next, in.awtHeteroSaddleConColor);
 			}
 		}
 		if(currentVal < 1) throw new RootNotFound();
@@ -645,18 +688,40 @@ public class OutputPlane extends CoordPlane
 	{
 		if(cd != 0 && cd != 2) throw new RootNotFound();
 	}
-	private Point2D semiStableMidpointPath(Point2D lnSt, Point2D lnNd, Point2D prev1, Point2D prev2) throws RootNotFound
+	Point2D semiStableMidpointPath(Point2D lnSt, Point2D lnNd, Point2D prev1, Point2D prev2) throws RootNotFound
 	{
 		double px = ((in.xMax.get() - in.xMin.get() + in.yMax.get() - in.yMin.get())/2) /
 				((in.canv.getWidth() + in.canv.getHeight())/2D);
 		MidpointPathGenerator gen = GeneratorFactory.getMidpointArcGenerator(px, prev1, prev2);
-		int cdLeft, cdRight, cdCenter;
+		int cdLeft = -1, cdRight = -1, cdCenter = -1, dir = 4;
 		while(!gen.done() && !Thread.interrupted())
 		{
 			System.out.println("current point: " + gen.getCurrentPoint());
-			cdLeft = hasLimCycle(lnSt, lnNd, gen.getCurrent().left);
-			cdRight = hasLimCycle(lnSt, lnNd, gen.getCurrent().right);
-			cdCenter = hasLimCycle(lnSt, lnNd, gen.getCurrent().center);
+			switch (dir)
+			{
+				case 0:
+					cdLeft = cdCenter;
+					cdCenter = hasLimCycle(lnSt, lnNd, gen.getCurrentPoint());
+					break;
+				case 1:
+					cdRight = cdCenter;
+					cdCenter = hasLimCycle(lnSt, lnNd, gen.getCurrentPoint());
+					break;
+				case 2:
+					cdRight = hasLimCycle(lnSt, lnNd, gen.getCurrent().right);
+					cdCenter = hasLimCycle(lnSt, lnNd, gen.getCurrent().center);
+					break;
+				case 3:
+					cdLeft = hasLimCycle(lnSt, lnNd, gen.getCurrent().left);
+					cdCenter = hasLimCycle(lnSt, lnNd, gen.getCurrent().center);
+					break;
+				default:
+					cdLeft = hasLimCycle(lnSt, lnNd, gen.getCurrent().left);
+					cdRight = hasLimCycle(lnSt, lnNd, gen.getCurrent().right);
+					cdCenter = hasLimCycle(lnSt, lnNd, gen.getCurrent().center);
+					break;
+			}
+
 			if(cdCenter != 0 && cdCenter != 2) break;
 			if(cdLeft == 0 || cdLeft == 2)
 			{
@@ -669,10 +734,25 @@ public class OutputPlane extends CoordPlane
 				else if (cdRight == 0 || cdRight == 2)
 				{
 					if(cdLeft == cdCenter)
+					{
 						gen.getNext(Side.RIGHT);
-					else gen.getNext(Side.LEFT);
-				} else gen.refine(Side.LEFT);
-			} else gen.refine(Side.RIGHT);
+						dir = 0;
+					}
+					else
+					{
+						gen.getNext(Side.LEFT);
+						dir = 1;
+					}
+				} else
+				{
+					gen.refine(Side.LEFT);
+					dir = 2;
+				}
+			} else
+			{
+				gen.refine(Side.RIGHT);
+				dir = 3;
+			}
 		}
 		if(!gen.done())
 		{
@@ -1186,88 +1266,15 @@ public class OutputPlane extends CoordPlane
 		}
 	}
 
-	
-	private SimpleMatrix getDerivsOfSol(Point2D p, double a, double b)
+
+
+	public void renderSaddleCon(Point2D start, final sepStart s1, final sepStart s2, boolean add, SaddleConTransversal transversal)
 	{
-		AST.Node res[] = new AST.Node[2];
-		AST.Node derivAB[][] = new AST.Node[2][2];
-		derivAB[0][0] = dx.differentiate('a').collapse();
-		derivAB[0][1] = dx.differentiate('b').collapse();
-		derivAB[1][0] = dy.differentiate('a').collapse();
-		derivAB[1][1] = dy.differentiate('b').collapse();
-
-		AST.Node derivXY[][] = new AST.Node[2][2];
-		derivXY[0][0] = dx.differentiate('x').collapse();
-		derivXY[0][1] = dx.differentiate('y').collapse();
-		derivXY[1][0] = dy.differentiate('x').collapse();
-		derivXY[1][1] = dy.differentiate('y').collapse();
-
-		SimpleMatrix dab = new SimpleMatrix(2, 2);
-		SimpleMatrix dxy = new SimpleMatrix(2, 2);
-		try
-		{
-			for (int i = 0; i < 2; i++)
-			{
-				for (int j = 0; j < 2; j++)
-				{
-					dab.set(i, j, derivAB[i][j].eval(p.getX(), p.getY(), a, b, 0));
-					dxy.set(i, j, derivXY[i][j].eval(p.getX(), p.getY(), a, b, 0));
-				}
-			}
-			return dab;//.invert().negative().mult(dxy);
-		} catch (EvaluationException r)
-		{
-			return null;
-		}
-	}
-
-//	private SimpleMatrix getDerivOfLine(sepStart s1, double a, double b) throws RootNotFound
-//	{
-//		SimpleMatrix V = SimpleMatrix.identity(2);
-//		SimpleMatrix D = getDerivsOfSol(s1.start, a, b);
-//		SimpleMatrix Vp = D.mult(V);
-//		Point2D iSect = null;
-//		double x = s1.start.getX();
-//		double y = s1.start.getY();
-//		double t0 = sepIntersect(s1, a, b, line, iSect);
-//		Evaluator eval = EvaluatorFactory.getRungeKuttaEval(dx, dy);
-//		Point2D next = s1.start;
-//		if (s1.positive)
-//			eval.initialise(x, y, 0, a, b, inc);
-//		else
-//			eval.initialise(x, y, 0, a, b, -inc);
-//		while (eval.getT() < t0)
-//		{
-//			next = eval.next();
-//			V = V.plus(Vp.scale(eval.getInc()));
-//			Vp = getDerivsOfSol(next, a, b);
-//		}
-//		Point2D temp = line[0].subtract(line[1]);
-//		SimpleMatrix fin = new SimpleMatrix(2, 1);
-//		fin.set(0, 0, next.getX());
-//		fin.set(1, 0, next.getY());
-//		SimpleMatrix res = new SimpleMatrix(2,2);
-//		res.set(0, 0, temp.getX() * V.get(0, 0)*temp.getX() + V.get(1, 0)*temp.getY());
-//		res.set(0, 1, temp.getX() * V.get(0, 1) * temp.getX() + V.get(1,1)*temp.getY());
-//		res.set(1, 0, temp.getY() * V.get(0, 0)*temp.getX() + V.get(1, 0)*temp.getY());
-//		res.set(1, 1, temp.getY() * V.get(0, 1) * temp.getX() + V.get(1,1)*temp.getY());
-//		return res;
-//	}
-
-
-
-
-	public void renderSaddleCon(Point2D start, final sepStart s1, final sepStart s2, boolean add)
-	{
-		try
-		{
-			PrintWriter out = new PrintWriter("output.text");
 			java.awt.Color tempCol;
 			if (s1.saddle.point.distance(s2.saddle.point) < .000001 * ((xMax.get() - xMin.get()) + (yMax.get() - yMin.get()))/2)
 				tempCol = (in.awtHomoSaddleConColor);
 				//				in.saddleCanvas.getGraphicsContext2D().setStroke(in.homoSaddleConColor);
 			else tempCol = (in.awtHeteroSaddleConColor);
-			in.g.setStroke(new BasicStroke(3));
 //			in.g.setColor(java.awt.Color.RED);
 
 			double aInc = 1D * (in.xMax.get() - in.xMin.get()) / in.getWidth();
@@ -1276,6 +1283,7 @@ public class OutputPlane extends CoordPlane
 			// This is a variable that helps us guess better for the next value (using euler's method)
 			double otherInc = 0D;
 			Point2D prev;
+			Point2D prevOld;
 			Point2D next;
 			Point2D temp;
 			Point2D st;
@@ -1289,34 +1297,36 @@ public class OutputPlane extends CoordPlane
 			boolean isA = false;
 			try
 			{
-				st = saddleConnection(s1, s2, isA, start.getX(), start.getY());
+//				st = saddleConnection(s1, s2, isA, start.getX(), start.getY());
+				st = saddleConFinitePath(s1, s2, start.getX(), start.getY(), FinitePathType.SPIRAL, null, transversal);
+
 				if (add)
 				{
-					in.saddleCons.add(new SaddleCon(st, s1, s2));
-					add = false;
+					in.saddleCons.add(new SaddleCon(st, s1, s2, transversal));
 				}
 			} catch (RootNotFound r)
 			{
-				try
-				{
-					isA = !isA;
-					st = saddleConnection(s1, s2, isA, start.getX(), start.getY());
-					if (add)
-					{
-						in.saddleCons.add(new SaddleCon(st, s1, s2));
-						add = false;
-					}
-				} catch (RootNotFound r1)
-				{
-					return;
-				}
+				return;
 			}
+			System.out.println("yay");
+			System.out.println(st);
+			Point2D circ[];
+		try
+			{
+				circ = saddleConLoop(s1, s2, st, transversal, LoopType.CIRCLE);
+			} catch (RootNotFound r)
+			{
+				System.out.println("circle failed");
+				return;
+			}/*
 			for (int i = 0; i < 2; i++)
 			{
 //			System.out.println("AINC: " + aInc);
 //			System.out.println("BINC: " + bInc);
 
-				prev = st;
+				prevOld = st;
+				prev = circ[i];
+				in.drawLine(prevOld, prev, tempCol, 3);
 				while (in.inBounds(prev.getX(), prev.getY()) && !Thread.interrupted())
 				{
 
@@ -1324,66 +1334,16 @@ public class OutputPlane extends CoordPlane
 					else temp = new Point2D(prev.getX() + aInc, prev.getY() + otherInc);
 					try
 					{
-						next = saddleConnection(s1, s2, isA, temp.getX(), temp.getY());
-//						System.out.println(i);
-//						if(next.subtract(prev).getY()/next.subtract(prev).getX() < .5)
-//						{
-//							for(int ix = (int) Math.round(prev.getX()); ix < Math.round(next.getX()); ix++)
-//							{
-//
-//							}
-//						} else
-//						{
-//
-//						}
+						next = saddleConFinitePath(s1, s2, prev.getX(), prev.getY(), FinitePathType.ARC, prevOld, transversal);
+						System.out.println(prevOld + "  " + prev + "  " + next);
 						in.drawLine(prev, next, tempCol, 3);
 						Platform.runLater(in::render);
-//						in.render();
-//
-//						sg.drawLine(
-//								(int) normToScrX(prev.getX()),
-//								(int) normToScrY(prev.getY()),
-//								(int) normToScrX(next.getX()),
-//								(int) normToScrY(next.getY()));
-//						in.saddleImageView.setImage(SwingFXUtils.toFXImage(in.saddleImageBuf, null));
-						diff = next.subtract(prev);
-//					if(isA)
-//					{
-//						if(diff.getX() == 0D || diff.getY()/diff.getX() > .5)
-//							isA = false;
-//					} else
-//					{
-//						if(diff.getY() == 0D || diff.getX()/diff.getY() > .5)
-//							isA = true;
-//					}
-
-//					if(isA)
-//					{
-//						if(diff.getX() < .1 * inc)
-//						{
-//							isA = false;
-//							otherInc = 0;
-//						}
-//						else
-//							otherInc = aInc * (diff.getY()/diff.getX());
-//					} else
-//					{
-//						if(diff.getY() < .1 * inc)
-//						{
-//							isA = true;
-//							otherInc = 0;
-//						}
-//						else
-//							otherInc = bInc * (diff.getX()/diff.getY());
-//					}
-						if (s1.saddle.point.distance(s2.saddle.point) < .000001 * ((xMax.get() - xMin.get()) + (yMax.get() - yMin.get()))/2)
 						{
 							System.out.println("they are the same");
 							try
 							{
 								double prevEval = tr.eval(s1.saddle.point.getX(), s1.saddle.point.getY(), prev.getX(), prev.getY(), 0);
-								out.println("Point: " + prev);
-								out.println("Trace: " + prevEval + "\n");
+
 								double nextEval = tr.eval(s1.saddle.point.getX(), s1.saddle.point.getY(), next.getX(), next.getY(), 0);
 								if (prevEval == 0D || prevEval == -0D) in.degenSaddleCons.add(prev);
 								else if (nextEval == 0D || nextEval == -0D) in.degenSaddleCons.add(next);
@@ -1398,12 +1358,15 @@ public class OutputPlane extends CoordPlane
 							{
 							}
 						}
+						prevOld = prev;
 						prev = next;
 						System.out.println(prev);
 						System.out.println(isA);
 						justThrew = false;
 					} catch (RootNotFound r)
 					{
+						if(true)
+							break;
 						System.out.println("off the scrn? " + r.offTheScreen);
 						if (r.offTheScreen)
 						{
@@ -1432,13 +1395,25 @@ public class OutputPlane extends CoordPlane
 				bInc = -bInc;
 //			in.saddleCanvas.getGraphicsContext2D().setStroke(Color.TURQUOISE);
 			}
+			*/
+		SaddleConHelper.init(this, Thread.currentThread());
+		SaddleConHelper sad1 = new SaddleConHelper(st, circ[0], transversal.clone(), s1, s2);
+		SaddleConHelper sad2 = new SaddleConHelper(st, circ[1], transversal.clone(), s1, s2);
+		sad1.start();
+		sad2.start();
+		try
+		{
+			sad1.join();
+		} catch (InterruptedException ignored) {}
+		try
+		{
+			sad2.join();
+		} catch (InterruptedException ignored) {}
 			in.gc.setStroke(Color.BLACK);
 			in.drawDegenSaddleCons();
 
 			Platform.runLater(this::draw);
-			out.close();
 			in.render();
-		} catch (FileNotFoundException ignored) {}
 	}
 
 	/**
@@ -1478,10 +1453,94 @@ public class OutputPlane extends CoordPlane
 			return inBoundsSaddle(p.getX(), p.getY());
 		return false;
 	}
+
+	int saddlePass(final sepStart s1, final sepStart s2, final double a, final double b, SaddleConTransversal traversal)
+	{
+		Point2D lnSt = traversal.getStart();
+		System.out.println("start of trans: " + lnSt);
+		Point2D lnNd = traversal.getEnd();
+		Evaluator e1 = EvaluatorFactory.getEvaluator(evalType, dx, dy);
+		e1.initialise(s1.getStart(inc), 0, a, b, s1.getInc(inc));
+		Evaluator e2 = EvaluatorFactory.getEvaluator(evalType, dx, dy);
+		e2.initialise(s2.getStart(inc), 0, a, b, s2.getInc(inc));
+
+		Point2D p1, p2;
+		try
+		{
+			p1 = getNextIsectLn(e1, lnSt, lnNd);
+		} catch (RootNotFound r)
+		{
+			System.out.println("are we here?");
+			if(traversal.homo)
+			{
+				try
+				{
+					p2 = getNextIsectLn(e2, lnSt, lnNd);
+					if(s2.posEig()) return 1;
+					else return -1;
+				} catch (RootNotFound r1)
+				{
+					return 0;
+				}
+			}
+			else
+			{
+				p1 = e1.getCurrent();
+				if(p1.distance(lnSt) < p1.distance(lnNd))
+				{
+					if(s1.posEig()) return 1;
+					else return -1;
+				} else
+				{
+					if(s1.posEig()) return -1;
+					else return 1;
+				}
+			}
+		}
+		try
+		{
+			p2 = getNextIsectLn(e2, lnSt, lnNd);
+		} catch (RootNotFound r)
+		{
+			System.out.println("or here?");
+			if(traversal.homo)
+			{
+				if(s1.posEig()) return 1;
+				else return -1;
+			} else
+			{
+				p1 = e1.getCurrent();
+				if(p1.distance(lnSt) < p1.distance(lnNd))
+				{
+					if(s1.posEig()) return 1;
+					else return -1;
+				} else
+				{
+					if(s1.posEig()) return -1;
+					else return 1;
+				}
+			}
+		}
+		if(p1.distance(lnSt) < p2.distance(lnSt))
+		{
+			if(s1.posEig()) return 1;
+			else return -1;
+		} else
+		{
+			if(s2.posEig()) return 1;
+			else return -1;
+		}
+
+	}
+	int saddlePass(final sepStart s1, final sepStart s2, Point2D p, final SaddleConTransversal transversal)
+	{
+		return saddlePass(s1, s2, p.getX(), p.getY(), transversal);
+	}
+
 	private double minDist(final sepStart sep, final Point2D other, final double at, final double bt, boolean firstTry) throws RootNotFound
 	{
 		boolean shortcut = false;
-		double mins [] = new double[5];
+//		double mins [] = new double[5];
 		double min = Double.MAX_VALUE;
 //		System.out.println(sep.getStart(.01));
 		Evaluator eval1 = EvaluatorFactory.getEvaluator(evalType, dx, dy);
@@ -1490,7 +1549,6 @@ public class OutputPlane extends CoordPlane
 //		double in;
 //		if(sep.posEig()) in = inc;
 //		else in = -inc;
-		double factor = 1D;
 		eval1.initialise(sep.getStart(Math.abs(inc)), 0, at, bt, inc);
 		eval2.initialise(sep.getStart(Math.abs(inc)), 0, at, bt, -inc);
 		Point2D prev = sep.getStart(Math.abs(inc));
@@ -1550,7 +1608,7 @@ public class OutputPlane extends CoordPlane
 				if(d < min)
 				{
 					min = d;
-					mins[i] = d;
+//					mins[i] = d;
 				}
 			}
 
@@ -1562,6 +1620,7 @@ public class OutputPlane extends CoordPlane
 			System.out.println("____________________________");
 			System.out.println("a: " + at);
 			System.out.println("b: " + bt);
+			double factor = 1D;
 			System.out.println("Start: " + sep.getStart(factor * (xMax.get() - xMin.get())/this.getWidth()));
 			System.out.println("Goal: " + other);
 			System.out.println("approaching?: " + approaching);
@@ -1607,6 +1666,129 @@ public class OutputPlane extends CoordPlane
 			throw new RootNotFound();
 		}
 	}
+	private Point2D saddleConLoop(sepStart s1, sepStart s2, Point2D center, SaddleConTransversal transversal,
+								  LoopType lty) [] throws RootNotFound
+	{
+		double px = ((in.xMax.get() - in.xMin.get() + in.yMax.get() - in.yMin.get())/2) /
+				((in.getWidth() + in.getHeight())/2D);
+		LoopGenerator gen = GeneratorFactory.getLoopGenerator(lty, px/5, center, 20);
+		int cd1;
+		int cd2 = saddlePass(s1, s2, gen.getCurrent(), transversal);
+		Point2D temp [] = new Point2D[2];
+		int currentVal = 0;
+		while(!gen.completed() && !Thread.interrupted())
+		{
+			System.out.println(gen.getCurrent());
+			Point2D prev = gen.getCurrent();
+			Point2D next = gen.next();
+			cd1 = cd2;
+			if(transversal.homo)
+			{
+				transversal.saddle = critical(transversal.saddle.point, next.getX(), next.getY());
+				transversal.central = critical(transversal.central.point, next.getX(), next.getY());
+			} else
+			{
+				transversal.s1 = critical(transversal.s1.point, next.getX(), next.getY());
+				transversal.s2 = critical(transversal.s2.point, next.getX(), next.getY());
+			}
+			cd2 = saddlePass(s1, s2, next, transversal);
+			if(cd2 != cd1 && (cd2 != 0))
+			{
+				temp[currentVal] = gen.getCurrent();
+				gen.advanceOneQuarter();
+				currentVal++;
+				System.out.println("FOUND ONE");
+				if(currentVal > 1) break;
+			}
+			{
+//				gen.next();
+			}
+		}
+		if(currentVal < 1) throw new RootNotFound();
+		return temp;
+	}
+
+	Point2D saddleConFinitePath(sepStart s1, sepStart s2, double a, double b,
+										 FinitePathType finitePathType, @Nullable Point2D prev, SaddleConTransversal transversal)
+			throws RootNotFound
+	{
+
+		double px = ((in.xMax.get() - in.xMin.get() + in.yMax.get() - in.yMin.get())/2) /
+				((in.canv.getWidth() + in.canv.getHeight()));
+		Point2D p = new Point2D(a, b);
+		int current = saddlePass(s1, s2, p, transversal);
+		if(current == 0 && finitePathType == FinitePathType.SPIRAL)
+		{
+			System.out.println("bad init state spiral");
+			throw new RootNotFound();
+		}
+		FinitePathGenerator s = GeneratorFactory.getFinitePathGenerator(finitePathType, px, p, 50 * px, prev);
+		Point2D pOld = p;
+		p = s.next();
+		boolean ready;
+		do
+		{
+			try
+			{
+				if (transversal.homo)
+				{
+					transversal.saddle = critical(transversal.saddle.point, p.getX(), p.getY());
+					transversal.central = critical(transversal.central.point, p.getX(), p.getY());
+				} else
+				{
+					transversal.s1 = critical(transversal.s1.point, p.getX(), p.getY());
+					transversal.s2 = critical(transversal.s2.point, p.getX(), p.getY());
+				}
+				ready = false;
+			} catch (RootNotFound r)
+			{
+				ready = true;
+				p = s.next();
+			}
+		} while (ready);
+
+		current = saddlePass(s1, s2, p, transversal);
+		int cd = current;
+		while(!Thread.interrupted() && !s.done())
+		{
+//			System.out.println("(" + current + ", " + cd + ")");
+//			if(s instanceof ArcGenerator)
+//				System.out.println(((ArcGenerator) s).getTheta());
+			try
+			{
+				if(transversal.homo)
+				{
+					transversal.saddle = critical(transversal.saddle.point, p.getX(), p.getY());
+					transversal.central = critical(transversal.central.point, p.getX(), p.getY());
+				} else
+				{
+					transversal.s1 = critical(transversal.s1.point, p.getX(), p.getY());
+					transversal.s2 = critical(transversal.s2.point, p.getX(), p.getY());
+				}
+				cd = saddlePass(s1, s2, p, transversal);
+				if (cd != current && (cd != 0))
+				{
+					break;
+				} else
+				{
+					pOld = p;
+					p = s.next();
+				}
+			} catch (RootNotFound r)
+			{
+				pOld = p;
+				p = s.next();
+			}
+		}
+		if(!s.done())
+			return p.midpoint(pOld);
+		else
+		{
+			System.out.println("finished and didn't find any");
+			throw new RootNotFound();
+		}
+	}
+
 
 	private Point2D saddleConnection(final sepStart s1init, final sepStart s2init, boolean isA, double at, double bt) throws RootNotFound
 	{
@@ -1904,29 +2086,15 @@ public class OutputPlane extends CoordPlane
 	private void drawGraphs()
 	{
 
-
-		for (Node n : needsReset)
+		if(needsReset.size() > 0)
 		{
-			n.setVisible(false);
+			for (Node n : needsReset)
+			{
+				n.setVisible(false);
+			}
+
+			needsReset.clear();
 		}
-
-		needsReset.clear();
-		/*if(initials.size() > 0)
-		{
-			BlockingQueue<InitCond> q = new ArrayBlockingQueue<>(initials.size());
-			for (SolutionArtist s : artistArmy)
-			{
-				if (s != null)
-					s.interrupt();
-			}
-			q.addAll(initials);
-			SolutionArtist.init(this, q);
-			for (SolutionArtist s : artistArmy)
-			{
-				s = new SolutionArtist();
-				s.start();
-			}
-		}*/
 		for(InitCond i : initials)
 		{
 			if(Thread.interrupted()) return;
