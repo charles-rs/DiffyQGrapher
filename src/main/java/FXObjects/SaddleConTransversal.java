@@ -3,6 +3,7 @@ package FXObjects;
 import Evaluation.CritPointTypes;
 import Evaluation.CriticalPoint;
 import Exceptions.BadSaddleTransversalException;
+import Exceptions.RootNotFound;
 import javafx.geometry.Point2D;
 
 
@@ -13,6 +14,7 @@ public class SaddleConTransversal implements Cloneable
 	CriticalPoint central;
 	CriticalPoint saddle;
 	CriticalPoint s1, s2;
+	private  static OutputPlane o;
 
 	private SaddleConTransversal(CriticalPoint central, CriticalPoint saddle, CriticalPoint s1, CriticalPoint s2, boolean homo)
 	{
@@ -27,6 +29,10 @@ public class SaddleConTransversal implements Cloneable
 			this.s1 = s1.clone();
 			this.s2 = s2.clone();
 		} catch (NullPointerException ignored) {}
+	}
+	public static void init (OutputPlane _o)
+	{
+		o = _o;
 	}
 
 	SaddleConTransversal (CriticalPoint p1, CriticalPoint p2) throws BadSaddleTransversalException
@@ -70,6 +76,19 @@ public class SaddleConTransversal implements Cloneable
 
 	}
 
+	public void update(Point2D p) throws RootNotFound
+	{
+		if (homo)
+		{
+			saddle = o.critical(saddle.point, p.getX(), p.getY());
+			central = o.critical(central.point, p.getX(), p.getY());
+		} else
+		{
+			s1 = o.critical(s1.point, p.getX(), p.getY());
+			s2 = o.critical(s2.point, p.getX(), p.getY());
+		}
+	}
+	
 	@Override
 	public SaddleConTransversal clone()
 	{

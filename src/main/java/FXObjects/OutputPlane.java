@@ -26,10 +26,8 @@ import javafx.scene.layout.BorderStroke;
 import javafx.scene.layout.BorderStrokeStyle;
 import javafx.scene.layout.BorderWidths;
 import javafx.scene.paint.Color;
-import javafx.scene.shape.Circle;
 import javafx.scene.shape.Line;
 import javafx.scene.text.Text;
-import org.ejml.simple.SimpleMatrix;
 
 
 import javax.annotation.Nullable;
@@ -61,7 +59,7 @@ public class OutputPlane extends CoordPlane
 	private final List<Point2D> horizIsos;
 	private final List<Point2D> vertIsos;
 	private final List<Node> needsReset;
-	private final List<sepStart> selectedSeps;
+	private final List<SepStart> selectedSeps;
 	private List<LimCycleStart> limCycles;
 	double inc = .01;
 	volatile double a, b;
@@ -104,6 +102,8 @@ public class OutputPlane extends CoordPlane
 	public OutputPlane(double side, TextField tField)
 	{
 		super(side);
+		SaddleConTransversal.init(this);
+
 
 		basinImg = new BufferedImage(canv.getWidth(), canv.getHeight(), BufferedImage.TYPE_INT_ARGB);
 		basinG = basinImg.createGraphics();
@@ -343,9 +343,7 @@ public class OutputPlane extends CoordPlane
 					selectedCritPoints.add(p);
 					drawSelectedCritPoints();
 					render();
-				} catch (RootNotFound ignored)
-				{
-				}
+				} catch (RootNotFound ignored){}
 				break;
 			case SELECTSEP:
 				try
@@ -370,13 +368,13 @@ public class OutputPlane extends CoordPlane
 						double min = Math.min(Math.min(d1, d2), Math.min(d3, d4));
 						boolean firstPos = p.matrix.getEigenvalue(0).getReal() > 0;
 						if (d1 == min)
-							selectedSeps.add(new sepStart(p, true, firstPos));
+							selectedSeps.add(new SepStart(p, true, firstPos));
 						else if (d2 == min)
-							selectedSeps.add(new sepStart(p, false, firstPos));
+							selectedSeps.add(new SepStart(p, false, firstPos));
 						else if (d3 == min)
-							selectedSeps.add(new sepStart(p, true, !firstPos));
+							selectedSeps.add(new SepStart(p, true, !firstPos));
 						else
-							selectedSeps.add(new sepStart(p, false, !firstPos));
+							selectedSeps.add(new SepStart(p, false, !firstPos));
 						draw();
 						if (selectedSeps.size() == 2)
 						{
@@ -446,6 +444,7 @@ public class OutputPlane extends CoordPlane
 					selectedCritPoints.clear();
 					clickMode = ClickModeType.DRAWPATH;
 				} catch (RootNotFound ignored) {}
+				break;
 			case FINDLIMCYCLE:
 				switch (limCycStep)
 				{
@@ -1268,7 +1267,7 @@ public class OutputPlane extends CoordPlane
 
 
 
-	public void renderSaddleCon(Point2D start, final sepStart s1, final sepStart s2, boolean add, SaddleConTransversal transversal)
+	public void renderSaddleCon(Point2D start, final SepStart s1, final SepStart s2, boolean add, SaddleConTransversal transversal)
 	{
 			java.awt.Color tempCol;
 			if (s1.saddle.point.distance(s2.saddle.point) < .000001 * ((xMax.get() - xMin.get()) + (yMax.get() - yMin.get()))/2)
@@ -1404,11 +1403,11 @@ public class OutputPlane extends CoordPlane
 		try
 		{
 			sad1.join();
-		} catch (InterruptedException ignored) {}
+		} catch (InterruptedException ignored) {sad1.interrupt();}
 		try
 		{
 			sad2.join();
-		} catch (InterruptedException ignored) {}
+		} catch (InterruptedException ignored) {sad2.interrupt();}
 			in.gc.setStroke(Color.BLACK);
 			in.drawDegenSaddleCons();
 
@@ -1454,11 +1453,13 @@ public class OutputPlane extends CoordPlane
 		return false;
 	}
 
-	int saddlePass(final sepStart s1, final sepStart s2, final double a, final double b, SaddleConTransversal traversal)
+	int saddlePass(final SepStart s1, final SepStart s2, final double a, final double b, SaddleConTransversal traversal)
 	{
 		Point2D lnSt = traversal.getStart();
-		System.out.println("start of trans: " + lnSt);
+//		System.out.println("start of trans: " + lnSt);
 		Point2D lnNd = traversal.getEnd();
+
+//		System.out.println("end of trans: " + lnNd);
 		Evaluator e1 = EvaluatorFactory.getEvaluator(evalType, dx, dy);
 		e1.initialise(s1.getStart(inc), 0, a, b, s1.getInc(inc));
 		Evaluator e2 = EvaluatorFactory.getEvaluator(evalType, dx, dy);
@@ -1475,11 +1476,12 @@ public class OutputPlane extends CoordPlane
 			{
 				try
 				{
-					p2 = getNextIsectLn(e2, lnSt, lnNd);
+					getNextIsectLn(e2, lnSt, lnNd);
 					if(s2.posEig()) return 1;
 					else return -1;
 				} catch (RootNotFound r1)
 				{
+					System.out.println("really hope we aren't here");
 					return 0;
 				}
 			}
@@ -1532,12 +1534,12 @@ public class OutputPlane extends CoordPlane
 		}
 
 	}
-	int saddlePass(final sepStart s1, final sepStart s2, Point2D p, final SaddleConTransversal transversal)
+	int saddlePass(final SepStart s1, final SepStart s2, Point2D p, final SaddleConTransversal transversal)
 	{
 		return saddlePass(s1, s2, p.getX(), p.getY(), transversal);
 	}
 
-	private double minDist(final sepStart sep, final Point2D other, final double at, final double bt, boolean firstTry) throws RootNotFound
+	private double minDist(final SepStart sep, final Point2D other, final double at, final double bt, boolean firstTry) throws RootNotFound
 	{
 		boolean shortcut = false;
 //		double mins [] = new double[5];
@@ -1642,7 +1644,7 @@ public class OutputPlane extends CoordPlane
 //				} catch (FileNotFoundException ignored) {}
 //					System.out.println("flipping");
 
-				return minDist(sepStart.flip(sep), other, at, bt, false);
+				return minDist(SepStart.flip(sep), other, at, bt, false);
 //				return minDist(sep, other, at, bt, false);
 			}
 			throw new RootNotFound(true);
@@ -1653,7 +1655,7 @@ public class OutputPlane extends CoordPlane
 //			if (mins[n] < min) min = mins[n];
 		return min;
 	}
-	private void assertSaddle(final sepStart s1, final sepStart s2) throws RootNotFound
+	private void assertSaddle(final SepStart s1, final SepStart s2) throws RootNotFound
 	{
 		if(s1.saddle.type != CritPointTypes.SADDLE)
 		{
@@ -1666,7 +1668,7 @@ public class OutputPlane extends CoordPlane
 			throw new RootNotFound();
 		}
 	}
-	private Point2D saddleConLoop(sepStart s1, sepStart s2, Point2D center, SaddleConTransversal transversal,
+	private Point2D saddleConLoop(SepStart s1, SepStart s2, Point2D center, SaddleConTransversal transversal,
 								  LoopType lty) [] throws RootNotFound
 	{
 		double px = ((in.xMax.get() - in.xMin.get() + in.yMax.get() - in.yMin.get())/2) /
@@ -1678,28 +1680,34 @@ public class OutputPlane extends CoordPlane
 		int currentVal = 0;
 		while(!gen.completed() && !Thread.interrupted())
 		{
-			System.out.println(gen.getCurrent());
-			Point2D prev = gen.getCurrent();
-			Point2D next = gen.next();
-			cd1 = cd2;
-			if(transversal.homo)
+//			try
 			{
-				transversal.saddle = critical(transversal.saddle.point, next.getX(), next.getY());
-				transversal.central = critical(transversal.central.point, next.getX(), next.getY());
-			} else
-			{
-				transversal.s1 = critical(transversal.s1.point, next.getX(), next.getY());
-				transversal.s2 = critical(transversal.s2.point, next.getX(), next.getY());
+				System.out.println(gen.getCurrent());
+				Point2D prev = gen.getCurrent();
+				Point2D next = gen.next();
+				cd1 = cd2;
+				s1 = s1.updateSaddle(critical(s1.saddle.point, next));
+				s2 = s2.updateSaddle(critical(s2.saddle.point, next));
+				if (transversal.homo)
+				{
+					transversal.saddle = critical(transversal.saddle.point, next.getX(), next.getY());
+					transversal.central = critical(transversal.central.point, next.getX(), next.getY());
+				} else
+				{
+					transversal.s1 = critical(transversal.s1.point, next.getX(), next.getY());
+					transversal.s2 = critical(transversal.s2.point, next.getX(), next.getY());
+				}
+				cd2 = saddlePass(s1, s2, next, transversal);
+				if (cd2 != cd1 && (cd2 != 0))
+				{
+					temp[currentVal] = gen.getCurrent();
+					gen.advanceOneQuarter();
+					currentVal++;
+					System.out.println("FOUND ONE");
+					if (currentVal > 1) break;
+				}
 			}
-			cd2 = saddlePass(s1, s2, next, transversal);
-			if(cd2 != cd1 && (cd2 != 0))
-			{
-				temp[currentVal] = gen.getCurrent();
-				gen.advanceOneQuarter();
-				currentVal++;
-				System.out.println("FOUND ONE");
-				if(currentVal > 1) break;
-			}
+//			catch (RootNotFound r)
 			{
 //				gen.next();
 			}
@@ -1707,9 +1715,133 @@ public class OutputPlane extends CoordPlane
 		if(currentVal < 1) throw new RootNotFound();
 		return temp;
 	}
+	Point2D saddleConMidpointPath(SepStart s1, SepStart s2, Point2D prev1, Point2D prev2, SaddleConTransversal transversal) throws RootNotFound
+	{
+		double px = ((in.xMax.get() - in.xMin.get() + in.yMax.get() - in.yMin.get())/2) /
+				((in.canv.getWidth() + in.canv.getHeight())/2D);
+		MidpointPathGenerator gen = GeneratorFactory.getMidpointArcGenerator(px, prev1, prev2);
+		int cdLeft = -1, cdRight = -1, cdCenter = -1, dir = 4;
+		SaddleConTransversal tLeft, tRight, tCenter;
+		tLeft = transversal.clone();
+		tRight = transversal.clone();
+		tCenter = transversal.clone();
+		SepStart s1Left, s2Left, s1Right, s2Right, s1Center, s2Center;
+		s1Left = s1.clone();
+		s1Right = s1.clone();
+		s1Center = s1.clone();
+		s2Left = s2.clone();
+		s2Right = s2.clone();
+		s2Center = s2.clone();
+		Point2D pLeft, pRight, pCenter;
+		while(!gen.done() && !Thread.interrupted())
+		{
+			System.out.println("current point: " + gen.getCurrentPoint());
+			pLeft = gen.getCurrent().left;
+			pRight = gen.getCurrent().right;
+			pCenter = gen.getCurrent().center;
+			tCenter.update(pCenter);
+			try
+			{
+				tRight.update(pRight);
 
-	Point2D saddleConFinitePath(sepStart s1, sepStart s2, double a, double b,
-										 FinitePathType finitePathType, @Nullable Point2D prev, SaddleConTransversal transversal)
+			} catch (RootNotFound r)
+			{
+				gen.refine(Side.LEFT);
+				dir = -1;
+			}
+			try
+			{
+				tLeft.update(pLeft);
+			} catch (RootNotFound r)
+			{
+				gen.refine(Side.RIGHT);
+				dir = -1;
+			}
+			try
+			{
+				tCenter.update(pCenter);
+
+			} catch (RootNotFound r)
+			{
+				gen.refine();
+				dir = -1;
+			}
+			s1Right = s1Right.updateSaddle(critical(s1Right.saddle.point, pRight));
+			s2Right = s2Right.updateSaddle(critical(s2Right.saddle.point, pRight));
+			s1Center = s1Center.updateSaddle(critical(s1Center.saddle.point, pCenter));
+			s2Center = s2Center.updateSaddle(critical(s2Center.saddle.point, pCenter));
+			s1Left = s1Left.updateSaddle(critical(s1Left.saddle.point, pLeft));
+			s2Left = s2Left.updateSaddle(critical(s2Left.saddle.point, pLeft));
+//			System.out.println("start: " + s1Center.saddle.point);
+			switch (dir)
+			{
+				case -1:
+					break;
+				case 0:
+					cdLeft = cdCenter;
+					cdCenter = saddlePass(s1Center, s2Center, gen.getCurrentPoint(), tCenter);
+					break;
+				case 1:
+					cdRight = cdCenter;
+					cdCenter = saddlePass(s1Center, s2Center, gen.getCurrentPoint(), tCenter);
+					break;
+				case 2:
+					cdRight = saddlePass(s1Right, s2Right, gen.getCurrent().right, tRight);
+					cdCenter = saddlePass(s1Center, s2Center, gen.getCurrent().center, tCenter);
+					break;
+				case 3:
+					cdLeft = saddlePass(s1Left, s2Left, gen.getCurrent().left, tLeft);
+					cdCenter = saddlePass(s1Center, s2Center, gen.getCurrent().center, tCenter);
+					break;
+				default:
+					cdLeft = saddlePass(s1Left, s2Left, gen.getCurrent().left, tLeft);
+					cdRight = saddlePass(s1Right, s2Right, gen.getCurrent().right, tRight);
+					cdCenter = saddlePass(s1Center, s2Center, gen.getCurrent().center, tCenter);
+					break;
+			}
+
+			if(cdCenter == 0) break;
+			if(cdLeft != 0)
+			{
+				if(cdLeft == cdRight)
+				{
+					System.out.println("no variation");
+					System.out.println("left: " + gen.getCurrent().left + "\nright: " + gen.getCurrent().right);
+					throw new RootNotFound();
+				}
+				else if (cdRight != 0)
+				{
+					if(cdLeft == cdCenter)
+					{
+						gen.getNext(Side.RIGHT);
+						dir = 0;
+					}
+					else
+					{
+						gen.getNext(Side.LEFT);
+						dir = 1;
+					}
+				} else
+				{
+					gen.refine(Side.LEFT);
+					dir = 2;
+				}
+			} else
+			{
+				gen.refine(Side.RIGHT);
+				dir = 3;
+			}
+		}
+		if(!gen.done())
+		{
+			System.out.println("defaulting out");
+			return saddleConFinitePath(s1, s2, prev1.getX(), prev1.getY(), FinitePathType.ARC, prev2, transversal);
+		}
+		else return gen.getCurrentPoint();
+	}
+
+	Point2D saddleConFinitePath(SepStart s1, SepStart s2, double a, double b,
+								FinitePathType finitePathType, @Nullable Point2D prev, SaddleConTransversal transversal)
 			throws RootNotFound
 	{
 
@@ -1765,6 +1897,8 @@ public class OutputPlane extends CoordPlane
 					transversal.s1 = critical(transversal.s1.point, p.getX(), p.getY());
 					transversal.s2 = critical(transversal.s2.point, p.getX(), p.getY());
 				}
+				s1 = s1.updateSaddle(critical(s1.saddle.point, p));
+				s2 = s2.updateSaddle(critical(s2.saddle.point, p));
 				cd = saddlePass(s1, s2, p, transversal);
 				if (cd != current && (cd != 0))
 				{
@@ -1790,10 +1924,10 @@ public class OutputPlane extends CoordPlane
 	}
 
 
-	private Point2D saddleConnection(final sepStart s1init, final sepStart s2init, boolean isA, double at, double bt) throws RootNotFound
+	private Point2D saddleConnection(final SepStart s1init, final SepStart s2init, boolean isA, double at, double bt) throws RootNotFound
 	{
-		sepStart s1 = s1init.clone();
-		sepStart s2 = s2init.clone();
+		SepStart s1 = s1init.clone();
+		SepStart s2 = s2init.clone();
 		long time = System.nanoTime();
 		double inc;
 		double old;
@@ -1817,7 +1951,7 @@ public class OutputPlane extends CoordPlane
 		double dist1;
 		double dist2;
 		Point2D sad;
-		sepStart sep;
+		SepStart sep;
 		if(minDist(s1, saddle2, at, bt, true) > minDist(s2, saddle1, at, bt, true))
 		{
 			sep = s1;
@@ -1950,7 +2084,7 @@ public class OutputPlane extends CoordPlane
 	}
 
 
-	private double sepIntersect(sepStart s, double a, double b, Point2D[] ln, Point2D res) throws RootNotFound
+	private double sepIntersect(SepStart s, double a, double b, Point2D[] ln, Point2D res) throws RootNotFound
 	{
 		double x, y;
 		x = s.getStart((xMax.get() - xMin.get())/this.getWidth()).getX();
@@ -2017,9 +2151,13 @@ public class OutputPlane extends CoordPlane
 	{
 		return EvaluatorFactory.getBestEvaluator(dx, dy).findCritical(start, a, b, t);
 	}
-	private CriticalPoint critical(Point2D start, double a, double b) throws RootNotFound
+	CriticalPoint critical(Point2D start, double a, double b) throws RootNotFound
 	{
 		return EvaluatorFactory.getBestEvaluator(dx, dy).findCritical(start, a, b, 0);
+	}
+	CriticalPoint critical(Point2D start, Point2D p) throws RootNotFound
+	{
+		return critical(start, p.getX(), p.getY());
 	}
 
 	private void updateCritical()
@@ -2491,7 +2629,7 @@ public class OutputPlane extends CoordPlane
 			}
 			drawSelectedCritPoints();
 			double inc = 2 * (xMax.get() - xMin.get()) / this.getWidth();
-			for (sepStart s : selectedSeps)
+			for (SepStart s : selectedSeps)
 			{
 				if(Thread.interrupted()) return;
 				synchronized (g)

@@ -1,7 +1,6 @@
 package FXObjects;
 
 import Exceptions.RootNotFound;
-import PathGenerators.FinitePathType;
 import javafx.application.Platform;
 import javafx.geometry.Point2D;
 
@@ -13,10 +12,10 @@ public class SaddleConHelper extends Thread
 	private static Thread parent;
 	private Point2D prev, next, prevOld;
 	private SaddleConTransversal transversal;
-	private sepStart s1, s2;
+	private SepStart s1, s2;
 	private Color col;
 
-	SaddleConHelper(Point2D st, Point2D nx, SaddleConTransversal transversal, sepStart s1, sepStart s2)
+	SaddleConHelper(Point2D st, Point2D nx, SaddleConTransversal transversal, SepStart s1, SepStart s2)
 	{
 		prev = st;
 		next = nx;
@@ -40,11 +39,12 @@ public class SaddleConHelper extends Thread
 		Platform.runLater(o.in::render);
 		prevOld = prev;
 		prev = next;
-		while (o.in.inBounds(prev.getX(), prev.getY()) && !parent.isInterrupted())
+		while (o.in.inBounds(prev.getX(), prev.getY()) && !parent.isInterrupted() && !Thread.interrupted())
 		{
 			try
 			{
-				next = o.saddleConFinitePath(s1, s2, prev.getX(), prev.getY(), FinitePathType.ARC, prevOld, transversal);
+				next = o.saddleConMidpointPath(s1, s2, prev, prevOld, transversal);
+				transversal.update(next);
 				o.in.drawLine(prev, next, col, 3);
 				Platform.runLater(o.in::render);
 				prevOld = prev;

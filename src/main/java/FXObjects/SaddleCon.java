@@ -8,10 +8,10 @@ import javafx.geometry.Point2D;
 public class SaddleCon
 {
 	public final Point2D pt;
-	public final sepStart s1;
-	public final sepStart s2;
+	public final SepStart s1;
+	public final SepStart s2;
 	public final SaddleConTransversal transversal;
-	public SaddleCon(Point2D p, sepStart a, sepStart b, SaddleConTransversal transversal)
+	public SaddleCon(Point2D p, SepStart a, SepStart b, SaddleConTransversal transversal)
 	{
 		pt = p;
 		s1 = a;

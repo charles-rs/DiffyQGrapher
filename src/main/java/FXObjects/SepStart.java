@@ -14,7 +14,7 @@ import org.ejml.simple.SimpleMatrix;
  *
  */
 
-public class sepStart implements Cloneable
+public class SepStart implements Cloneable
 {
 	/**
 	 * The saddle we start at
@@ -27,7 +27,7 @@ public class sepStart implements Cloneable
 	 * @param s the saddle point
 	 * @param st the state: must be valid
 	 */
-	private sepStart(CriticalPoint s, int st)
+	private SepStart(CriticalPoint s, int st)
 	{
 		this.saddle = s;
 		this.state = st;
@@ -42,7 +42,7 @@ public class sepStart implements Cloneable
 	 * @param posEig whether or not we use the positive eigenvector (the eigenvector associated with the positive
 	 *               eigenvalue)
 	 */
-	public sepStart(CriticalPoint s, boolean posDir, boolean posEig)
+	public SepStart(CriticalPoint s, boolean posDir, boolean posEig)
 	{
 		int state1;
 		saddle = s;
@@ -121,9 +121,9 @@ public class sepStart implements Cloneable
 	 * @param other the separatrix to flip
 	 * @return the flipped separatrix
 	 */
-	public static sepStart flip(final sepStart other)
+	public static SepStart flip(final SepStart other)
 	{
-		return new sepStart(other.saddle, !other.posDir(), other.posEig());
+		return new SepStart(other.saddle, !other.posDir(), other.posEig());
 	}
 
 	/**
@@ -131,13 +131,13 @@ public class sepStart implements Cloneable
 	 * @param sad the new saddle
 	 * @return the updated separatrix
 	 */
-	public sepStart updateSaddle(CriticalPoint sad)
+	public SepStart updateSaddle(CriticalPoint sad)
 	{
-		return new sepStart(sad, this.state);
+		return new SepStart(sad, this.state);
 	}
 	@Override
-	public sepStart clone()
+	public SepStart clone()
 	{
-		return new sepStart(this.saddle, this.state);
+		return new SepStart(this.saddle, this.state);
 	}
 }
