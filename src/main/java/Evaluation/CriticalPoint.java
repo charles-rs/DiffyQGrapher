@@ -12,11 +12,13 @@ public class CriticalPoint implements Cloneable
 	public Point2D point;
 	public CritPointTypes type;
 	public SimpleEVD<SimpleMatrix> matrix;
-	public CriticalPoint(Point2D p, CritPointTypes t, SimpleEVD<SimpleMatrix> s)
+	public SimpleMatrix jacob;
+	public CriticalPoint(Point2D p, CritPointTypes t, SimpleEVD<SimpleMatrix> s, SimpleMatrix jacob)
 	{
 		point = p;
 		type = t;
 		matrix = s;
+		this.jacob = jacob;
 		try
 		{
 			if (t == CritPointTypes.SADDLE)
@@ -31,6 +33,6 @@ public class CriticalPoint implements Cloneable
 	@Override
 	public CriticalPoint clone()
 	{
-		return new CriticalPoint(point, type, matrix);
+		return new CriticalPoint(point, type, matrix, jacob);
 	}
 }

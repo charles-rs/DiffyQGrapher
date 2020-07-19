@@ -1,5 +1,7 @@
 package FXObjects;
 
+import AST.Node;
+import Exceptions.EvaluationException;
 import Exceptions.RootNotFound;
 import javafx.application.Platform;
 import javafx.geometry.Point2D;
@@ -39,11 +41,44 @@ public class SaddleConHelper extends Thread
 		Platform.runLater(o.in::render);
 		prevOld = prev;
 		prev = next;
+		Node tr = o.getDy().diff('y').add(o.getDx().diff('x'));
+		double prevTr, nextTr = 0;
+		boolean excepted = false;
+		if(transversal.homo)
+		{
+			try
+			{
+				prevTr = tr.eval(s1.saddle.point.getX(), s1.saddle.point.getY(), prevOld.getX(), prevOld.getY(), 0);
+				nextTr = tr.eval(s1.saddle.point.getX(), s1.saddle.point.getY(), prev.getX(), prev.getY(), 0);
+				if (Math.signum(prevTr) != Math.signum(nextTr))
+					o.in.degenSaddleCons.add(prevOld.midpoint(prev));
+
+			} catch (EvaluationException e)
+			{
+				excepted = true;
+			}
+		}
 		while (o.in.inBounds(prev.getX(), prev.getY()) && !parent.isInterrupted() && !Thread.interrupted())
 		{
 			try
 			{
+
 				next = o.saddleConMidpointPath(s1, s2, prev, prevOld, transversal);
+				s1 = s1.updateSaddle(o.critical(s1.saddle.point, next));
+				s2 = s2.updateSaddle(o.critical(s2.saddle.point, next));
+				if(transversal.homo && !excepted)
+				{
+					try
+					{
+						prevTr = nextTr;
+						nextTr = tr.eval(s1.saddle.point.getX(), s1.saddle.point.getY(), next.getX(), next.getY(), 0);
+						if (Math.signum(prevTr) != Math.signum(nextTr))
+							o.in.degenSaddleCons.add(prevOld.midpoint(prev));
+					} catch (EvaluationException e)
+					{
+						excepted = true;
+					}
+				}
 				transversal.update(next);
 				o.in.drawLine(prev, next, col, 3);
 				Platform.runLater(o.in::render);

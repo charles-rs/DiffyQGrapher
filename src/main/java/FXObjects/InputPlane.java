@@ -297,8 +297,9 @@ public class InputPlane extends CoordPlane
 			isA = false;
 			second = bifHelp(first[0], first[1], first[2], first[3], dx, dy, det, derivative, 'b');
 		}
+		if(second == null) return;
 		if(add) saddleBifs.add(second);
-		while (inBounds(first[2], first[3]) && second != null)
+		while (inBounds(first[2], first[3]))
 		{
 			first = second;
 			if (isA)
@@ -306,7 +307,7 @@ public class InputPlane extends CoordPlane
 						det, derivative, 'a');
 			else second = bifHelp(first[0], first[1], first[2], first[3] + yInc, dx, dy,
 					det, derivative, 'b');
-			gc.strokeLine(normToScrX(first[2]), normToScrY(first[3]), normToScrX(second[2]), normToScrY(second[3]));
+			if(second == null) break;
 			drawLine(first[2], first[3], second[2], second[3], awtSaddleBifColor);
 		}
 		first = start;
@@ -318,7 +319,8 @@ public class InputPlane extends CoordPlane
 			isA = false;
 			second = bifHelp(first[0], first[1], first[2], first[3], dx, dy, det, derivative, 'b');
 		}
-		while (inBounds(first[2], first[3]) && second != null)
+		if(second == null) return;
+		while (inBounds(first[2], first[3]))
 		{
 			first = second;
 			if (isA)
@@ -327,7 +329,6 @@ public class InputPlane extends CoordPlane
 			else second = bifHelp(first[0], first[1], first[2], first[3] - yInc, dx, dy,
 					det, derivative, 'b');
 			if(second == null) break;
-			gc.strokeLine(normToScrX(first[2]), normToScrY(first[3]), normToScrX(second[2]), normToScrY(second[3]));
 			drawLine(first[2], first[3], second[2], second[3], awtSaddleBifColor);
 		}
 
@@ -420,16 +421,18 @@ public class InputPlane extends CoordPlane
 			isA = false;
 			second = bifHelp(first[0], first[1], first[2], first[3], dx, dy, tr, derivative, 'b');
 		}
+		if(second == null) return;
 		if(add) hopfBifs.add(second);
 		double t = op.getT();
 		try
 		{
-			while (inBounds(first[2], first[3]) && second != null && det.eval(first, t) > 0.)
+			while (inBounds(first[2], first[3]) && det.eval(first, t) > 0.)
 			{
 				first = second;
 				if (isA)
 					second = bifHelp(first[0], first[1], first[2] + xInc, first[3], dx, dy, tr, derivative, 'a');
 				else second = bifHelp(first[0], first[1], first[2], first[3] + yInc, dx, dy, tr, derivative, 'b');
+				if(second == null) break;
 				double firstEval = L.eval(first, t);
 				double secondEval = L.eval(second, t);
 //				if(firstEval == 0D || firstEval == -0D)
@@ -455,7 +458,8 @@ public class InputPlane extends CoordPlane
 				isA = false;
 				second = bifHelp(first[0], first[1], first[2], first[3], dx, dy, tr, derivative, 'b');
 			}
-			while (inBounds(first[2], first[3]) && second != null && det.eval(first[0], first[1], first[2], first[3], t) > 0.)
+			if(second == null) return;
+			while (inBounds(first[2], first[3]) && det.eval(first[0], first[1], first[2], first[3], t) > 0.)
 			{
 				first = second;
 				if (isA)

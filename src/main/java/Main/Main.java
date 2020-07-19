@@ -93,7 +93,8 @@ public class Main extends Application
 		itmDyy = new MenuItem("y");
 		menDxDt.getItems().addAll(itmDxt, itmDxx, itmDxy);
 		menDyDt.getItems().addAll(itmDyt, itmDyx, itmDyy);
-		view.getItems().addAll(menDxDt, menDyDt);
+		MenuItem linearisation = new MenuItem("Linearisation");
+		view.getItems().addAll(menDxDt, menDyDt, linearisation);
 
 		MenuItem separatrices = new MenuItem("Separatrices");
 		MenuItem horizIso = new MenuItem("Horizontal Isocline");
@@ -350,6 +351,10 @@ public class Main extends Application
 		itmDyy.setOnAction((e) ->
 		{
 			openSecondary(outPlane.getDy(), 'y', inPlane.getA(), inPlane.getB(), 0, 0, 0);
+		});
+		linearisation.setOnAction(e ->
+		{
+			outPlane.clickMode = ClickModeType.LINEARISATION;
 		});
 		separatrices.setOnAction((e) ->
 		{

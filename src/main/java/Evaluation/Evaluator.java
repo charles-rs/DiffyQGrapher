@@ -171,7 +171,7 @@ public abstract class Evaluator
 	{
 		Point2D sol = NewtonEvaluator.solve(20, start, a, b, t, dx, dy, 'x', 'y');
 		{
-			CritPointTypes type = null;
+			CritPointTypes type;
 			try
 			{
 				SimpleMatrix deriv = new SimpleMatrix(2, 2);
@@ -198,7 +198,7 @@ public abstract class Evaluator
 					else
 						type = CritPointTypes.CENTER;
 				}
-				return new CriticalPoint(sol, type, evd);
+				return new CriticalPoint(sol, type, evd, deriv);
 			} catch (EvaluationException e)
 			{
 				throw new RootNotFound();

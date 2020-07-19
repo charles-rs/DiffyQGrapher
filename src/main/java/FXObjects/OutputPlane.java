@@ -299,6 +299,16 @@ public class OutputPlane extends CoordPlane
 					System.out.println("Root not found");
 				}
 				break;
+			case LINEARISATION:
+				try
+				{
+					CriticalPoint root = critical(pt);
+					new LinearisationWindow(root);
+				} catch (RootNotFound r)
+				{
+					System.out.println("Root not found");
+				}
+				break;
 			case DRAWHORIZISO:
 				drawHorizIso(pt);
 				horizIsos.add(pt);
@@ -1408,7 +1418,6 @@ public class OutputPlane extends CoordPlane
 		{
 			sad2.join();
 		} catch (InterruptedException ignored) {sad2.interrupt();}
-			in.gc.setStroke(Color.BLACK);
 			in.drawDegenSaddleCons();
 
 			Platform.runLater(this::draw);
