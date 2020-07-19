@@ -1471,6 +1471,12 @@ public class OutputPlane extends CoordPlane
 			p1 = getNextIsectLn(e1, lnSt, lnNd);
 		} catch (RootNotFound r)
 		{
+//			e1.advance(10);
+			if(e1.stuck())
+			{
+				System.out.println("STUCK");
+				return 0;
+			}
 			System.out.println("are we here?");
 			if(traversal.homo)
 			{
@@ -1504,6 +1510,12 @@ public class OutputPlane extends CoordPlane
 			p2 = getNextIsectLn(e2, lnSt, lnNd);
 		} catch (RootNotFound r)
 		{
+//			e2.advance(10);
+			if(e2.stuck())
+			{
+				System.out.println("STUCK (x2)");
+				return 0;
+			}
 			System.out.println("or here?");
 			if(traversal.homo)
 			{
@@ -1743,6 +1755,8 @@ public class OutputPlane extends CoordPlane
 			try
 			{
 				tRight.update(pRight);
+				s1Right = s1Right.updateSaddle(critical(s1Right.saddle.point, pRight));
+				s2Right = s2Right.updateSaddle(critical(s2Right.saddle.point, pRight));
 
 			} catch (RootNotFound r)
 			{
@@ -1752,6 +1766,8 @@ public class OutputPlane extends CoordPlane
 			try
 			{
 				tLeft.update(pLeft);
+				s1Left = s1Left.updateSaddle(critical(s1Left.saddle.point, pLeft));
+				s2Left = s2Left.updateSaddle(critical(s2Left.saddle.point, pLeft));
 			} catch (RootNotFound r)
 			{
 				gen.refine(Side.RIGHT);
@@ -1760,18 +1776,15 @@ public class OutputPlane extends CoordPlane
 			try
 			{
 				tCenter.update(pCenter);
-
+				s1Center = s1Center.updateSaddle(critical(s1Center.saddle.point, pCenter));
+				s2Center = s2Center.updateSaddle(critical(s2Center.saddle.point, pCenter));
 			} catch (RootNotFound r)
 			{
 				gen.refine();
 				dir = -1;
 			}
-			s1Right = s1Right.updateSaddle(critical(s1Right.saddle.point, pRight));
-			s2Right = s2Right.updateSaddle(critical(s2Right.saddle.point, pRight));
-			s1Center = s1Center.updateSaddle(critical(s1Center.saddle.point, pCenter));
-			s2Center = s2Center.updateSaddle(critical(s2Center.saddle.point, pCenter));
-			s1Left = s1Left.updateSaddle(critical(s1Left.saddle.point, pLeft));
-			s2Left = s2Left.updateSaddle(critical(s2Left.saddle.point, pLeft));
+
+
 //			System.out.println("start: " + s1Center.saddle.point);
 			switch (dir)
 			{
@@ -1835,7 +1848,8 @@ public class OutputPlane extends CoordPlane
 		if(!gen.done())
 		{
 			System.out.println("defaulting out");
-			return saddleConFinitePath(s1, s2, prev1.getX(), prev1.getY(), FinitePathType.ARC, prev2, transversal);
+//			return saddleConFinitePath(s1, s2, prev1.getX(), prev1.getY(), FinitePathType.ARC, prev2, transversal);
+			throw new RootNotFound();
 		}
 		else return gen.getCurrentPoint();
 	}

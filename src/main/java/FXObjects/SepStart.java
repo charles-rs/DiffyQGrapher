@@ -2,6 +2,7 @@ package FXObjects;
 
 import Evaluation.CritPointTypes;
 import Evaluation.CriticalPoint;
+import Exceptions.RootNotFound;
 import javafx.geometry.Point2D;
 import org.ejml.simple.SimpleBase;
 import org.ejml.simple.SimpleMatrix;
@@ -131,9 +132,11 @@ public class SepStart implements Cloneable
 	 * @param sad the new saddle
 	 * @return the updated separatrix
 	 */
-	public SepStart updateSaddle(CriticalPoint sad)
+	public SepStart updateSaddle(CriticalPoint sad) throws RootNotFound
 	{
-		return new SepStart(sad, this.state);
+		if(sad.type == CritPointTypes.SADDLE)
+			return new SepStart(sad, this.state);
+		else throw new RootNotFound();
 	}
 	@Override
 	public SepStart clone()

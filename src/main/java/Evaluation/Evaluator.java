@@ -153,6 +153,11 @@ public abstract class Evaluator
 		return inc;
 	}
 
+	public boolean stuck()
+	{
+		return getCurrent().distance(next()) < Math.abs(inc)/16;
+	}
+
 	/**
 	 * Uses Newton's method to find a critical point starting at start, with other initial conditions
 	 * @param start the start point
