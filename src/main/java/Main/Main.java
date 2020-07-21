@@ -136,9 +136,9 @@ public class Main extends Application
 		aField = new TextField();
 		bField = new TextField();
 		tField = new TextField();
-		Pane inP, outP;
-		inP = new Pane();
-		outP = new Pane();
+//		Pane inP, outP;
+//		inP = new Pane();
+//		outP = new Pane();
 		outPlane = new OutputPlane(600, tField);
 		InputPlane inPlane = new InputPlane(300, aField, bField, outPlane);
 		outPlane.in = inPlane;
@@ -197,16 +197,23 @@ public class Main extends Application
 
 		leftBox.getChildren().add(inputArea);
 		leftBox.getChildren().addAll(aBox, bBox, tBox);
-		leftBox.getChildren().addAll(inP, inPButtonBox);
-		inP.getChildren().add(inPlane);
+//		leftBox.getChildren().addAll(inP, inPButtonBox);
+		leftBox.getChildren().addAll(inPlane, inPButtonBox);
+//		inP.getChildren().add(inPlane);
 		mainH.getChildren().add(leftBox);
 		//mainH.getChildren().add(r);
 		VBox rightBox = new VBox();
 		rightBox.setSpacing(10);
 		rightBox.setAlignment(Pos.TOP_CENTER);
-		rightBox.getChildren().addAll(outP, outPButtonBox);
+//		rightBox.getChildren().addAll(outP, outPButtonBox);
+		rightBox.getChildren().addAll(outPlane, outPButtonBox);
+//		VBox.setVgrow(outPlane, Priority.SOMETIMES);
+//		VBox.setVgrow(inPlane, Priority.SOMETIMES);
+//		HBox.setHgrow(leftBox, Priority.SOMETIMES);
+//		HBox.setHgrow(rightBox, Priority.SOMETIMES);
 		mainH.getChildren().add(rightBox);
-		outP.getChildren().add(outPlane);
+
+//		outP.getChildren().add(outPlane);
 
 
 		AnchorPane.setRightAnchor(mainH, 20.0);
@@ -461,6 +468,7 @@ public class Main extends Application
 
 		//primaryStage.setMaximized(true);
 		primaryStage.show();
+//		System.out.println(outP.getHeight());
 	}
 
 
