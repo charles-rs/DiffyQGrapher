@@ -21,7 +21,7 @@ repositories {
 if (JavaVersion.current() == JavaVersion.VERSION_11
         || JavaVersion.current() == JavaVersion.VERSION_12) {
     javafx {
-        modules = [ 'javafx.controls', 'javafx.web', 'javafx.fxml' ]
+        modules = [ 'javafx.controls', 'javafx.web', 'javafx.fxml', 'javafx.swing' ]
     }
 }
 
@@ -34,8 +34,13 @@ dependencies {
 
 }
 jar {
+
     manifest {
         attributes ('Class-Path': configurations.compile.collect { it.getName() }.join(' '),
-                'Main-Class': 'Main.Main')
+                'Main-Class': 'Main.Main'//,
+               // 'Implementation-Title': 'DiffyQGrapher'
+        )
     }
+    from configurations.compile.collect { entry -> zipTree(entry) }
+    destinationDir = file("$rootDir/jar")
 }
