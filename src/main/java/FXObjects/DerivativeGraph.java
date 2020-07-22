@@ -6,6 +6,7 @@ import javafx.scene.control.TextField;
 import javafx.scene.input.KeyCode;
 import javafx.scene.input.MouseEvent;
 
+import java.awt.*;
 import java.io.File;
 
 /**
@@ -97,7 +98,8 @@ public class DerivativeGraph extends CoordPlane
 
 	@Override
 	protected void updateForZoom(){}
-
+	@Override
+	protected void updateForResize(){}
 	/**
 	 * draws by moving along the axis and calculating a value. Linearly interpolates in segments of size inc
 	 */
@@ -117,8 +119,7 @@ public class DerivativeGraph extends CoordPlane
 					next = derivative.eval(increment, y, a, b, t);
 					while(increment <= xMax.get())
 					{
-						gc.strokeLine(normToScrX(increment - inc), normToScrY(temp),
-								normToScrX(increment), normToScrY(next));
+						drawLine((increment - inc), (temp), (increment), (next), Color.BLACK);
 						temp = next;
 						increment += inc;
 						next = derivative.eval(increment, y, a, b, t);
@@ -130,8 +131,7 @@ public class DerivativeGraph extends CoordPlane
 					next = derivative.eval(x, increment, a, b, t);
 					while(increment <= xMax.get())
 					{
-						gc.strokeLine(normToScrX(increment - inc), normToScrY(temp),
-								normToScrX(increment), normToScrY(next));
+						drawLine((increment - inc), (temp), (increment), (next), Color.BLACK);
 						temp = next;
 						increment += inc;
 						next = derivative.eval(x, increment, a, b, t);
@@ -143,8 +143,7 @@ public class DerivativeGraph extends CoordPlane
 					next = derivative.eval(x, y, a, b, increment);
 					while(increment <= xMax.get())
 					{
-						gc.strokeLine(normToScrX(increment - inc), normToScrY(temp),
-								normToScrX(increment), normToScrY(next));
+						drawLine((increment - inc), (temp), (increment), (next), Color.BLACK);
 						temp = next;
 						increment += inc;
 						next = derivative.eval(x, y, a, b, increment);

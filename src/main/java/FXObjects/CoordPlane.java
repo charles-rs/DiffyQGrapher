@@ -61,10 +61,7 @@ public abstract class CoordPlane extends Pane
 	 * red dot the displays when a thread is doing a hard task
 	 */
 	protected Circle loading;
-	/**
-	 * the canvas where everything is drawn
-	 */
-	protected final Canvas c;
+
 	/**
 	 * the variables holding the current limits of the axes
 	 */
@@ -74,10 +71,7 @@ public abstract class CoordPlane extends Pane
 	 * stores the initial bounds for resetting
 	 */
 	private final double initZoom [];
-	/**
-	 * this is just and alias for c.getGraphicsContext2D() since we use it a lot
-	 */
-	protected final GraphicsContext gc;
+
 	/**
 	 * the currently active plane
 	 */
@@ -155,11 +149,6 @@ public abstract class CoordPlane extends Pane
 		setPrefHeight(side);
 
 		setPrefWidth(side);
-		c = new Canvas(side, side);
-		gc = c.getGraphicsContext2D();
-		//getChildren().add(c);
-//		c.widthProperty().bind(this.widthProperty());
-//		c.heightProperty().bind(this.heightProperty());
 
 		fxImg = new WritableImage((int) side, (int) side);
 
@@ -243,8 +232,8 @@ public abstract class CoordPlane extends Pane
 
 					setPrefWidth(Math.max(this.getMinWidth(), Math.min(mouseEvent.getX(), mouseEvent.getY())));
 					setPrefHeight(Math.max(this.getMinWidth(), Math.min(mouseEvent.getX(), mouseEvent.getY())));
-					System.out.println("updating pref width to: " + prefWidthProperty().get());
 					drawAxes(false);
+					updateForResize();
 					mouseEvent.consume();
 				}
 				else if (mouseEvent.getEventType() == MouseEvent.MOUSE_RELEASED && zoomBox.getHeight() != 0
@@ -302,7 +291,6 @@ public abstract class CoordPlane extends Pane
 			}
 		});
 		setVisible(true);
-		c.setVisible(true);
 
 	}
 
@@ -322,6 +310,11 @@ public abstract class CoordPlane extends Pane
 	 * current window are already in their zoomed state.
 	 */
 	protected abstract void updateForZoom();
+
+	/**
+	 * Runs every time the window is resized. moves child nodes to where they need to be
+	 */
+	protected abstract void updateForResize();
 
 	/**
 	 * selects the current window. Also bothers with shifting the JavaFX focus.

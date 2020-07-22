@@ -6,6 +6,7 @@ import AST.Value;
 import Evaluation.*;
 import Events.SaddleSelected;
 import Events.HopfPointSelected;
+import Events.UpdatedState;
 import Exceptions.BadSaddleTransversalException;
 import Exceptions.EvaluationException;
 import Exceptions.RootNotFound;
@@ -53,7 +54,6 @@ public class OutputPlane extends CoordPlane
 	private double t = 0;
 	private final List<InitCond> initials;
 	private final List<InitCond> isoclines;
-//	private final List<SolutionArtist> artistArmy;
 	private List<CriticalPoint> criticalPoints;
 	private List<Point2D> selectedCritPoints;
 	private final List<Point2D> horizIsos;
@@ -65,7 +65,7 @@ public class OutputPlane extends CoordPlane
 	volatile double a, b;
 	private Derivative dx, dy;
 	public EvalType evalType;
-	public ClickModeType clickMode = ClickModeType.DRAWPATH;
+	private ClickModeType clickMode = ClickModeType.DRAWPATH;
 	private boolean drawSep = false;
 	private CriticalPoint currentPoint = null;
 
@@ -209,6 +209,32 @@ public class OutputPlane extends CoordPlane
 		return (Derivative) dy.clone();
 	}
 
+
+	public void setClickMode(ClickModeType cl)
+	{
+		this.clickMode = cl;
+		switch (cl)
+		{
+			case DRAWPATH:
+				fireEvent(new UpdatedState(0));
+				break;
+			case DRAWISO:
+				fireEvent(new UpdatedState(1));
+				break;
+			case FINDCRITICAL:
+				fireEvent(new UpdatedState(2));
+				break;
+			case DRAWHORIZISO:
+				fireEvent(new UpdatedState(3));
+				break;
+		}
+	}
+
+	public ClickModeType getClickMode()
+	{
+		return clickMode;
+	}
+
 	public double getT()
 	{
 		return t;
@@ -224,6 +250,14 @@ public class OutputPlane extends CoordPlane
 //		}
 		basinImg = new BufferedImage(canv.getWidth(), canv.getHeight(), BufferedImage.TYPE_INT_ARGB);
 		renderBasins();
+	}
+	@Override
+	protected void updateForResize()
+	{
+		for(Node n : needsReset) n.setVisible(false);
+		needsReset.clear();
+		for(CriticalPoint c : criticalPoints)
+			labelCritical(c);
 	}
 
 	public void clearObjects()
@@ -363,7 +397,7 @@ public class OutputPlane extends CoordPlane
 					CriticalPoint p = critical(pt);
 					if (selectedSeps.size() < 2)
 					{
-						double tol = (xMax.get() - xMin.get())/c.getWidth();
+						double tol = (xMax.get() - xMin.get())/canv.getWidth();
 						Point2D p1 = new Point2D(p.point.getX() + tol * p.matrix.getEigenVector(0).get(0),
 								p.point.getY() + tol * p.matrix.getEigenVector(0).get(1));
 						Point2D p2 = new Point2D(p.point.getX() - tol * p.matrix.getEigenVector(0).get(0),
@@ -738,7 +772,7 @@ public class OutputPlane extends CoordPlane
 				((in.canv.getWidth() + in.canv.getHeight())/2D);
 		MidpointPathGenerator gen = GeneratorFactory.getMidpointArcGenerator(px, prev1, prev2);
 		int cdLeft = -1, cdRight = -1, cdCenter = -1, dir = 4;
-		while(!gen.done() && !Thread.interrupted())
+		while((!gen.done() || dir > 1) && !Thread.interrupted())
 		{
 			System.out.println("current point: " + gen.getCurrentPoint());
 			switch (dir)
@@ -801,9 +835,11 @@ public class OutputPlane extends CoordPlane
 		if(!gen.done())
 		{
 			System.out.println("defaulting out");
-			return semiStableFinitePath(lnSt, lnNd, prev1.getX(), prev1.getY(), FinitePathType.ARC, prev2);
+//			return semiStableFinitePath(lnSt, lnNd, prev1.getX(), prev1.getY(), FinitePathType.ARC, prev2);
+			throw new RootNotFound();
 		}
-		else return gen.getCurrentPoint();
+		else if (dir == 0 || dir == 1) return gen.getCurrentPoint();
+		else throw new RootNotFound();
 	}
 	private Point2D semiStableFinitePath(Point2D lnSt, Point2D lnNd, double a, double b,
 										 FinitePathType finitePathType, @Nullable Point2D prev) throws RootNotFound
@@ -1791,7 +1827,7 @@ public class OutputPlane extends CoordPlane
 		s2Right = s2.clone();
 		s2Center = s2.clone();
 		Point2D pLeft, pRight, pCenter;
-		while(!gen.done() && !Thread.interrupted())
+		while((!gen.done() || dir > 1) && !Thread.interrupted())
 		{
 			System.out.println("current point: " + gen.getCurrentPoint());
 			pLeft = gen.getCurrent().left;
@@ -2280,7 +2316,6 @@ public class OutputPlane extends CoordPlane
 
 			text.setVisible(true);
 			needsReset.add(text);
-			c.getGraphicsContext2D().setFill(Color.BLACK);
 		}
 	}
 
@@ -2301,11 +2336,7 @@ public class OutputPlane extends CoordPlane
 			if(Thread.interrupted()) return;
 			drawGraph(i, true, awtSolutionColor);
 		}
-		for (CriticalPoint p : criticalPoints)
-		{
-			if(Thread.interrupted()) return;
-			Platform.runLater(() -> labelCritical(p));
-		}
+
 	}
 
 	void drawGraph(InitCond init, boolean arrow, java.awt.Color color)
@@ -2379,7 +2410,6 @@ public class OutputPlane extends CoordPlane
 
 	private void drawIso(InitCond init)
 	{
-		gc.setStroke(isoclineColor);
 		try
 		{
 			double val = dy.eval(init.x, init.y, a, b, t) / dx.eval(init.x, init.y, a, b, t);
@@ -2387,16 +2417,11 @@ public class OutputPlane extends CoordPlane
 			drawIsoHelper(slope, new Point2D(init.x, init.y), awtIsoclineColor);
 
 
-		} catch (EvaluationException ignored)
-		{
-		}
-		gc.setStroke(Color.BLACK);
+		} catch (EvaluationException ignored){}
 	}
 
 	private void drawHorizIso(Point2D pt)
 	{
-		gc.setStroke(horizIsoColor);
-		g.setColor(awtHorizIsoColor);
 		try
 		{
 			AST.Node thing = Maths.divide(dy, dy.differentiate('y')).collapse();
@@ -2428,15 +2453,11 @@ public class OutputPlane extends CoordPlane
 					drawIsoHelper(dy, new Point2D(x, y), awtHorizIsoColor);
 				}
 			}
-		} catch (EvaluationException ignored)
-		{
-		}
-		gc.setStroke(Color.BLACK);
+		} catch (EvaluationException ignored) {}
 	}
 
 	private void drawVertIso(Point2D pt)
 	{
-		gc.setStroke(vertIsoColor);
 		try
 		{
 			AST.Node thing = Maths.divide(dx, dx.differentiate('x')).collapse();
@@ -2468,10 +2489,7 @@ public class OutputPlane extends CoordPlane
 					drawIsoHelper(dx, new Point2D(x, y), awtVertIsoColor);
 				}
 			}
-		} catch (EvaluationException ignored)
-		{
-		}
-		gc.setStroke(Color.BLACK);
+		} catch (EvaluationException ignored){}
 	}
 
 	private void drawIsoHelper(AST.Node slope, Point2D init, java.awt.Color color)
@@ -2487,8 +2505,8 @@ public class OutputPlane extends CoordPlane
 			double sign = 1;
 			double tol = 30.;
 			long time = System.nanoTime();
-			double xinc = 1.5 * (xMax.get() - xMin.get()) / this.getWidth();
-			double yinc = 1.5 * (yMax.get() - yMin.get()) / c.getHeight();
+			double xinc = 1.5 * (xMax.get() - xMin.get()) / canv.getWidth();
+			double yinc = 1.5 * (yMax.get() - yMin.get()) / canv.getHeight();
 			for (int j = 0; j < 2; j++)
 			{
 				while (inBounds(first) && System.nanoTime() - time < 100000000)
@@ -2515,7 +2533,6 @@ public class OutputPlane extends CoordPlane
 							}
 							second = new Point2D(x, y);
 							drawLine(first, second, color);
-							//gc.strokeLine(normToScrX(first.getX()), normToScrY(first.getY()), normToScrX(second.getX()), normToScrY(second.getY()));
 							first = second;
 						} else break;
 					} else
@@ -2539,7 +2556,6 @@ public class OutputPlane extends CoordPlane
 							}
 							second = new Point2D(x, y);
 							drawLine(first, second, color);
-							//gc.strokeLine(normToScrX(first.getX()), normToScrY(first.getY()), normToScrX(second.getX()), normToScrY(second.getY()));
 							first = second;
 						} else break;
 					}
@@ -2625,14 +2641,12 @@ public class OutputPlane extends CoordPlane
 				java.awt.Color tempCol;
 				if (!temp)
 				{
-					gc.setStroke(stblSeparatrixColor);
 					tempCol = (awtStblSeparatrixColor);
 					sn = '-';
 				}
 				else
 				{
 					tempCol = (awtUnstblSeparatrixColor);
-					gc.setStroke(unstblSeparatrixColor);
 					sn = '+';
 				}
 				drawGraphBack(point1, false, sn, tempCol);
@@ -2641,13 +2655,11 @@ public class OutputPlane extends CoordPlane
 				if (temp)
 				{
 					tempCol = (awtStblSeparatrixColor);
-					gc.setStroke(stblSeparatrixColor);
 					sn = '-';
 				}
 				else
 				{
 					tempCol = (awtUnstblSeparatrixColor);
-					gc.setStroke(unstblSeparatrixColor);
 					sn = '+';
 				}
 				InitCond point2 = new InitCond(c.point.getX() + tol * c.matrix.getEigenVector(1).get(0),
@@ -2657,19 +2669,15 @@ public class OutputPlane extends CoordPlane
 				drawGraphBack(point2, false, sn, tempCol);
 				drawGraphBack(point4, false, sn, tempCol);
 			}
-		} catch (NullPointerException ignored)
-		{
-		}
+		} catch (NullPointerException ignored) {}
 	}
 
 	private void drawSelectedCritPoints()
 	{
-		gc.setStroke(criticalColor);
 		for (Point2D p : selectedCritPoints)
 		{
-			gc.strokeOval(normToScrX(p.getX()) - 8, normToScrY(p.getY()) - 8, 16, 16);
+			g.drawOval(imgNormToScrX(p.getX()) - 8, imgNormToScrY(p.getY()) - 8, 16, 16);
 		}
-		gc.setStroke(Color.BLACK);
 	}
 
 	@Override
@@ -2712,6 +2720,11 @@ public class OutputPlane extends CoordPlane
 //			updateLimCycles();
 		});
 		solutionArtist.start();
+		for (CriticalPoint p : criticalPoints)
+		{
+			if(Thread.interrupted()) return;
+			Platform.runLater(() -> labelCritical(p));
+		}
 	}
 	@Override
 	public boolean writePNG(File f)

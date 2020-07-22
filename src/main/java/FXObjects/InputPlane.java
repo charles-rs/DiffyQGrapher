@@ -86,7 +86,6 @@ public class InputPlane extends CoordPlane
 	 * canvas that is overlayed on the normal one for drawing saddle connection bifurcations.
 	 * These are difficult bifurcations to draw, so we want to avoid redrawing them except when absolutely necessary
 	 */
-	Canvas saddleCanvas;
 	boolean updateSaddleCons;
 
 
@@ -107,7 +106,6 @@ public class InputPlane extends CoordPlane
 		super(side);
 
 		clickMode = InClickModeType.MOVEPOINT;
-		saddleCanvas = new Canvas(side, side);
 //		getChildren().addAll(saddleCanvas);
 		updateSaddleCons = false;
 		this.op = op;
@@ -120,7 +118,6 @@ public class InputPlane extends CoordPlane
 		pentlist = new ArrayList<>();
 		degenHopf = new ArrayList<>();
 		semiStables = new ArrayList<>();
-		saddleCanvas.setVisible(true);
 		pt = new Circle();
 		pt.setRadius(2);
 		pt.setFill(Color.RED);
@@ -263,7 +260,6 @@ public class InputPlane extends CoordPlane
 	 */
 	private void saddleBifHelp(double start [], boolean add)
 	{
-		gc.setStroke(saddleBifColor);
 
 		Node dx = op.getDx();
 		Node dy = op.getDy();
@@ -308,7 +304,7 @@ public class InputPlane extends CoordPlane
 			else second = bifHelp(first[0], first[1], first[2], first[3] + yInc, dx, dy,
 					det, derivative, 'b');
 			if(second == null) break;
-			drawLine(first[2], first[3], second[2], second[3], awtSaddleBifColor);
+			drawLine(first[2], first[3], second[2], second[3], awtSaddleBifColor, 3);
 		}
 		first = start;
 		try
@@ -329,10 +325,9 @@ public class InputPlane extends CoordPlane
 			else second = bifHelp(first[0], first[1], first[2], first[3] - yInc, dx, dy,
 					det, derivative, 'b');
 			if(second == null) break;
-			drawLine(first[2], first[3], second[2], second[3], awtSaddleBifColor);
+			drawLine(first[2], first[3], second[2], second[3], awtSaddleBifColor, 3);
 		}
 
-		gc.setStroke(Color.BLACK);
 	}
 
 	/**
@@ -363,24 +358,21 @@ public class InputPlane extends CoordPlane
 	 */
 	private void hopfBifHelp(double start [], boolean add)
 	{
-		gc.setStroke(hopfBifColor);
-
-		g.setColor(awtHopfBifColor);
 		Node dx = op.getDx().getVal();
 		Node dy = op.getDy().getVal();
 		Node tr = Maths.add(dx.diff('x'), dy.diff('y')).collapse();
 		Node det = Maths.minus(Maths.mult(dx.diff('x'), dy.diff('y')),
 				Maths.mult(dx.diff('y'), dy.diff('x'))).collapse();
 		Node xDiv, yDiv;
-		Node m20, m11, m02, m30, m21, m12, m03, v20, v11, v02, v30, v21, v12, v03;
+		Node m20, m11, m02, m30, m12, v20, v11, v02, v21, v03;
 		xDiv = dx.diff('y');
 		m20 = dx.diff('x').diff('x').div(2).div(xDiv);
 		m11 = dx.diff('x').diff('y').div(xDiv);
 		m02 = dx.diff('y').diff('y').div(2).div(xDiv);
 		m30 = dx.diff('x').diff('x').diff('x').div(2).div(xDiv);
-		m21 = dx.diff('x').diff('x').diff('y').div(2).div(xDiv);
+//		m21 = dx.diff('x').diff('x').diff('y').div(2).div(xDiv);
 		m12 = dx.diff('x').diff('y').diff('y').div(2).div(xDiv);
-		m03 = dx.diff('y').diff('y').diff('y').div(6).div(xDiv);
+//		m03 = dx.diff('y').diff('y').diff('y').div(6).div(xDiv);
 
 
 		yDiv = dy.diff('x').neg();
@@ -447,7 +439,7 @@ public class InputPlane extends CoordPlane
 					degenHopf.add(prev.add(next.subtract(prev).multiply(factor)));
 					System.out.println("DEGEN DEGEN DEGEN");
 				}
-				drawLine(first[2], first[3], second[2], second[3], awtHopfBifColor);
+				drawLine(first[2], first[3], second[2], second[3], awtHopfBifColor, 3);
 			}
 			first = start;
 			try
@@ -481,10 +473,9 @@ public class InputPlane extends CoordPlane
 					System.out.println("DEGEN DEGEN DEGEN");
 				}
 
-				drawLine(first[2], first[3], second[2], second[3], awtHopfBifColor);
+				drawLine(first[2], first[3], second[2], second[3], awtHopfBifColor, 3);
 			}
 		} catch (EvaluationException ignored) {}
-		gc.setStroke(Color.BLACK);
 	}
 
 	/**
@@ -549,7 +540,7 @@ public class InputPlane extends CoordPlane
 						Math.pow(init.get(2, 0) - result.get(2, 0), 2) < .0001)
 					return temp;
 			}
-		} catch (EvaluationException e)
+		} catch (EvaluationException | SingularMatrixException e)
 		{
 			return null;
 		}
@@ -559,9 +550,12 @@ public class InputPlane extends CoordPlane
 	@Override
 	protected void updateForZoom()
 	{
-		
 	}
-
+	@Override
+	protected void updateForResize()
+	{
+		drawPoint();
+	}
 	@Override
 	public void render()
 	{
@@ -620,7 +614,6 @@ public class InputPlane extends CoordPlane
 		degenSaddleCons.clear();
 		if(artist != null)
 			artist.interrupt();
-		saddleCanvas.getGraphicsContext2D().clearRect(0, 0, c.getWidth(), c.getHeight());
 
 		for(SaddleCon sad : saddleCons)
 		{
@@ -693,7 +686,6 @@ public class InputPlane extends CoordPlane
 			this.getChildren().remove(p);
 		}
 		pentlist.clear();
-		saddleCanvas.getGraphicsContext2D().clearRect(0, 0, c.getWidth(), c.getHeight());
 		draw();
 	}
 

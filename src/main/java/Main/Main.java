@@ -4,6 +4,7 @@ import AST.Derivative;
 import Evaluation.EvalType;
 import Events.SaddleSelected;
 import Events.HopfPointSelected;
+import Events.UpdatedState;
 import Exceptions.SyntaxError;
 import FXObjects.*;
 import Parser.Tokenizer;
@@ -34,10 +35,12 @@ public class Main extends Application
 	VBox leftBox;
 	Tokenizer tokyBoi;
 	OutputPlane outPlane;
+	static Language lang;
+	static int instructionCode = 0;
 	@Override
 	public void start(Stage primaryStage) throws Exception
 	{
-
+		lang = Language.ENGLISH;
 		AnchorPane anchor = new AnchorPane();
 		TextArea inputArea = new TextArea();
 		inputArea.setText("dx/dt = \ndy/dt = \n");
@@ -51,6 +54,7 @@ public class Main extends Application
 		Menu view = new Menu("View");
 		Menu draw = new Menu("Draw");
 		Menu bifurcation = new Menu("Find Bifurcation");
+		Menu language = new Menu("Language");
 
 		//MENU ITEMS GO HERE
 		/////////////////////////////////////////////////////////////
@@ -116,8 +120,16 @@ public class Main extends Application
 		MenuItem cycleBif = new MenuItem("Semi-stable Limit Cycle Bifurcation");
 		MenuItem setSaddleBounds = new MenuItem("Set Saddle Connection Bounds");
 		bifurcation.getItems().addAll(saddleBif, hopfBif, sdlConBif, cycleBif, setSaddleBounds);
+
+		MenuItem info = new MenuItem("info");
+		MenuItem instructions = new MenuItem("Instructions");
+		help.getItems().addAll(info, instructions);
+
+		MenuItem english = new MenuItem("English");
+		MenuItem pirate = new MenuItem("Pirate");
+		language.getItems().addAll(english, pirate);
 		////////////////////////////////////////////////////////
-		bar.getMenus().addAll(file, options, view, draw, bifurcation, help);
+		bar.getMenus().addAll(file, options, view, draw, bifurcation, help, language);
 
 		mainH = new HBox();
 		root.getChildren().addAll(bar, anchor);
@@ -294,44 +306,39 @@ public class Main extends Application
 			drawPath.setText(strDrawGraph + " x");
 			findCritical.setText(strFindCritical);
 			drawIso.setText(strDrawIso);
-			outPlane.clickMode = ClickModeType.DRAWPATH;
+			outPlane.setClickMode(ClickModeType.DRAWPATH);
 		});
 		findCritical.setOnAction((e) ->
 		{
 			findCritical.setText(strFindCritical + " x");
 			drawPath.setText(strDrawGraph);
 			drawIso.setText(strDrawIso);
-			outPlane.clickMode = ClickModeType.FINDCRITICAL;
+			outPlane.setClickMode(ClickModeType.FINDCRITICAL);
 		});
 		drawIso.setOnAction((e) ->
 		{
 			drawIso.setText(strDrawIso + " x");
 			drawPath.setText(strDrawGraph);
 			findCritical.setText(strFindCritical);
-			outPlane.clickMode = ClickModeType.DRAWISO;
+			outPlane.setClickMode(ClickModeType.DRAWISO);
 		});
 		root.setOnKeyPressed((k) ->
 		{
 			if(k.getCode() == KeyCode.T && k.isControlDown())
 			{
-				switch (outPlane.clickMode)
+				switch (outPlane.getClickMode())
 				{
 					case DRAWPATH:
 						findCritical.setText(strFindCritical + " x");
 						drawPath.setText(strDrawGraph);
-						outPlane.clickMode = ClickModeType.FINDCRITICAL;
+						outPlane.setClickMode(ClickModeType.FINDCRITICAL);
 						break;
 					case FINDCRITICAL:
-						drawPath.setText(strDrawGraph);
-						drawIso.setText(strDrawIso + " x");
-						findCritical.setText(strFindCritical);
-						outPlane.clickMode = ClickModeType.DRAWISO;
-						break;
-					case DRAWISO:
+						drawPath.setText(strDrawGraph + " x");
 						drawIso.setText(strDrawIso);
 						findCritical.setText(strFindCritical);
-						drawPath.setText(strDrawGraph + " x");
-						outPlane.clickMode = ClickModeType.DRAWPATH;
+						outPlane.setClickMode(ClickModeType.DRAWPATH);
+						break;
 				}
 			}
 		});
@@ -361,7 +368,7 @@ public class Main extends Application
 		});
 		linearisation.setOnAction(e ->
 		{
-			outPlane.clickMode = ClickModeType.LINEARISATION;
+			outPlane.setClickMode(ClickModeType.LINEARISATION);
 		});
 		separatrices.setOnAction((e) ->
 		{
@@ -369,11 +376,11 @@ public class Main extends Application
 		});
 		horizIso.setOnAction((e) ->
 		{
-			outPlane.clickMode = ClickModeType.DRAWHORIZISO;
+			outPlane.setClickMode(ClickModeType.DRAWHORIZISO);
 		});
 		vertIso.setOnAction((e) ->
 		{
-			outPlane.clickMode = ClickModeType.DRAWVERTISO;
+			outPlane.setClickMode(ClickModeType.DRAWVERTISO);
 		});
 		pentagram.setOnAction(e ->
 		{
@@ -389,32 +396,31 @@ public class Main extends Application
 		});
 		limCycle.setOnAction(e ->
 		{
-			outPlane.clickMode = ClickModeType.FINDLIMCYCLE;
+			outPlane.setClickMode(ClickModeType.FINDLIMCYCLE);
 		});
 		basin.setOnAction(e ->
 		{
-			outPlane.clickMode = ClickModeType.DRAWBASIN;
+			outPlane.setClickMode(ClickModeType.DRAWBASIN);
 		});
 		coBasin.setOnAction(e ->
 		{
-			outPlane.clickMode = ClickModeType.DRAWCOBASIN;
+			outPlane.setClickMode(ClickModeType.DRAWCOBASIN);
 		});
 		saddleBif.setOnAction((e) ->
 		{
-			outPlane.clickMode = ClickModeType.SELECTSADDLE;
-
+			outPlane.setClickMode(ClickModeType.SELECTSADDLE);
 		});
 		hopfBif.setOnAction((e) ->
 		{
-			outPlane.clickMode = ClickModeType.SELECTHOPFPOINT;
+			outPlane.setClickMode(ClickModeType.SELECTHOPFPOINT);
 		});
 		sdlConBif.setOnAction((e) ->
 		{
-			outPlane.clickMode = ClickModeType.SELECTSEP;
+			outPlane.setClickMode(ClickModeType.SELECTSEP);
 		});
 		cycleBif.setOnAction(e ->
 		{
-			outPlane.clickMode = ClickModeType.SEMISTABLE;
+			outPlane.setClickMode(ClickModeType.SEMISTABLE);
 		});
 		quit.setOnAction(e ->
 		{
@@ -444,22 +450,41 @@ public class Main extends Application
 		});
 		setSaddleBounds.setOnAction(e ->
 				getSaddleBoundsAndSet());
+		instructions.setOnAction(e ->
+		{
+			new InstructionsWindow(inPlane, outPlane);
+		});
+		english.setOnAction(e ->
+		{
+			lang = Language.ENGLISH;
+			InstructionsWindow.update();
+			outPlane.fireEvent(new UpdatedState(Main.instructionCode));
+		});
+		pirate.setOnAction(e ->
+		{
+			lang = Language.PIRATE;
+			InstructionsWindow.update();
+			outPlane.fireEvent(new UpdatedState(Main.instructionCode));
+		});
 		EventHandler<ActionEvent> handler = e ->
 		{
 			if(e instanceof SaddleSelected)
 			{
 				if(((SaddleSelected) e).pt != null)
 					inPlane.saddleBif(((SaddleSelected) e).pt);
-				outPlane.clickMode = ClickModeType.DRAWPATH;
-			}
-			if(e instanceof HopfPointSelected)
+				outPlane.setClickMode(ClickModeType.DRAWPATH);
+			} else if(e instanceof HopfPointSelected)
 			{
 				if(((HopfPointSelected) e).pt != null)
 					inPlane.hopfBif(((HopfPointSelected) e).pt);
-				outPlane.clickMode = ClickModeType.DRAWPATH;
+				outPlane.setClickMode(ClickModeType.DRAWPATH);
+			} else if (e instanceof UpdatedState)
+			{
+				instructionCode = ((UpdatedState) e).code;
 			}
 		};
 		outPlane.addEventHandler(ActionEvent.ANY, handler);
+		inPlane.addEventHandler(ActionEvent.ANY, handler);
 
 
 

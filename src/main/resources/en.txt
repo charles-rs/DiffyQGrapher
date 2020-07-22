@@ -1,0 +1,12 @@
+0
+Click to draw a solution starting at the point clicked
+~
+1
+Click to draw a generic isocline (level curve) starting at the mouse
+~
+2
+Click to find the nearest critical point using Newton's method
+~
+3
+Click to draw the nearest horizontal isocline
+~
