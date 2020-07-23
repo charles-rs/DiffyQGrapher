@@ -1,5 +1,6 @@
 package FXObjects;
 
+import Events.UpdatedState;
 import javafx.application.Platform;
 import javafx.beans.property.DoubleProperty;
 import javafx.beans.property.SimpleDoubleProperty;
@@ -86,6 +87,8 @@ public abstract class CoordPlane extends Pane
 	protected final Rectangle zoomBox;
 
 	private volatile boolean activeResize = false;
+
+	protected int currentInstrCode;
 
 
 	/**
@@ -226,8 +229,7 @@ public abstract class CoordPlane extends Pane
 					zoomBox.setHeight(mouseEvent.getY() - zoomBox.getY());
 
 				}
-				else if (mouseEvent.getEventType() == MouseEvent.MOUSE_DRAGGED) //&&
-						//mouseEvent.getX() > getWidth() - 8 && mouseEvent.getY() > getHeight() - 8)
+				else if (mouseEvent.getEventType() == MouseEvent.MOUSE_DRAGGED)
 				{
 
 					setPrefWidth(Math.max(this.getMinWidth(), Math.min(mouseEvent.getX(), mouseEvent.getY())));
@@ -330,6 +332,7 @@ public abstract class CoordPlane extends Pane
 			if(temp != null)
 				temp.drawBorders();
 			drawBorders();
+			fireUpdate(this.currentInstrCode);
 	}
 
 	/**
@@ -432,13 +435,6 @@ public abstract class CoordPlane extends Pane
 			xAxis.setStartX(0);
 			xAxis.setEndX(this.getWidth());
 		}
-
-//		g.drawLine(0, imgNormToScrY(0), canv.getWidth(), imgNormToScrY(0));
-//		g.drawLine(imgNormToScrX(0), 0, imgNormToScrX(0), canv.getHeight());
-//		g.drawString(strxMin, 2, canv.getHeight()/2 - 2);
-//		g.drawString(stryMin, canv.getWidth()/2 + 2, canv.getHeight() - 2);
-//		g.drawString(stryMax, canv.getWidth()/2 + 2, 12);
-//		g.drawString(strxMax, canv.getWidth() - 7 * strxMax.length(), canv.getHeight()/2 - 4);
 
 	}
 
@@ -573,6 +569,11 @@ public abstract class CoordPlane extends Pane
 	protected void drawLine(Point2D p1, Point2D p2, java.awt.Color color, float width)
 	{
 		drawLine(p1.getX(), p1.getY(), p2.getX(), p2.getY(), color, width);
+	}
+	protected void fireUpdate(int cd)
+	{
+		fireEvent(new UpdatedState(cd));
+		currentInstrCode = cd;
 	}
 
 	/**

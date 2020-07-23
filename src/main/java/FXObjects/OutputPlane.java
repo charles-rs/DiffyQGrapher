@@ -48,6 +48,8 @@ public class OutputPlane extends CoordPlane
 	 */
 	public double dSaddleXMin, dSaddleXMax, dSaddleYMin, dSaddleYMax;
 
+
+
 	private Line cycleLine;
 	int limCycStep = 0;
 
@@ -105,7 +107,7 @@ public class OutputPlane extends CoordPlane
 	{
 		super(side);
 		SaddleConTransversal.init(this);
-
+		currentInstrCode = 0;
 
 		basinImg = new BufferedImage(canv.getWidth(), canv.getHeight(), BufferedImage.TYPE_INT_ARGB);
 		basinG = basinImg.createGraphics();
@@ -216,19 +218,53 @@ public class OutputPlane extends CoordPlane
 		switch (cl)
 		{
 			case DRAWPATH:
-				fireEvent(new UpdatedState(0));
+				fireUpdate(0);
 				break;
 			case DRAWISO:
-				fireEvent(new UpdatedState(1));
+				fireUpdate(1);
 				break;
 			case FINDCRITICAL:
-				fireEvent(new UpdatedState(2));
+				fireUpdate(2);
 				break;
 			case DRAWHORIZISO:
-				fireEvent(new UpdatedState(3));
+				fireUpdate(3);
+				break;
+			case LINEARISATION:
+				fireUpdate(4);
+				break;
+			case SELECTSADDLE:
+				fireUpdate(5);
+				break;
+			case SELECTHOPFPOINT:
+				fireUpdate(6);
+				break;
+			case DRAWVERTISO:
+				fireUpdate(7);
+				break;
+			case DRAWBASIN:
+				fireUpdate(8);
+				break;
+			case DRAWCOBASIN:
+				fireUpdate(9);
+				break;
+			case FINDLIMCYCLE:
+				fireUpdate(10);
+				break;
+			case SELECTSEP:
+				fireUpdate(20);
+				break;
+			case SELECTHOMOCENTER:
+				fireUpdate(25);
+				break;
+			case SETTRAVERSAL:
+				fireUpdate(30);
+				break;
+			case SEMISTABLE:
+				fireUpdate(40);
 				break;
 		}
 	}
+
 
 	public ClickModeType getClickMode()
 	{
@@ -348,13 +384,13 @@ public class OutputPlane extends CoordPlane
 			case DRAWHORIZISO:
 				drawHorizIso(pt);
 				horizIsos.add(pt);
-				clickMode = ClickModeType.DRAWPATH;
+				setClickMode(ClickModeType.DRAWPATH);
 				render();
 				break;
 			case DRAWVERTISO:
 				drawVertIso(new Point2D(x, y));
 				vertIsos.add(pt);
-				clickMode = ClickModeType.DRAWPATH;
+				setClickMode(ClickModeType.DRAWPATH);
 				render();
 				break;
 			case DRAWISO:
@@ -364,11 +400,11 @@ public class OutputPlane extends CoordPlane
 				break;
 			case DRAWBASIN:
 				drawBasin(pt);
-				clickMode = ClickModeType.DRAWPATH;
+				setClickMode(ClickModeType.DRAWPATH);
 				break;
 			case DRAWCOBASIN:
 				drawCoBasin(pt);
-				clickMode = ClickModeType.DRAWPATH;
+				setClickMode(ClickModeType.DRAWPATH);
 			case SELECTSADDLE:
 				try
 				{
@@ -427,13 +463,13 @@ public class OutputPlane extends CoordPlane
 							if (e.isControlDown())
 							{
 								limCycStep = 0;
-								clickMode = ClickModeType.SETTRAVERSAL;
+								setClickMode(ClickModeType.SETTRAVERSAL);
 							}
 							else
 							{
 								if (selectedSeps.get(0).saddle.point.distance(selectedSeps.get(1).saddle.point) < inc / 100)
 								{
-									clickMode = ClickModeType.SELECTHOMOCENTER;
+									setClickMode(ClickModeType.SELECTHOMOCENTER);
 								} else
 								{
 									try
@@ -460,11 +496,11 @@ public class OutputPlane extends CoordPlane
 									}
 
 									selectedCritPoints.clear();
-									clickMode = ClickModeType.DRAWPATH;
+									setClickMode(ClickModeType.DRAWPATH);
 								}
 
 							}
-						}
+						} else fireUpdate(21);
 					}
 				} catch (RootNotFound ignored) {}
 				break;
@@ -473,6 +509,7 @@ public class OutputPlane extends CoordPlane
 				{
 					saddleTravStart = pt;
 					saddleTravStarted = true;
+					fireUpdate(31);
 				} else
 				{
 					SaddleConTransversal transversal = new SaddleConTransversal(saddleTravStart, pt,
@@ -492,6 +529,7 @@ public class OutputPlane extends CoordPlane
 					});
 					in.artist.start();
 					saddleTravStarted = false;
+					setClickMode(ClickModeType.DRAWPATH);
 				}
 				break;
 			case SELECTHOMOCENTER:
@@ -521,7 +559,7 @@ public class OutputPlane extends CoordPlane
 					}
 
 					selectedCritPoints.clear();
-					clickMode = ClickModeType.DRAWPATH;
+					setClickMode(ClickModeType.DRAWPATH);
 				} catch (RootNotFound ignored) {}
 				break;
 			case FINDLIMCYCLE:
@@ -530,12 +568,14 @@ public class OutputPlane extends CoordPlane
 					case 0:
 						cycleLine.setStartX(e.getX());
 						cycleLine.setStartY(e.getY());
+						fireUpdate(11);
 						limCycStep = 1;
 						break;
 					case 1:
 						cycleLine.setEndX(e.getX());
 						cycleLine.setEndY(e.getY());
 						cycleLine.setVisible(true);
+						fireUpdate(12);
 						limCycStep = 2;
 						break;
 					case 2:
@@ -551,7 +591,7 @@ public class OutputPlane extends CoordPlane
 
 						limCycleArtist.start();
 						limCycStep = 0;
-						clickMode = ClickModeType.DRAWPATH;
+						setClickMode(ClickModeType.DRAWPATH);
 						break;
 				}
 				break;
@@ -562,6 +602,7 @@ public class OutputPlane extends CoordPlane
 						cycleLine.setStartX(e.getX());
 						cycleLine.setStartY(e.getY());
 						limCycStep = 1;
+						fireUpdate(41);
 						break;
 					case 1:
 						cycleLine.setEndX(e.getX());
@@ -588,7 +629,7 @@ public class OutputPlane extends CoordPlane
 						});
 						in.artist.start();
 						limCycStep = 0;
-						clickMode = ClickModeType.DRAWPATH;
+						setClickMode(ClickModeType.DRAWPATH);
 				}
 		}
 

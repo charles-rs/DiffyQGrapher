@@ -16,6 +16,7 @@ import javafx.stage.Stage;
 import java.io.File;
 import java.io.FileInputStream;
 import java.io.FileNotFoundException;
+import java.io.InputStream;
 import java.util.HashMap;
 import java.util.Scanner;
 
@@ -33,6 +34,7 @@ public class InstructionsWindow extends Stage
 		text.prefWidthProperty().bind(widthProperty());
 		text.prefHeightProperty().bind(heightProperty());
 		text.setWrapText(true);
+
 		setScene(new Scene(p));
 		EventHandler<ActionEvent> handle = event ->
 		{
@@ -52,15 +54,15 @@ public class InstructionsWindow extends Stage
 	public static void update()
 	{
 		strings = new HashMap<>();
-		File f;
+		InputStream f;
 		switch (Main.lang)
 		{
 			case PIRATE:
-				f = new File("src/main/resources/pi.txt");
+				f = Main.class.getResourceAsStream("Instr/pi.txt");
 				break;
 			case ENGLISH:
 			default:
-				f = new File("src/main/resources/en.txt");
+				f = Main.class.getResourceAsStream("Instr/en.txt");
 		}
 		try
 		{
@@ -71,6 +73,7 @@ public class InstructionsWindow extends Stage
 			while(in.hasNext())
 			{
 				sb = new StringBuilder();
+
 				cd = in.nextInt();
 				String tp = in.next();
 				while(!tp.equals("~"))
@@ -82,7 +85,7 @@ public class InstructionsWindow extends Stage
 				strings.put(cd, sb.toString());
 			}
 			in.close();
-		} catch (FileNotFoundException ignored)
+		} catch (Exception ignored)
 		{
 			System.out.println("file not found");
 		}

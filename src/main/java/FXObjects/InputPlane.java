@@ -38,7 +38,7 @@ import java.util.List;
 public class InputPlane extends CoordPlane
 {
 
-	public InClickModeType clickMode;
+	private InClickModeType clickMode;
 
 	List<Pentagram> pentlist;
 
@@ -104,7 +104,7 @@ public class InputPlane extends CoordPlane
 	{
 
 		super(side);
-
+		currentInstrCode = 100;
 		clickMode = InClickModeType.MOVEPOINT;
 //		getChildren().addAll(saddleCanvas);
 		updateSaddleCons = false;
@@ -180,6 +180,25 @@ public class InputPlane extends CoordPlane
 	}
 
 
+	public void setClickMode(InClickModeType ty)
+	{
+		clickMode = ty;
+		switch (ty)
+		{
+			case MOVEPOINT:
+				fireUpdate(100);
+				break;
+			case PLACEPENT:
+				fireUpdate(101);
+				break;
+			case EDITPENT:
+				fireUpdate(102);
+				break;
+			case REMOVEPENT:
+				fireUpdate(103);
+				break;
+		}
+	}
 
 	public void interrupt()
 	{

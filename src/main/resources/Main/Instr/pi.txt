@@ -1,0 +1,80 @@
+-1
+Select yerself a coordinate plane, and get a bottle o' rum while yer at it
+~
+0
+Put th' mouse where ya desire a solution
+~
+1
+Click yer mouse where ye need a level curve
+...and a bottle o' rum
+~
+2
+Invoke th' Method of the Old English Physicist to get yerself a critical point!
+~
+3
+Push the button of ye mouse to find the isocline as horizontal as the plank!
+~
+4
+Click yer mouse to show the local approximation and a bottle o' rum
+~
+5
+Point th' technology-rat near the saddle of ye saddle node bifurcation
+~
+6
+Click yer mouse near th' point ya wanna see change
+~
+7
+Push the button of ye mouse to find the isocline as vertical as the drop off the plank!
+~
+8
+Get yerself the sink ya want the basin of rum for
+~
+9
+get yerself the source for a cobasin and a bottle of rum
+~
+10
+Put th' first end of yer limit cycle transversal
+...and a bottle o' rum
+~
+11
+Click th' other end of yer transversal line, hoping the solution will cross it like you crossed the old captain in last year's mutiny!
+~
+12
+Start a solution that'll get to the limit cycle like you get to yer buried treasure!
+~
+20
+Get ye th' initial separatrix with a bottle of rum!
+~
+21
+Now for another round!
+(Keep ya ctrl key down for a static transversal)
+~
+25
+Finally almost to shore! Click the point in th' middle of yer homoclinic saddle connection!
+~
+30
+Get yer initial point of the static transversal, but remember, a true pirate doesn't use static anything!
+~
+31
+Get the other point of th' non-pirate transversal
+~
+40
+Point ye computer-rat at th' first end of the part-stable cycle transversal
+~
+41
+Point ye computer-rat at th' second end of the part-stable cycle transversal
+...and a bottle o' rum
+~
+100
+Yer computer-rat's got the captain's control over the (a, b) point!
+(likewise yer arrow keys)
+~
+101
+Click to place One (1) Satan's Capsule!
+~
+102
+Edit one of Satan's Capsules!
+~
+103
+Rid yerself of a Satan's Capsule!
+~

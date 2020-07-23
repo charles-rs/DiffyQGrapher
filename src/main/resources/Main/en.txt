@@ -1,0 +1,11 @@
+title~Differential Equations
+file~File
+options~Options
+view~View
+draw~Draw
+bifurcation~Find Bifurcation
+help~Help
+language~Language
+save in~Save Parameter Space
+save out~Save Solution Space
+quit~Quit

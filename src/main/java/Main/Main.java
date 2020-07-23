@@ -6,22 +6,42 @@ import Events.SaddleSelected;
 import Events.HopfPointSelected;
 import Events.UpdatedState;
 import Exceptions.SyntaxError;
-import FXObjects.*;
+import FXObjects.ClickModeType;
+import FXObjects.DerivativeGraph;
+import FXObjects.InClickModeType;
+import FXObjects.InputPlane;
+import FXObjects.OutputPlane;
 import Parser.Tokenizer;
 import javafx.application.Application;
 import javafx.event.ActionEvent;
 import javafx.event.EventHandler;
 import javafx.geometry.Pos;
 import javafx.scene.Scene;
-import javafx.scene.control.*;
+import javafx.scene.control.Button;
+import javafx.scene.control.Label;
+import javafx.scene.control.Menu;
+import javafx.scene.control.MenuBar;
+import javafx.scene.control.MenuItem;
+import javafx.scene.control.Separator;
+import javafx.scene.control.SeparatorMenuItem;
+import javafx.scene.control.TextArea;
+import javafx.scene.control.TextField;
 import javafx.scene.input.KeyCode;
 import javafx.scene.input.KeyEvent;
-import javafx.scene.layout.*;
+import javafx.scene.layout.AnchorPane;
+import javafx.scene.layout.HBox;
+import javafx.scene.layout.Priority;
+import javafx.scene.layout.Region;
+import javafx.scene.layout.VBox;
 import javafx.stage.FileChooser;
 import javafx.stage.Stage;
 
+
 import java.io.File;
+import java.io.InputStream;
 import java.io.StringReader;
+import java.util.Scanner;
+import java.util.prefs.Preferences;
 
 /**
  * absolute fucking mess.
@@ -35,12 +55,33 @@ public class Main extends Application
 	VBox leftBox;
 	Tokenizer tokyBoi;
 	OutputPlane outPlane;
+	private Menu file;
+	private Menu options;
+	private Menu help;
+	private Menu view;
+	private Menu draw;
+	private Menu bifurcation;
+	private Menu language;
+	private MenuItem saveInpt;
+	private MenuItem saveOut;
+	private MenuItem quit;
 	static Language lang;
-	static int instructionCode = 0;
+	static int instructionCode = -1;
+	private Preferences prefs;
+	private Stage primaryStage;
 	@Override
 	public void start(Stage primaryStage) throws Exception
 	{
-		lang = Language.ENGLISH;
+		prefs = Preferences.userNodeForPackage(getClass());
+		this.primaryStage = primaryStage;
+		try
+		{
+			lang = Language.fromString(prefs.get("language", ""));
+		} catch (NullPointerException n)
+		{
+			lang = Language.ENGLISH;
+		}
+
 		AnchorPane anchor = new AnchorPane();
 		TextArea inputArea = new TextArea();
 		inputArea.setText("dx/dt = \ndy/dt = \n");
@@ -48,19 +89,21 @@ public class Main extends Application
 		inputArea.setPrefColumnCount(20);
 		VBox root = new VBox();
 		MenuBar bar = new MenuBar();
-		Menu file = new Menu("File");
-		Menu options = new Menu("Options");
-		Menu help = new Menu("Help");
-		Menu view = new Menu("View");
-		Menu draw = new Menu("Draw");
-		Menu bifurcation = new Menu("Find Bifurcation");
-		Menu language = new Menu("Language");
+
+		file = new Menu();
+		options = new Menu();
+		help = new Menu();
+		view = new Menu();
+		draw = new Menu();
+		bifurcation = new Menu();
+		language = new Menu();
 
 		//MENU ITEMS GO HERE
 		/////////////////////////////////////////////////////////////
-		MenuItem saveInpt = new MenuItem("Save Parameter Space");
-		MenuItem saveOut = new MenuItem("Save Solution Space");
-		MenuItem quit = new MenuItem("Quit");
+
+		saveInpt = new MenuItem();
+		saveOut = new MenuItem();
+		quit = new MenuItem();
 		file.getItems().addAll(saveInpt, saveOut, quit);
 
 
@@ -114,8 +157,10 @@ public class Main extends Application
 				limCycle, basin, coBasin);
 
 
-		MenuItem saddleBif = new MenuItem("Saddle Node Bifurcation");
-		MenuItem hopfBif = new MenuItem("Hopf Bifurcation");
+		MenuItem saddleBif;
+		saddleBif = new MenuItem("Saddle Node Bifurcation");
+		MenuItem hopfBif;
+		hopfBif = new MenuItem("Hopf Bifurcation");
 		MenuItem sdlConBif = new MenuItem("Saddle Connection Bifurcation");
 		MenuItem cycleBif = new MenuItem("Semi-stable Limit Cycle Bifurcation");
 		MenuItem setSaddleBounds = new MenuItem("Set Saddle Connection Bounds");
@@ -384,15 +429,15 @@ public class Main extends Application
 		});
 		pentagram.setOnAction(e ->
 		{
-			inPlane.clickMode = InClickModeType.PLACEPENT;
+			inPlane.setClickMode(InClickModeType.PLACEPENT);
 		});
 		noMorePentagram.setOnAction(e ->
 		{
-			inPlane.clickMode = InClickModeType.REMOVEPENT;
+			inPlane.setClickMode(InClickModeType.REMOVEPENT);
 		});
 		editPentagram.setOnAction(e ->
 		{
-			inPlane.clickMode = InClickModeType.EDITPENT;
+			inPlane.setClickMode(InClickModeType.EDITPENT);
 		});
 		limCycle.setOnAction(e ->
 		{
@@ -452,18 +497,23 @@ public class Main extends Application
 				getSaddleBoundsAndSet());
 		instructions.setOnAction(e ->
 		{
-			new InstructionsWindow(inPlane, outPlane);
+			InstructionsWindow temp = new InstructionsWindow(inPlane, outPlane);
+			temp.setX(primaryStage.getWidth());
 		});
 		english.setOnAction(e ->
 		{
 			lang = Language.ENGLISH;
+			prefs.put("language", lang.toString());
+			update();
 			InstructionsWindow.update();
 			outPlane.fireEvent(new UpdatedState(Main.instructionCode));
 		});
 		pirate.setOnAction(e ->
 		{
 			lang = Language.PIRATE;
+			prefs.put("language", lang.toString());
 			InstructionsWindow.update();
+			update();
 			outPlane.fireEvent(new UpdatedState(Main.instructionCode));
 		});
 		EventHandler<ActionEvent> handler = e ->
@@ -490,10 +540,58 @@ public class Main extends Application
 
 		primaryStage.setTitle("Differential Equations");
 		primaryStage.setScene(new Scene(root, 1200, 800));
-
 		//primaryStage.setMaximized(true);
+		update();
 		primaryStage.show();
 //		System.out.println(outP.getHeight());
+	}
+	private void update()
+	{
+		InputStream in = getClass().getResourceAsStream(lang.toString() + ".txt");
+		Scanner s = new Scanner(in);
+		String temp;
+		String [] split;
+		while(s.hasNext())
+		{
+			temp = s.nextLine();
+			split = temp.split("~");
+			switch (split[0])
+			{
+				case "file":
+					file.setText(split[1]);
+					break;
+				case "options":
+					options.setText(split[1]);
+					break;
+				case "view":
+					view.setText(split[1]);
+					break;
+				case "draw":
+					draw.setText(split[1]);
+					break;
+				case "bifurcation":
+					bifurcation.setText(split[1]);
+					break;
+				case "help":
+					help.setText(split[1]);
+					break;
+				case "language":
+					language.setText(split[1]);
+					break;
+				case "save in":
+					saveInpt.setText(split[1]);
+					break;
+				case "save out":
+					saveOut.setText(split[1]);
+					break;
+				case "quit":
+					quit.setText(split[1]);
+					break;
+				case "title":
+					primaryStage.setTitle(split[1]);
+					break;
+			}
+		}
 	}
 
 

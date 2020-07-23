@@ -1,0 +1,11 @@
+title~Differential Equation Treasure Map
+file~Archives
+options~Me Settings
+view~Through the Telescope
+draw~Design the Treasure Map
+bifurcation~Find Bifurcation
+help~Help Matey!
+language~Speakin
+save in~Save th' Parameter Space
+save out~Save th' Solution Space
+quit~Leave the Math for a bottle of Rum!
