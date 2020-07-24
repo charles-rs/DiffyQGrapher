@@ -12,6 +12,8 @@ import FXObjects.InClickModeType;
 import FXObjects.InputPlane;
 import FXObjects.OutputPlane;
 import Parser.Tokenizer;
+import Settings.Settings;
+import Settings.SettingsWindow;
 import javafx.application.Application;
 import javafx.event.ActionEvent;
 import javafx.event.EventHandler;
@@ -62,26 +64,65 @@ public class Main extends Application
 	private Menu draw;
 	private Menu bifurcation;
 	private Menu language;
+	private Menu evalOpt;
+	private Menu clickOpt;
+	private Menu menDyDt;
+	private Menu menDxDt;
+	private MenuItem sets;
 	private MenuItem saveInpt;
 	private MenuItem saveOut;
 	private MenuItem quit;
+	private MenuItem euler;
+	private MenuItem midEuler;
+	private MenuItem rungeKutta;
+	private MenuItem drawPath;
+	private MenuItem findCritical;
+	private MenuItem drawIso;
+	private MenuItem linearisation;
+	private MenuItem separatrices;
+	private MenuItem horizIso;
+	private MenuItem vertIso;
+	private MenuItem pentagram;
+	private MenuItem noMorePentagram;
+	private MenuItem editPentagram;
+	private MenuItem limCycle;
+	private MenuItem basin;
+	private MenuItem coBasin;
+	private MenuItem saddleBif;
+	private MenuItem hopfBif;
+	private MenuItem sdlConBif;
+	private MenuItem cycleBif;
+	private MenuItem info;
+	private MenuItem instructions;
+
+	private Label tLabel;
+	private Button btnClearOut;
+	private Button resetZoom;
+	private Button update;
+	private Button btnClearIn;
+	private Button btnInterruptSadCon;
+	private Button btnResetInZoom;
+
+	private String strEuler, strMidEuler, strRungeKutta;
 	static Language lang;
 	static int instructionCode = -1;
 	private Preferences prefs;
 	private Stage primaryStage;
+	private Settings settings;
 	@Override
 	public void start(Stage primaryStage) throws Exception
 	{
 		prefs = Preferences.userNodeForPackage(getClass());
+
 		this.primaryStage = primaryStage;
 		try
 		{
 			lang = Language.fromString(prefs.get("language", ""));
-		} catch (NullPointerException n)
+		} catch (NullPointerException | SecurityException n)
 		{
 			lang = Language.ENGLISH;
 		}
-
+		settings = Settings.fromPrefs();
 		AnchorPane anchor = new AnchorPane();
 		TextArea inputArea = new TextArea();
 		inputArea.setText("dx/dt = \ndy/dt = \n");
@@ -107,30 +148,25 @@ public class Main extends Application
 		file.getItems().addAll(saveInpt, saveOut, quit);
 
 
-		Menu evalOpt = new Menu("Change Evaluator");
+		evalOpt = new Menu();
 		options.getItems().addAll(evalOpt);
-		String strEuler, strMidEuler, strRungeKutta;
-		strEuler = "Euler's Method";
-		strRungeKutta = "Runge Kutta Method";
-		strMidEuler = "Midpoint Euler's Method";
-		MenuItem euler = new MenuItem(strEuler);
-		MenuItem midEuler = new MenuItem(strMidEuler);
-		MenuItem rungeKutta = new MenuItem(strRungeKutta + "  x");
+
+
+		euler = new MenuItem();
+		midEuler = new MenuItem();
+		rungeKutta = new MenuItem();
 		evalOpt.getItems().addAll(euler, midEuler, rungeKutta);
 
-		Menu clickOpt = new Menu("Change Mode");
-		options.getItems().addAll(clickOpt);
-		String strDrawGraph, strFindCritical, strDrawIso;
-		strDrawGraph = "Draw Path";
-		strFindCritical = "Find Critical Points";
-		strDrawIso = "Draw Isocline";
-		MenuItem drawPath = new MenuItem(strDrawGraph + " x");
-		MenuItem findCritical = new MenuItem(strFindCritical);
-		MenuItem drawIso = new MenuItem(strDrawIso);
+		sets = new MenuItem();
+		clickOpt = new Menu();
+		options.getItems().addAll(clickOpt, sets);
+		drawPath = new MenuItem();
+		findCritical = new MenuItem();
+		drawIso = new MenuItem();
 		clickOpt.getItems().addAll(drawPath, findCritical, drawIso);
 
-		Menu menDyDt = new Menu("dy/dt vs");
-		Menu menDxDt = new Menu("dx/dt vs");
+		menDyDt = new Menu();
+		menDxDt = new Menu();
 		MenuItem itmDxt, itmDyt, itmDxx, itmDyx, itmDxy, itmDyy;
 		itmDxt = new MenuItem("t");
 		itmDxx = new MenuItem("x");
@@ -140,34 +176,31 @@ public class Main extends Application
 		itmDyy = new MenuItem("y");
 		menDxDt.getItems().addAll(itmDxt, itmDxx, itmDxy);
 		menDyDt.getItems().addAll(itmDyt, itmDyx, itmDyy);
-		MenuItem linearisation = new MenuItem("Linearisation");
+		linearisation = new MenuItem();
 		view.getItems().addAll(menDxDt, menDyDt, linearisation);
 
-		MenuItem separatrices = new MenuItem("Separatrices");
-		MenuItem horizIso = new MenuItem("Horizontal Isocline");
-		MenuItem vertIso = new MenuItem("Vertical Isocline");
-		MenuItem pentagram = new MenuItem("Pentagram");
-		MenuItem noMorePentagram = new MenuItem("Remove Pentagram");
-		MenuItem editPentagram = new MenuItem("Edit Pentagram");
-		MenuItem limCycle = new MenuItem("Limit Cycle");
-		MenuItem basin = new MenuItem("Basin");
-		MenuItem coBasin = new MenuItem("Cobasin");
+		separatrices = new MenuItem();
+		horizIso = new MenuItem();
+		vertIso = new MenuItem();
+		pentagram = new MenuItem();
+		noMorePentagram = new MenuItem();
+		editPentagram = new MenuItem();
+		limCycle = new MenuItem();
+		basin = new MenuItem();
+		coBasin = new MenuItem();
 		draw.getItems().addAll(separatrices, horizIso, vertIso, new SeparatorMenuItem(),
 				pentagram, noMorePentagram, editPentagram, new SeparatorMenuItem(),
 				limCycle, basin, coBasin);
 
 
-		MenuItem saddleBif;
-		saddleBif = new MenuItem("Saddle Node Bifurcation");
-		MenuItem hopfBif;
-		hopfBif = new MenuItem("Hopf Bifurcation");
-		MenuItem sdlConBif = new MenuItem("Saddle Connection Bifurcation");
-		MenuItem cycleBif = new MenuItem("Semi-stable Limit Cycle Bifurcation");
-		MenuItem setSaddleBounds = new MenuItem("Set Saddle Connection Bounds");
-		bifurcation.getItems().addAll(saddleBif, hopfBif, sdlConBif, cycleBif, setSaddleBounds);
+		saddleBif = new MenuItem();
+		hopfBif = new MenuItem();
+		sdlConBif = new MenuItem();
+		cycleBif = new MenuItem();
+		bifurcation.getItems().addAll(saddleBif, hopfBif, sdlConBif, cycleBif);
 
-		MenuItem info = new MenuItem("info");
-		MenuItem instructions = new MenuItem("Instructions");
+		info = new MenuItem();
+		instructions = new MenuItem();
 		help.getItems().addAll(info, instructions);
 
 		MenuItem english = new MenuItem("English");
@@ -186,31 +219,34 @@ public class Main extends Application
 
 		HBox aBox, bBox, tBox;
 		TextField aField, bField, tField;
-		Label aLabel, bLabel, tLabel;
+		Label aLabel, bLabel;
+
 		aLabel = new Label("a:");
 		bLabel = new Label("b:");
-		tLabel = new Label("Initial t:");
+		tLabel = new Label();
 		aField = new TextField();
 		bField = new TextField();
 		tField = new TextField();
 //		Pane inP, outP;
 //		inP = new Pane();
 //		outP = new Pane();
-		outPlane = new OutputPlane(600, tField);
-		InputPlane inPlane = new InputPlane(300, aField, bField, outPlane);
+		outPlane = new OutputPlane(600, tField, settings.outPlaneSettings);
+		InputPlane inPlane = new InputPlane(300, aField, bField, outPlane, settings.inPlaneSettings);
 		outPlane.in = inPlane;
 		HBox outPButtonBox = new HBox();
-		Button btnClearOut = new Button("Clear");
+
+		btnClearOut = new Button();
 		btnClearOut.setOnAction(actionEvent ->
 		{
 			outPlane.clear();
 		});
-		Button resetZoom = new Button("Reset Zoom");
+
+		resetZoom = new Button();
 		resetZoom.setOnAction(actionEvent ->
 		{
 			outPlane.resetZoom();
 		});
-		Button update = new Button("Update Graph");
+		update = new Button();
 		update.setOnAction(actionEvent ->
 		{
 			outPlane.clearObjects();
@@ -224,17 +260,19 @@ public class Main extends Application
 		outPButtonBox.setAlignment(Pos.CENTER);
 		outPButtonBox.setSpacing(10);
 		HBox inPButtonBox = new HBox();
-		Button btnClearIn = new Button("Clear");
+
+		btnClearIn = new Button();
 		btnClearIn.setOnAction((actionEvent) ->
 		{
 			inPlane.clear();
 		});
-		Button btnInterruptSadCon = new Button("Interrupt");
+
+		btnInterruptSadCon = new Button();
 		btnInterruptSadCon.setOnAction((actionEvent ->
 		{
 			inPlane.interrupt();
 		}));
-		Button btnResetInZoom = new Button("Reset Zoom");
+		btnResetInZoom = new Button();
 		btnResetInZoom.setOnAction(actionEvent ->
 		{
 			inPlane.resetZoom();
@@ -348,23 +386,23 @@ public class Main extends Application
 		});
 		drawPath.setOnAction((e) ->
 		{
-			drawPath.setText(strDrawGraph + " x");
-			findCritical.setText(strFindCritical);
-			drawIso.setText(strDrawIso);
+//			drawPath.setText(strDrawGraph + " x");
+//			findCritical.setText(strFindCritical);
+//			drawIso.setText(strDrawIso);
 			outPlane.setClickMode(ClickModeType.DRAWPATH);
 		});
 		findCritical.setOnAction((e) ->
 		{
-			findCritical.setText(strFindCritical + " x");
-			drawPath.setText(strDrawGraph);
-			drawIso.setText(strDrawIso);
+//			findCritical.setText(strFindCritical + " x");
+//			drawPath.setText(strDrawGraph);
+//			drawIso.setText(strDrawIso);
 			outPlane.setClickMode(ClickModeType.FINDCRITICAL);
 		});
 		drawIso.setOnAction((e) ->
 		{
-			drawIso.setText(strDrawIso + " x");
-			drawPath.setText(strDrawGraph);
-			findCritical.setText(strFindCritical);
+//			drawIso.setText(strDrawIso + " x");
+//			drawPath.setText(strDrawGraph);
+//			findCritical.setText(strFindCritical);
 			outPlane.setClickMode(ClickModeType.DRAWISO);
 		});
 		root.setOnKeyPressed((k) ->
@@ -374,14 +412,13 @@ public class Main extends Application
 				switch (outPlane.getClickMode())
 				{
 					case DRAWPATH:
-						findCritical.setText(strFindCritical + " x");
-						drawPath.setText(strDrawGraph);
+//						findCritical.setText(strFindCritical + " x");
+//						drawPath.setText(strDrawGraph);
 						outPlane.setClickMode(ClickModeType.FINDCRITICAL);
 						break;
 					case FINDCRITICAL:
-						drawPath.setText(strDrawGraph + " x");
-						drawIso.setText(strDrawIso);
-						findCritical.setText(strFindCritical);
+//						drawPath.setText(strDrawGraph + " x");
+//						findCritical.setText(strFindCritical);
 						outPlane.setClickMode(ClickModeType.DRAWPATH);
 						break;
 				}
@@ -493,12 +530,15 @@ public class Main extends Application
 			if (selected != null)
 				outPlane.writePNG(selected);
 		});
-		setSaddleBounds.setOnAction(e ->
-				getSaddleBoundsAndSet());
 		instructions.setOnAction(e ->
 		{
 			InstructionsWindow temp = new InstructionsWindow(inPlane, outPlane);
 			temp.setX(primaryStage.getWidth());
+		});
+		sets.setOnAction(e ->
+		{
+			new SettingsWindow(settings, lang);
+			outPlane.updateSettings();
 		});
 		english.setOnAction(e ->
 		{
@@ -589,6 +629,116 @@ public class Main extends Application
 					break;
 				case "title":
 					primaryStage.setTitle(split[1]);
+					break;
+				case "euler":
+					strEuler = split[1];
+					if(outPlane.evalType == EvalType.Euler)
+						euler.setText(strEuler + " x");
+					else
+						euler.setText(strEuler);
+					break;
+				case "mideuler":
+					strMidEuler = split[1];
+					if(outPlane.evalType == EvalType.MidEuler)
+						midEuler.setText(strMidEuler + " x");
+					else
+						midEuler.setText(strMidEuler);
+					break;
+				case "runge":
+					strRungeKutta = split[1];
+					if(outPlane.evalType == EvalType.RungeKutta)
+						rungeKutta.setText(strRungeKutta + " x");
+					else
+						rungeKutta.setText(strRungeKutta);
+					break;
+				case "evalopt":
+					evalOpt.setText(split[1]);
+					break;
+				case "clickopt":
+					clickOpt.setText(split[1]);
+					break;
+				case "drawpath":
+					drawPath.setText(split[1]);
+					break;
+				case "critical":
+					findCritical.setText(split[1]);
+					break;
+				case "isocline":
+					drawIso.setText(split[1]);
+					break;
+				case "dx":
+					menDxDt.setText(split[1]);
+					break;
+				case "dy":
+					menDyDt.setText(split[1]);
+					break;
+				case "lin":
+					linearisation.setText(split[1]);
+					break;
+				case "sep":
+					separatrices.setText(split[1]);
+					break;
+				case "horiz":
+					horizIso.setText(split[1]);
+					break;
+				case "vert":
+					vertIso.setText(split[1]);
+					break;
+				case "pent":
+					pentagram.setText(split[1]);
+					break;
+				case "rmpent":
+					noMorePentagram.setText(split[1]);
+					break;
+				case "editpent":
+					editPentagram.setText(split[1]);
+					break;
+				case "limcyc":
+					limCycle.setText(split[1]);
+					break;
+				case "basin":
+					basin.setText(split[1]);
+					break;
+				case "cobasin":
+					coBasin.setText(split[1]);
+					break;
+				case "saddlenode":
+					saddleBif.setText(split[1]);
+					break;
+				case "hopf":
+					hopfBif.setText(split[1]);
+					break;
+				case "saddlecon":
+					sdlConBif.setText(split[1]);
+					break;
+				case "semistable":
+					cycleBif.setText(split[1]);
+					break;
+				case "info":
+					info.setText(split[1]);
+					break;
+				case "instr":
+					instructions.setText(split[1]);
+					break;
+				case "init":
+					tLabel.setText(split[1]);
+					break;
+				case "clear":
+					btnClearIn.setText(split[1]);
+					btnClearOut.setText(split[1]);
+					break;
+				case "reset":
+					resetZoom.setText(split[1]);
+					btnResetInZoom.setText(split[1]);
+					break;
+				case "update":
+					update.setText(split[1]);
+					break;
+				case "interrupt":
+					btnInterruptSadCon.setText(split[1]);
+					break;
+				case "settings":
+					sets.setText(split[1]);
 					break;
 			}
 		}

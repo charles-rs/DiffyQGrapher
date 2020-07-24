@@ -9,3 +9,35 @@ language~Language
 save in~Save Parameter Space
 save out~Save Solution Space
 quit~Quit
+euler~Euler's Method
+mideuler~Midpoint Euler's Method
+runge~Runge-Kutta Method
+evalopt~Change Evaluator
+clickopt~Change Mode
+drawpath~Draw Path
+critical~Find Critical
+isocline~Draw Level Curve
+dx~dx/dt vs
+dy~dy/dt vs
+lin~Linearisation
+sep~Separatrices
+horiz~Horizontal Isocline
+vert~Vertical Isocline
+pent~Pentagram
+rmpent~Remove Pentagram
+editpent~Edit Pentagram
+limcyc~Limit Cycle
+basin~Basin
+cobasin~Cobasin
+saddlenode~Saddle Node Bifurcation
+hopf~Andronov-Hopf Bifurcation
+saddlecon~Saddle Connection Bifurcation
+semistable~Semi-stable Limit Cycle Bifurcation
+info~Info
+instr~Instructions
+init~Initial t:
+clear~Clear
+reset~Reset Zoom
+update~Update Graph
+interrupt~Interrupt
+settings~Settings

@@ -1,0 +1,24 @@
+staticinc~Non-movin' increment
+inc~increment
+writecrit~shall we save th' names?
+save~Keep th' values
+title~Change me Values
+solpick~Th' Color of Solutions!
+isopick~Choose th' Level-Curve Color
+horizisopick~Choose th' Horizontal Isocline Color
+vertisopick~Choose th' Vertical Isocline Color
+stablepick~Choose th' Stable Separatrix Color
+unstablepick~Choose th' Unstable Separatrix Color
+criticalpick~Choose th' Critical Point Color
+attrcycpick~Choose th' Attracting Cycle Color
+repcycpick~Choose th' Repelling Cycle Color
+resetout~Reset me th' output Colors
+saddlenode~Choose th' Saddle-Node Bifurcation Color
+hopf~Choose th' Andronov-Hopf Bifurcation Color
+homocon~Choose th' Homoclinic Saddle Connection Color
+heterocon~Choose th' Heteroclinic Saddle Connection Color
+semistable~Choose th' Semistable Limit Cycle Bifurcation Color
+resetin~Reset me th' input colors
+savepent~Save Satan's Capsules
+axesin~Draw th' Axes Parameter
+axesout~Draw th' Axes Solution

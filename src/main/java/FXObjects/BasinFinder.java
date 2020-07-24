@@ -5,6 +5,7 @@ import Evaluation.EvaluatorFactory;
 import Exceptions.NoMoreXException;
 import javafx.geometry.Point2D;
 
+import java.awt.*;
 import java.util.concurrent.atomic.AtomicBoolean;
 
 
@@ -16,6 +17,7 @@ public class BasinFinder extends Thread
 	private static Double left, right;
 	private static Side s;
 	private static double inc;
+	private static float colNum;
 	private static java.awt.Color col;
 
 
@@ -74,6 +76,10 @@ public class BasinFinder extends Thread
 
 	}
 
+	public static void reset()
+	{
+		colNum = 0;
+	}
 	public static void init(OutputPlane _o, Point2D _crit, boolean posDir)
 	{
 		doneLeft = new AtomicBoolean(false);
@@ -85,7 +91,8 @@ public class BasinFinder extends Thread
 		if(!posDir) inc *= -1;
 		right = crit.getX();
 		left = crit.getX() - 1 *  inc;
-		col = new java.awt.Color(((crit.hashCode()) & ((~0) >>> 8)) | (1 << 30), true);
+		col = new Color(Color.getHSBColor(colNum, 1, 1).getRGB() & ((~0) >>> 8) | (1 << 30), true);
+		colNum += Math.PI;
 	}
 
 	private synchronized static xAndSide getNextX() throws NoMoreXException

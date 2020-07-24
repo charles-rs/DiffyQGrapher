@@ -9,3 +9,35 @@ language~Speakin
 save in~Save th' Parameter Space
 save out~Save th' Solution Space
 quit~Leave the Math for a bottle of Rum!
+euler~Euler's Technique
+mideuler~Midpoint Euler's Technique
+runge~Runge-Kutta Technique
+evalopt~Types of Evaluation
+clickopt~Hap'nigns on Click!
+drawpath~Draw Ye A Solution!
+critical~Discover a Root!
+isocline~Curve of equivalent height!
+dx~dx/dt above
+dy~dy/dt above
+lin~Get Me a Matrix!
+sep~Lines that Separate
+horiz~Isocline like the Plank!
+vert~Isocline like the drop off the Plank!
+pent~Satan's Capsule
+rmpent~Remove Satan's Capsule!
+editpent~Edit Satan's Capsule
+limcyc~Cycle o' Limits
+basin~Tub
+cobasin~Cotub
+saddlenode~Bifurcation of Saddle Node
+hopf~Andronov's and Hopf's Bifurcation
+saddlecon~Connection of Saddles
+semistable~Bifurcation of two Limit Cycles
+info~View the Logs
+instr~Compass
+init~Startin' t:
+clear~Fresh Map
+reset~Remove Telescope
+update~Get 'er up to date
+interrupt~Stop!
+settings~Change Things

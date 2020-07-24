@@ -3,6 +3,7 @@ package FXObjects;
 import AST.Maths;
 import AST.Node;
 import Exceptions.EvaluationException;
+import Settings.InPlaneSettings;
 import javafx.application.Platform;
 import javafx.geometry.Insets;
 import javafx.geometry.Point2D;
@@ -87,7 +88,7 @@ public class InputPlane extends CoordPlane
 	 * These are difficult bifurcations to draw, so we want to avoid redrawing them except when absolutely necessary
 	 */
 	boolean updateSaddleCons;
-
+	public InPlaneSettings settings;
 
 	/**
 	 * Constructs an input plane.
@@ -100,10 +101,12 @@ public class InputPlane extends CoordPlane
 	 * @param bField pointer to the text field for b
 	 * @param op pointer to the output plane
 	 */
-	public InputPlane(double side, TextField aField, TextField bField, OutputPlane op)
+	public InputPlane(double side, TextField aField, TextField bField, OutputPlane op, InPlaneSettings settings)
 	{
 
 		super(side);
+		this.settings = settings;
+		updateSettings();
 		currentInstrCode = 100;
 		clickMode = InClickModeType.MOVEPOINT;
 //		getChildren().addAll(saddleCanvas);
@@ -179,6 +182,24 @@ public class InputPlane extends CoordPlane
 
 	}
 
+	private void initColors()
+	{
+		awtSaddleBifColor = fromFXColor(saddleBifColor);
+		awtHopfBifColor = fromFXColor(hopfBifColor);
+		awtHomoSaddleConColor = fromFXColor(homoSaddleConColor);
+		awtHeteroSaddleConColor = fromFXColor(heteroSaddleConColor);
+		awtSemiStableColor = fromFXColor(semiStableColor);
+	}
+
+	private void updateSettings()
+	{
+		saddleBifColor = settings.saddleBifColor;
+		hopfBifColor = settings.hopfBifColor;
+		homoSaddleConColor = settings.homoSaddleConColor;
+		heteroSaddleConColor = settings.heteroSaddleConColor;
+		semiStableColor = settings.semiStableColor;
+		initColors();
+	}
 
 	public void setClickMode(InClickModeType ty)
 	{
@@ -715,34 +736,38 @@ public class InputPlane extends CoordPlane
 		Graphics2D g2 = temp.createGraphics();
 		g2.drawImage(canv, 0, 0, null);
 		g2.setColor(java.awt.Color.BLACK);
-		int x0 = imgNormToScrX(0);
-		int y0 = imgNormToScrY(0);
-		g2.drawLine(x0, 0, x0, temp.getHeight());
-		g2.drawLine(0, y0, temp.getWidth(), y0);
-		for(Pentagram p : pentlist)
+		if(settings.drawAxes)
 		{
-			int w = imgNormToScrX(scrToNormX(p.border.getWidth()));
-			int h = imgNormToScrY(scrToNormY(p.border.getHeight()));
-			int x = imgNormToScrX(scrToNormX(p.getLayoutX()));
-			int y = imgNormToScrY(scrToNormY(p.getLayoutY()));
-			g2.drawRect(x, y, w, h);
-			g2.setFont(new Font("Big", Font.PLAIN, 20));
-			g2.drawString(String.valueOf(p.getSaddles()),
-					x + w/2 - g2.getFontMetrics().stringWidth(p.saddle.getText())/2,
-					y + h/2 + g2.getFontMetrics().getHeight()/2 - 5);
-			g2.drawString(String.valueOf(p.getSinks()),
-					x + 5,
-					y + g2.getFontMetrics().getHeight());
-			g2.drawString(String.valueOf(p.getSources()),
-					x + w - g2.getFontMetrics().stringWidth(String.valueOf(p.getSources())) - 3,
-					y + g2.getFontMetrics().getHeight());
-			g2.drawString(String.valueOf(p.getAttrCycles()),
-					x + 5,
-					y + h - 5);
-			g2.drawString(String.valueOf(p.getRepelCycles()),
-					x + w - g2.getFontMetrics().stringWidth(String.valueOf(p.getRepelCycles())) - 3,
-					y + h - 5);
+			int x0 = imgNormToScrX(0);
+			int y0 = imgNormToScrY(0);
+			g2.drawLine(x0, 0, x0, temp.getHeight());
+			g2.drawLine(0, y0, temp.getWidth(), y0);
 		}
+		if(settings.drawPent)
+			for(Pentagram p : pentlist)
+			{
+				int w = imgNormToScrX(scrToNormX(p.border.getWidth()));
+				int h = imgNormToScrY(scrToNormY(p.border.getHeight()));
+				int x = imgNormToScrX(scrToNormX(p.getLayoutX()));
+				int y = imgNormToScrY(scrToNormY(p.getLayoutY()));
+				g2.drawRect(x, y, w, h);
+				g2.setFont(new Font("Big", Font.PLAIN, 20));
+				g2.drawString(String.valueOf(p.getSaddles()),
+						x + w/2 - g2.getFontMetrics().stringWidth(p.saddle.getText())/2,
+						y + h/2 + g2.getFontMetrics().getHeight()/2 - 5);
+				g2.drawString(String.valueOf(p.getSinks()),
+						x + 5,
+						y + g2.getFontMetrics().getHeight());
+				g2.drawString(String.valueOf(p.getSources()),
+					x + w - g2.getFontMetrics().stringWidth(String.valueOf(p.getSources())) - 3,
+						y + g2.getFontMetrics().getHeight());
+				g2.drawString(String.valueOf(p.getAttrCycles()),
+						x + 5,
+						y + h - 5);
+				g2.drawString(String.valueOf(p.getRepelCycles()),
+						x + w - g2.getFontMetrics().stringWidth(String.valueOf(p.getRepelCycles())) - 3,
+						y + h - 5);
+			}
 		try
 		{
 			ImageIO.write(temp, "png", f);

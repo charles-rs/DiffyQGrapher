@@ -31,7 +31,7 @@ public class SemiStableHelper extends Thread
 		Platform.runLater(o.in::render);
 		prevOld = prev;
 		prev = next;
-		while (o.in.inBounds(prev.getX(), prev.getY()) && !parent.isInterrupted())
+		while (o.in.inBounds(prev.getX(), prev.getY()) && !parent.isInterrupted() && !Thread.interrupted())
 		{
 			try
 			{

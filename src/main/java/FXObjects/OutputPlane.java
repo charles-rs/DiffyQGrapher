@@ -11,6 +11,8 @@ import Exceptions.BadSaddleTransversalException;
 import Exceptions.EvaluationException;
 import Exceptions.RootNotFound;
 import PathGenerators.*;
+import Settings.OutPlaneSettings;
+import Settings.Settings;
 import javafx.application.Platform;
 import javafx.embed.swing.SwingFXUtils;
 import javafx.geometry.Insets;
@@ -63,7 +65,7 @@ public class OutputPlane extends CoordPlane
 	private final List<Node> needsReset;
 	private final List<SepStart> selectedSeps;
 	private List<LimCycleStart> limCycles;
-	double inc = .01;
+	double inc;
 	volatile double a, b;
 	private Derivative dx, dy;
 	public EvalType evalType;
@@ -71,31 +73,28 @@ public class OutputPlane extends CoordPlane
 	private boolean drawSep = false;
 	private CriticalPoint currentPoint = null;
 
-	private Color solutionColor = Color.BLACK;
-	private Color isoclineColor = Color.BLUE;
-	private Color horizIsoColor = Color.PURPLE;
-	private Color vertIsoColor = Color.ORANGE;
-	private Color stblSeparatrixColor = Color.ORANGERED;
-	private Color unstblSeparatrixColor = Color.DARKCYAN;
-	private Color criticalColor = Color.RED;
-	private Color attrLimCycleColor = Color.GREEN;
-	private Color repLimCycleColor = Color.MAGENTA;
+	private Color solutionColor;
+	private Color isoclineColor;
+	private Color horizIsoColor;
+	private Color vertIsoColor;
+	private Color stblSeparatrixColor;
+	private Color unstblSeparatrixColor;
+	private Color criticalColor;
+	private Color attrLimCycleColor;
+	private Color repLimCycleColor;
 
-	java.awt.Color awtSolutionColor = fromFXColor(solutionColor);
-	private java.awt.Color awtIsoclineColor = fromFXColor(isoclineColor);
-	private java.awt.Color awtHorizIsoColor = fromFXColor(horizIsoColor);
-	private java.awt.Color awtVertIsoColor = fromFXColor(vertIsoColor);
-	private java.awt.Color awtStblSeparatrixColor = fromFXColor(stblSeparatrixColor);
-	private java.awt.Color awtUnstblSeparatrixColor = fromFXColor(unstblSeparatrixColor);
-	private java.awt.Color awtCriticalColor = fromFXColor(criticalColor);
-	private java.awt.Color awtAttrLimCycleColor = fromFXColor(attrLimCycleColor);
-	private java.awt.Color awtRepLimCycleColor = fromFXColor(repLimCycleColor);
+	java.awt.Color awtSolutionColor;// = fromFXColor(solutionColor);
+	private java.awt.Color awtIsoclineColor;// = fromFXColor(isoclineColor);
+	private java.awt.Color awtHorizIsoColor;// = fromFXColor(horizIsoColor);
+	private java.awt.Color awtVertIsoColor;// = fromFXColor(vertIsoColor);
+	private java.awt.Color awtStblSeparatrixColor;// = fromFXColor(stblSeparatrixColor);
+	private java.awt.Color awtUnstblSeparatrixColor;// = fromFXColor(unstblSeparatrixColor);
+	private java.awt.Color awtCriticalColor;// = fromFXColor(criticalColor);
+	private java.awt.Color awtAttrLimCycleColor;// = fromFXColor(attrLimCycleColor);
+	private java.awt.Color awtRepLimCycleColor;// = fromFXColor(repLimCycleColor);
 
+	public OutPlaneSettings settings;
 
-	private ImageView basinVw;
-	private WritableImage basinFXImg;
-	private BufferedImage basinImg;
-	final Graphics2D basinG;
 	private Point2D saddleTravStart;
 	private boolean saddleTravStarted = false;
 
@@ -103,19 +102,16 @@ public class OutputPlane extends CoordPlane
 
 	private Thread limCycleArtist = new Thread(), limCycleUpdater = new Thread(), solutionArtist = new Thread();
 
-	public OutputPlane(double side, TextField tField)
+	public OutputPlane(double side, TextField tField, OutPlaneSettings settings)
 	{
 		super(side);
 		SaddleConTransversal.init(this);
+		this.settings = settings;
 		currentInstrCode = 0;
+		updateSettings();
 
-		basinImg = new BufferedImage(canv.getWidth(), canv.getHeight(), BufferedImage.TYPE_INT_ARGB);
-		basinG = basinImg.createGraphics();
-		basinVw = new ImageView();
-		basinVw.fitWidthProperty().bind(this.widthProperty());
-		basinVw.fitHeightProperty().bind(this.heightProperty());
 		cycleLine = new Line();
-		this.getChildren().addAll(cycleLine, basinVw);
+		this.getChildren().addAll(cycleLine);
 		cycleLine.setVisible(false);
 
 		dSaddleXMax = this.xMax.get();
@@ -199,7 +195,18 @@ public class OutputPlane extends CoordPlane
 		render();*/
 	}
 
-
+	private void initColors()
+	{
+		awtSolutionColor = fromFXColor(solutionColor);
+		awtIsoclineColor = fromFXColor(isoclineColor);
+		awtHorizIsoColor = fromFXColor(horizIsoColor);
+		awtVertIsoColor = fromFXColor(vertIsoColor);
+		awtStblSeparatrixColor = fromFXColor(stblSeparatrixColor);
+		awtUnstblSeparatrixColor = fromFXColor(unstblSeparatrixColor);
+		awtCriticalColor = fromFXColor(criticalColor);
+		awtAttrLimCycleColor = fromFXColor(attrLimCycleColor);
+		awtRepLimCycleColor = fromFXColor(repLimCycleColor);
+	}
 
 	public Derivative getDx()
 	{
@@ -211,7 +218,23 @@ public class OutputPlane extends CoordPlane
 		return (Derivative) dy.clone();
 	}
 
+	public void updateSettings()
+	{
+		if(settings.staticInc)
+			inc = settings.inc;
+		else inc = ((xMax.get() - xMin.get())/512 + (yMax.get() - yMin.get())/512)/2;
+		solutionColor = settings.solutionColor;
+		isoclineColor = settings.isoclineColor;
+		horizIsoColor = settings.horizIsoColor;
+		vertIsoColor = settings.vertIsoColor;
+		stblSeparatrixColor = settings.stblSeparatrixColor;
+		unstblSeparatrixColor = settings.unstblSeparatrixColor;
+		criticalColor = settings.criticalColor;
+		attrLimCycleColor = settings.attrLimCycleColor;
+		repLimCycleColor = settings.repLimCycleColor;
+		initColors();
 
+	}
 	public void setClickMode(ClickModeType cl)
 	{
 		this.clickMode = cl;
@@ -278,14 +301,14 @@ public class OutputPlane extends CoordPlane
 	@Override
 	protected void updateForZoom()
 	{
-		inc = ((xMax.get() - xMin.get())/512 + (yMax.get() - yMin.get())/512)/2;
+		if(!settings.staticInc)
+			inc = ((xMax.get() - xMin.get())/512 + (yMax.get() - yMin.get())/512)/2;
 //		synchronized (basinG)
 //		{
 //			basinG.setColor(new java.awt.Color(255, 255, 255, 255));
 //			basinG.clearRect(0, 0, basinImg.getWidth(), basinImg.getHeight());
 //		}
-		basinImg = new BufferedImage(canv.getWidth(), canv.getHeight(), BufferedImage.TYPE_INT_ARGB);
-		renderBasins();
+		BasinFinder.reset();
 	}
 	@Override
 	protected void updateForResize()
@@ -316,18 +339,6 @@ public class OutputPlane extends CoordPlane
 	{
 		this.b = b;
 		Platform.runLater(this::draw);
-	}
-	void renderBasins()
-	{
-		Platform.runLater(() ->
-		{
-			synchronized (basinImg)
-			{
-				basinFXImg = SwingFXUtils.toFXImage(basinImg, null);
-			}
-			basinVw.setImage(basinFXImg);
-
-		});
 	}
 
 	public void updateDX(Derivative temp)
@@ -695,11 +706,19 @@ public class OutputPlane extends CoordPlane
 		try
 		{
 			s1.join();
-		} catch (InterruptedException ignored) {}
+		} catch (InterruptedException i)
+		{
+			s1.interrupt();
+			s2.interrupt();
+		}
 		try
 		{
 			s2.join();
-		} catch (InterruptedException ignored) {}
+		} catch (InterruptedException i)
+		{
+			s1.interrupt();
+			s2.interrupt();
+		}
 		/*
 		for (int i = 0; i < 2; i++)
 		{
@@ -780,27 +799,27 @@ public class OutputPlane extends CoordPlane
 		int cd2 = hasLimCycle(lnSt, lnNd, gen.getCurrent());;
 		Point2D temp [] = new Point2D[2];
 		int currentVal = 0;
-		assertCode(cd2);
+//		assertCode(cd2);
+		Point2D next;
 		while(!gen.completed() && !Thread.interrupted())
 		{
 			System.out.println(gen.getCurrent());
-			Point2D prev = gen.getCurrent();
-			Point2D next = gen.next();
+			next = gen.next();
 			cd1 = cd2;
 			cd2 = hasLimCycle(lnSt, lnNd, next);
-			if(cd2 != cd1 && (cd2 == 2 || cd2 == 0))
+			if(cd2 != cd1 && (cd2 == 2 || cd2 == 0) && (cd1 == 0 || cd1 == 2))
 			{
 				temp[currentVal] = gen.getCurrent();
 				gen.advanceOneQuarter();
 				currentVal++;
 				if(currentVal > 1) break;
-			} //else
-			{
-				prev = gen.getCurrent();
-				next = gen.next();
 			}
 		}
-		if(currentVal < 1) throw new RootNotFound();
+		if(currentVal < 1)
+		{
+			System.out.println("didn't get them all");
+			throw new RootNotFound();
+		}
 		return temp;
 	}
 	private void assertCode(int cd) throws RootNotFound
@@ -1091,7 +1110,7 @@ public class OutputPlane extends CoordPlane
 				pOld2 = pNew2;
 				pNew1 = getNextIsectLn(e1, lnSt, lnNd);
 				pNew2 = getNextIsectLn(e2, lnSt, lnNd);
-				if (pOld1.distance(pNew1) < inc / 1000 && pOld2.distance(pNew2) < inc / 1000)
+				if (pOld1.distance(pNew1) < inc / 1000 && pOld2.distance(pNew2) < inc / 1000 || Thread.interrupted())
 					break;
 			}
 		} catch (RootNotFound r)
@@ -1439,84 +1458,7 @@ public class OutputPlane extends CoordPlane
 			{
 				System.out.println("circle failed");
 				return;
-			}/*
-			for (int i = 0; i < 2; i++)
-			{
-//			System.out.println("AINC: " + aInc);
-//			System.out.println("BINC: " + bInc);
-
-				prevOld = st;
-				prev = circ[i];
-				in.drawLine(prevOld, prev, tempCol, 3);
-				while (in.inBounds(prev.getX(), prev.getY()) && !Thread.interrupted())
-				{
-
-					if (isA) temp = new Point2D(prev.getX() + otherInc, prev.getY() + bInc);
-					else temp = new Point2D(prev.getX() + aInc, prev.getY() + otherInc);
-					try
-					{
-						next = saddleConFinitePath(s1, s2, prev.getX(), prev.getY(), FinitePathType.ARC, prevOld, transversal);
-						System.out.println(prevOld + "  " + prev + "  " + next);
-						in.drawLine(prev, next, tempCol, 3);
-						Platform.runLater(in::render);
-						{
-							System.out.println("they are the same");
-							try
-							{
-								double prevEval = tr.eval(s1.saddle.point.getX(), s1.saddle.point.getY(), prev.getX(), prev.getY(), 0);
-
-								double nextEval = tr.eval(s1.saddle.point.getX(), s1.saddle.point.getY(), next.getX(), next.getY(), 0);
-								if (prevEval == 0D || prevEval == -0D) in.degenSaddleCons.add(prev);
-								else if (nextEval == 0D || nextEval == -0D) in.degenSaddleCons.add(next);
-								else if (Math.signum(prevEval) != Math.signum(nextEval))
-								{
-									double factor = Math.abs(prevEval) / (Math.abs(nextEval) + Math.abs(prevEval));
-									in.degenSaddleCons.add(prev.add(next.subtract(prev).multiply(factor)));
-									System.out.println("DEGEN DEGEN DEGEN");
-								}
-
-							} catch (EvaluationException ignored)
-							{
-							}
-						}
-						prevOld = prev;
-						prev = next;
-						System.out.println(prev);
-						System.out.println(isA);
-						justThrew = false;
-					} catch (RootNotFound r)
-					{
-						if(true)
-							break;
-						System.out.println("off the scrn? " + r.offTheScreen);
-						if (r.offTheScreen)
-						{
-							System.out.println("did the thing");
-							break;
-						}
-						if (prev.distance(st) < Math.min(aInc, bInc)) break;
-						if (justThrew)
-						{
-//						if(justFailed)
-							{
-								System.out.println("breaking");
-								break;
-//						} else
-//						{
-//							justFailed = true;
-							}
-						} else
-						{
-							isA = !isA;
-							justThrew = true;
-						}
-					}
-				}
-				aInc = -aInc;
-				bInc = -bInc;
-//			in.saddleCanvas.getGraphicsContext2D().setStroke(Color.TURQUOISE);
 			}
-			*/
 		SaddleConHelper.init(this, Thread.currentThread());
 		SaddleConHelper sad1 = new SaddleConHelper(st, circ[0], transversal.clone(), s1, s2);
 		SaddleConHelper sad2 = new SaddleConHelper(st, circ[1], transversal.clone(), s1, s2);
@@ -1525,15 +1467,23 @@ public class OutputPlane extends CoordPlane
 		try
 		{
 			sad1.join();
-		} catch (InterruptedException ignored) {sad1.interrupt();}
+		} catch (InterruptedException i)
+		{
+			sad1.interrupt();
+			sad2.interrupt();
+		}
 		try
 		{
 			sad2.join();
-		} catch (InterruptedException ignored) {sad2.interrupt();}
-			in.drawDegenSaddleCons();
+		} catch (InterruptedException i)
+		{
+			sad1.interrupt();
+			sad2.interrupt();
+		}
+		in.drawDegenSaddleCons();
 
-			Platform.runLater(this::draw);
-			in.render();
+		Platform.runLater(this::draw);
+		in.render();
 	}
 
 	/**
@@ -2773,33 +2723,39 @@ public class OutputPlane extends CoordPlane
 		BufferedImage temp = new BufferedImage(canv.getWidth(), canv.getHeight(), canv.getType());
 		Graphics2D g2 = temp.createGraphics();
 		g2.drawImage(canv, 0, 0, null);
-		g2.setColor(awtCriticalColor);
-		for(CriticalPoint p : this.criticalPoints)
+		if(settings.writeCriticalText)
 		{
-			if(inBounds(p.point))
+			g2.setColor(awtCriticalColor);
+			for (CriticalPoint p : this.criticalPoints)
 			{
-				int x, y;
-				x = imgNormToScrX(p.point.getX()) + 8;
-				y = imgNormToScrY(p.point.getY()) - 12;
-				g2.setFont(g2.getFont().deriveFont(12F));
-				int w = g2.getFontMetrics().stringWidth(p.type.getStringRep());
+				if (inBounds(p.point))
+				{
+					int x, y;
+					x = imgNormToScrX(p.point.getX()) + 8;
+					y = imgNormToScrY(p.point.getY()) - 12;
+					g2.setFont(g2.getFont().deriveFont(12F));
+					int w = g2.getFontMetrics().stringWidth(p.type.getStringRep());
 
-				if (y <= 0)
-				{
-					y = imgNormToScrY(p.point.getY()) + 16;
+					if (y <= 0)
+					{
+						y = imgNormToScrY(p.point.getY()) + 16;
+					}
+					if (x + w + 4 > temp.getWidth())
+					{
+						x = imgNormToScrX(p.point.getX()) - 12 - w;
+					}
+					g2.drawString(p.type.getStringRep(), x, y);
 				}
-				if (x + w + 4 > temp.getWidth())
-				{
-					x = imgNormToScrX(p.point.getX()) - 12 - w;
-				}
-				g2.drawString(p.type.getStringRep(), x, y);
 			}
+			g2.setColor(java.awt.Color.BLACK);
 		}
-		g2.setColor(java.awt.Color.BLACK);
-		int x0 = imgNormToScrX(0);
-		int y0 = imgNormToScrY(0);
-		g2.drawLine(x0, 0, x0, temp.getHeight());
-		g2.drawLine(0, y0, temp.getWidth(), y0);
+		if(settings.drawAxes)
+		{
+			int x0 = imgNormToScrX(0);
+			int y0 = imgNormToScrY(0);
+			g2.drawLine(x0, 0, x0, temp.getHeight());
+			g2.drawLine(0, y0, temp.getWidth(), y0);
+		}
 		try
 		{
 			ImageIO.write(temp, "png", f);
