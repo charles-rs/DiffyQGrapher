@@ -4,7 +4,8 @@ public enum Language
 {
 	ENGLISH,
 	PIRATE,
-	SPANISH;
+	SPANISH,
+	PORTUGUESE;
 
 
 
@@ -19,6 +20,9 @@ public enum Language
 			case "es":
 			case "ES":
 				return SPANISH;
+			case "pt":
+			case "PT":
+				return PORTUGUESE;
 			case "en":
 			case "EN":
 			default:
@@ -35,6 +39,8 @@ public enum Language
 				return "pi";
 			case SPANISH:
 				return "es";
+			case PORTUGUESE:
+				return "pt";
 			case ENGLISH:
 			default:
 				return "en";

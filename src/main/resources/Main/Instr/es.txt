@@ -26,10 +26,10 @@ Elige el punto critical para la bifurcación de Hopf
 Haz clic para dibujar la isoclina vertical más cerca
 ~
 8
-Haz clic cerca del atractor de la cuenca deseada (Cuídate no elegir un punto que no es un atractor)
+Haz clic cerca del atractor de la cuenca deseada (Cuídate no elegir un punto que no sea un atractor)
 ~
 9
-Haz clic cerca de la fuente de la co-cuenca deseada (Cuítate no eligir un punto que no es una fuente)
+Haz clic cerca de la fuente de la co-cuenca deseada (Cuítate no eligir un punto que no sea una fuente)
 ~
 10
 Elige un lado de la linea transversal que cruza donde piensas que hay un ciclo límite

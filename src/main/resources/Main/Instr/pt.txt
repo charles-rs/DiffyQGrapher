@@ -1,0 +1,76 @@
+-1
+Por favor escolhe um plano de coordenadas
+~
+0
+Clica para desanhar uma solução començando ao ponto selecionado
+~
+1
+Clica pra desanhar uma isóclina general començando ao mouse
+~
+2
+Clica para encontrar o ponto crítico mais cerca usando o método de Newton
+~
+3
+Clica para desanhar a isóclina horizontal mais cerca
+~
+4
+Clica para mostrar a linearização do ponto crítico mais cerca usando o método de Newton
+~
+5
+Clica cerca da sela da bifurcação tangencial
+~
+6
+Escohle o ponto crítico para a bifurcação de Hopf
+~
+7
+Clica para desanhar a isóclina vertical mais cerca
+~
+8
+Clica cerca do atrator da bacia desejada (Tem cuidado não seleciona um ponto crítico que não seja um atrator)
+~
+9
+Clica cerca da fonte da co-bacia desejada (Tem cuidado não seleciona um ponto crítico que não seja uma fonte)
+~
+10
+Escolhe uma extremidade da transversa que atravessa onda você acha que tem um ciclo limite
+~
+11
+Escolhe a outra extremidade da transversa do ciclo limite
+~
+12
+Escolhe início da solução que deveria convergir ao ciclo limite desejado
+~
+20
+Escolhe o primeiro separatriz
+~
+21
+Escohle o segundo separatriz
+Segure a tecla ctrl se quiser uma transversa estática
+~
+25
+Escolhe o ponto crítico dentro do bifurcação homoclínico
+~
+30
+Escolhe a primeira extremidade da sua transversa estática
+~
+31
+Escolhe a outra extremidade da sua transversa estática
+~
+40
+Escolhe uma extremidade da transversa do cicle limite semi-estável
+~
+41
+Escolhe a outra extremidade da transversa do ciclo limite semi-estável
+~
+100
+Clica para mover o ponto (a, b), ou usa as teclas de setas
+~
+101
+Clica para pôr a cápsula pentagrama
+~
+102
+Escolhe a cápsula pentagrama para editar
+~
+103
+Escolhe a cápsula pentagrama para remover
+~

@@ -206,7 +206,8 @@ public class Main extends Application
 		MenuItem english = new MenuItem("English");
 		MenuItem pirate = new MenuItem("Pirate");
 		MenuItem espanol = new MenuItem("Español");
-		language.getItems().addAll(english, pirate, espanol);
+		MenuItem portugues = new MenuItem("Português");
+		language.getItems().addAll(english, pirate, espanol, portugues);
 		////////////////////////////////////////////////////////
 		bar.getMenus().addAll(file, options, view, draw, bifurcation, help, language);
 
@@ -560,6 +561,14 @@ public class Main extends Application
 		espanol.setOnAction(e ->
 		{
 			lang = Language.SPANISH;
+			prefs.put("language", lang.toString());
+			update();
+			InstructionsWindow.update();
+			outPlane.fireEvent(new UpdatedState(Main.instructionCode));
+		});
+		portugues.setOnAction(e ->
+		{
+			lang = Language.PORTUGUESE;
 			prefs.put("language", lang.toString());
 			update();
 			InstructionsWindow.update();

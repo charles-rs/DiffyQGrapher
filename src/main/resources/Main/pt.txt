@@ -1,0 +1,43 @@
+title~Equações diferenciais
+file~Arquivo
+options~Opções
+view~Vista
+draw~Desanhar
+bifurcation~Encontrar bifurcação
+help~Ajuda
+language~Língua
+save in~Salvar espaço de parâmetros
+save out~Salvar espaço de solucões
+quit~Sair
+euler~Método de Euler
+mideuler~Método de Euler central
+runge~Método de Runge-Kutta
+evalopt~Mudar de avaliador
+clickopt~Mudar de modo
+drawpath~Desenhar solução
+critical~Encontrar ponto crítico
+isocline~Desenhar isóclina
+dx~dx/dt vs
+dy~dy/dt vs
+lin~Linearização
+sep~Separatriz
+horiz~Isóclina horizontal
+vert~Isóclina vertical
+pent~Pentagrama
+rmpent~Remover pentagrama
+editpent~Editar pentagram
+limcyc~Ciclo limite
+basin~Bacia
+cobasin~Co-bacia
+saddlenode~Bifurcação tangencial
+hopf~Bifurcação de Hopf
+saddlecon~Saddle Connection Bifurcation
+semistable~Semi-stable Limit Cycle Bifurcation
+info~Info
+instr~Instruções
+init~t inicial:
+clear~Limpar
+reset~Reinicializar zoom
+update~Atualizar
+interrupt~Interromper
+settings~Configurações

@@ -44,7 +44,7 @@ Select the start of a solution that should converge to the desired limit cycle
 Select the first separatrix
 ~
 21
-Select the second seperatrix
+Select the second separatrix
 Hold ctrl if you would like a static transversal
 ~
 25
