@@ -3,21 +3,21 @@ inc~Increment
 writecrit~Label Critical on Save
 save~Save
 title~settings
-solpick~Choose Solution Color
-isopick~Choose Level-Curve Color
-horizisopick~Choose Horizontal Isocline Color
-vertisopick~Choose Vertical Isocline Color
-stablepick~Choose Stable Separatrix Color
-unstablepick~Choose Unstable Separatrix Color
-criticalpick~Choose Critical Point Color
-attrcycpick~Choose Attracting Cycle Color
-repcycpick~Choose Repelling Cycle Color
+solpick~Solution Color
+isopick~Level-Curve Color
+horizisopick~Horizontal Isocline Color
+vertisopick~Vertical Isocline Color
+stablepick~Stable Separatrix Color
+unstablepick~Unstable Separatrix Color
+criticalpick~Critical Point Color
+attrcycpick~Attracting Cycle Color
+repcycpick~Repelling Cycle Color
 resetout~Reset Output Colors
-saddlenode~Choose Saddle-Node Bifurcation Color
-hopf~Choose Andronov-Hopf Bifurcation Color
-homocon~Choose Homoclinic Saddle Connection Color
-heterocon~Choose Heteroclinic Saddle Connection Color
-semistable~Choose Semistable Limit Cycle Bifurcation Color
+saddlenode~Saddle-Node Bifurcation Color
+hopf~Andronov-Hopf Bifurcation Color
+homocon~Homoclinic Saddle Connection Color
+heterocon~Heteroclinic Saddle Connection Color
+semistable~Semistable Limit Cycle Bifurcation Color
 resetin~Reset Input Colors
 savepent~Save Pentagrams
 axesin~Draw Axes Parameter

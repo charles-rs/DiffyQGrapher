@@ -55,15 +55,8 @@ public class InstructionsWindow extends Stage
 	{
 		strings = new HashMap<>();
 		InputStream f;
-		switch (Main.lang)
-		{
-			case PIRATE:
-				f = Main.class.getResourceAsStream("Instr/pi.txt");
-				break;
-			case ENGLISH:
-			default:
-				f = Main.class.getResourceAsStream("Instr/en.txt");
-		}
+		String file = "Instr/" + Main.lang.toString() + ".txt";
+		f = Main.class.getResourceAsStream(file);
 		try
 		{
 			Scanner in = new Scanner(f);

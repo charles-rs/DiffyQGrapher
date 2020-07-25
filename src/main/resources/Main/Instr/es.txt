@@ -1,0 +1,76 @@
+-1
+Por favor elige un plano
+~
+0
+Haz clic para dibujar una solución empezando en el punto elegido
+~
+1
+Haz clic para dibujar una isoclina general empezando en el ratón
+~
+2
+Haz clic para encontrar el punto critical más cerca, usando el método de Newton
+~
+3
+Haz clic para dibujar la isoclina horizontal más cerca
+~
+4
+Haz clic para mostrar la linealización del punto critical más cerca usando el método de Newton
+~
+5
+Haz clic cerca de la silla de la bifurcacion tangencial
+~
+6
+Elige el punto critical para la bifurcación de Hopf
+~
+7
+Haz clic para dibujar la isoclina vertical más cerca
+~
+8
+Haz clic cerca del atractor de la cuenca deseada (Cuídate no elegir un punto que no es un atractor)
+~
+9
+Haz clic cerca de la fuente de la co-cuenca deseada (Cuítate no eligir un punto que no es una fuente)
+~
+10
+Elige un lado de la linea transversal que cruza donde piensas que hay un ciclo límite
+~
+11
+Elige el otro lado de la linea transversal del ciclo límite
+~
+12
+Elige el comienzo de una solución que debería converger al ciclo límite desirado.
+~
+20
+Elige el primer separatriz
+~
+21
+Elige el segundo separatriz
+Manten presionada la tecla ctrl si quieres una linea transversal estático
+~
+25
+Elige el punto critical dentro de la conección de sillas homoclínica
+~
+30
+Elige el primer punto de tu linea transversal estático
+~
+31
+Elige el segundo punto de tu linea transversal estático
+~
+40
+Elige el primer punto de la linea transversal del ciclo de límite semi-estable
+~
+41
+Elige el segundo punto de la linea transversal del ciclo de límite semi-estable
+~
+100
+Haz clic para mover el punto (a, b), o usa la teclas de flecha
+~
+101
+Haz clic para poner un compartimento de pentagrama
+~
+102
+Elige un compartimento de pentagrama para editar
+~
+103
+Elige un compartimento de pentagrama para quitar
+~

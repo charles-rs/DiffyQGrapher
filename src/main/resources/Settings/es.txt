@@ -1,0 +1,24 @@
+staticinc~Incremento estático
+inc~Incremento
+writecrit~Marcar critical en cuanto guardar
+save~Guardar
+title~Configuraciones
+solpick~Color de soluciones
+isopick~Color de isoclinas generales
+horizisopick~Color de isoclinas horizontales
+vertisopick~Color de isoclinas verticales
+stablepick~Color de separatriz estable
+unstablepick~Color de separatriz inestable
+criticalpick~Color de punto critical
+attrcycpick~Color de ciclo límite estable
+repcycpick~Color de cicle límite inestable
+resetout~Reiniciar colores de soluciones
+saddlenode~Color de bifurcación tangencial
+hopf~Color de bifurcación de Hopf
+homocon~Color de bifurcación homoclínico
+heterocon~Color de bifurcación heteroclínico
+semistable~Color de bifurcación de ciclo límite semi-estable
+resetin~Reiniciar colores de bifurcaciones
+savepent~Guardar pentagramas
+axesin~Dibujar ejes parametro
+axesout~Dibujar ejes soluciones

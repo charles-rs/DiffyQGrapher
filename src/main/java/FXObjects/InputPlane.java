@@ -860,14 +860,14 @@ public class InputPlane extends CoordPlane
 						{
 							getChildren().remove(P);
 							pentlist.remove(P);
-							clickMode = InClickModeType.MOVEPOINT;
+							setClickMode(InClickModeType.MOVEPOINT);
 						}
 						else if (clickMode == InClickModeType.EDITPENT)
 						{
 							getChildren().remove(P);
 							pentlist.remove(P);
 							getInfoAndAddPentagram(x, y);
-							clickMode = InClickModeType.MOVEPOINT;
+							setClickMode(InClickModeType.MOVEPOINT);
 						}
 					});
 					drawPentagram(P);
@@ -876,7 +876,7 @@ public class InputPlane extends CoordPlane
 			});
 			newWindow.setOnCloseRequest((e) ->
 			{
-				clickMode = InClickModeType.MOVEPOINT;
+				setClickMode(InClickModeType.MOVEPOINT);
 			});
 			newWindow.show();
 
