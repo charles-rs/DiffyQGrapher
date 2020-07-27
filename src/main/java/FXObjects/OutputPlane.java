@@ -18,16 +18,15 @@ import javafx.embed.swing.SwingFXUtils;
 import javafx.geometry.Insets;
 import javafx.geometry.Point2D;
 import javafx.scene.Node;
+import javafx.scene.canvas.Canvas;
+import javafx.scene.canvas.GraphicsContext;
 import javafx.scene.control.Label;
 import javafx.scene.control.TextField;
 import javafx.scene.image.ImageView;
 import javafx.scene.image.WritableImage;
 import javafx.scene.input.KeyCode;
 import javafx.scene.input.MouseEvent;
-import javafx.scene.layout.Border;
-import javafx.scene.layout.BorderStroke;
-import javafx.scene.layout.BorderStrokeStyle;
-import javafx.scene.layout.BorderWidths;
+import javafx.scene.layout.*;
 import javafx.scene.paint.Color;
 import javafx.scene.shape.Line;
 import javafx.scene.text.Text;
@@ -40,7 +39,11 @@ import java.awt.geom.AffineTransform;
 import java.awt.image.BufferedImage;
 import java.io.*;
 import java.util.ArrayList;
+import java.util.Collections;
 import java.util.List;
+import java.util.Queue;
+import java.util.concurrent.ConcurrentLinkedQueue;
+import java.util.concurrent.CopyOnWriteArrayList;
 
 
 public class OutputPlane extends CoordPlane
@@ -62,7 +65,6 @@ public class OutputPlane extends CoordPlane
 	private List<Point2D> selectedCritPoints;
 	private final List<Point2D> horizIsos;
 	private final List<Point2D> vertIsos;
-	private final List<Node> needsReset;
 	private final List<SepStart> selectedSeps;
 	private List<LimCycleStart> limCycles;
 	double inc;
@@ -82,6 +84,8 @@ public class OutputPlane extends CoordPlane
 	private Color criticalColor;
 	private Color attrLimCycleColor;
 	private Color repLimCycleColor;
+	private Color divBifConvColor;
+	private Color divBifDivColor;
 
 	java.awt.Color awtSolutionColor;// = fromFXColor(solutionColor);
 	private java.awt.Color awtIsoclineColor;// = fromFXColor(isoclineColor);
@@ -92,6 +96,8 @@ public class OutputPlane extends CoordPlane
 	private java.awt.Color awtCriticalColor;// = fromFXColor(criticalColor);
 	private java.awt.Color awtAttrLimCycleColor;// = fromFXColor(attrLimCycleColor);
 	private java.awt.Color awtRepLimCycleColor;// = fromFXColor(repLimCycleColor);
+	private java.awt.Color awtDivBifConvColor;
+	private java.awt.Color awtDivBifDivColor;
 
 	public OutPlaneSettings settings;
 
@@ -99,12 +105,19 @@ public class OutputPlane extends CoordPlane
 	private boolean saddleTravStarted = false;
 
 	public InputPlane in;
+	final Canvas labelCanv;
 
 	private Thread limCycleArtist = new Thread(), limCycleUpdater = new Thread(), solutionArtist = new Thread();
 
 	public OutputPlane(double side, TextField tField, OutPlaneSettings settings)
 	{
 		super(side);
+		labelCanv = new Canvas();
+		labelCanv.widthProperty().bind(widthProperty());
+		labelCanv.heightProperty().bind(heightProperty());
+		getChildren().addAll(labelCanv);
+
+
 		SaddleConTransversal.init(this);
 		this.settings = settings;
 		currentInstrCode = 0;
@@ -121,10 +134,9 @@ public class OutputPlane extends CoordPlane
 
 		evalType = EvalType.RungeKutta;
 		initials = new ArrayList<>();
-		criticalPoints = new ArrayList<>();
+		criticalPoints = new CopyOnWriteArrayList<>();
 		isoclines = new ArrayList<>();
 		limCycles = new ArrayList<>();
-		needsReset = new ArrayList<>();
 		horizIsos = new ArrayList<>();
 		vertIsos = new ArrayList<>();
 		selectedCritPoints = new ArrayList<>();
@@ -175,7 +187,9 @@ public class OutputPlane extends CoordPlane
 				e.consume();
 			}
 		});
+		labelCanv.toFront();
 		loading.toFront();
+		labelCanv.setVisible(true);
 
 
 
@@ -206,6 +220,8 @@ public class OutputPlane extends CoordPlane
 		awtCriticalColor = fromFXColor(criticalColor);
 		awtAttrLimCycleColor = fromFXColor(attrLimCycleColor);
 		awtRepLimCycleColor = fromFXColor(repLimCycleColor);
+		awtDivBifConvColor = fromFXColor(divBifConvColor);
+		awtDivBifDivColor = fromFXColor(divBifDivColor);
 	}
 
 	public Derivative getDx()
@@ -232,6 +248,8 @@ public class OutputPlane extends CoordPlane
 		criticalColor = settings.criticalColor;
 		attrLimCycleColor = settings.attrLimCycleColor;
 		repLimCycleColor = settings.repLimCycleColor;
+		divBifConvColor = settings.divBifConvColor;
+		divBifDivColor = settings.divBifDivColor;
 		initColors();
 
 	}
@@ -313,10 +331,13 @@ public class OutputPlane extends CoordPlane
 	@Override
 	protected void updateForResize()
 	{
-		for(Node n : needsReset) n.setVisible(false);
-		needsReset.clear();
-		for(CriticalPoint c : criticalPoints)
-			labelCritical(c);
+//		clearReset();
+//		for(CriticalPoint c : criticalPoints)
+//			labelCritical(c);
+		synchronized (labelCanv)
+		{
+			labelCanv.getGraphicsContext2D().clearRect(0, 0, getWidth(), getHeight());
+		}
 	}
 
 	public void clearObjects()
@@ -324,8 +345,11 @@ public class OutputPlane extends CoordPlane
 		selectedCritPoints.clear();
 		criticalPoints.clear();
 		selectedSeps.clear();
-		for (Node n : needsReset) n.setVisible(false);
-		needsReset.clear();
+//		clearReset();
+		synchronized (labelCanv)
+		{
+			labelCanv.getGraphicsContext2D().clearRect(0, 0, getWidth(), getHeight());
+		}
 	}
 
 	public void updateA(double a)
@@ -2287,41 +2311,50 @@ public class OutputPlane extends CoordPlane
 				g.setColor(awtCriticalColor);
 				g.fillOval(imgNormToScrX(p.point.getX()) - 5, imgNormToScrY(p.point.getY()) - 5, 10, 10);
 			}
-			Label text = new Label(p.type.getStringRep());
-			text.setPadding(new Insets(2));
-			text.setBorder(new Border(new BorderStroke(criticalColor, BorderStrokeStyle.SOLID, null, new BorderWidths(1))));
-			this.getChildren().add(text);
-			text.setLayoutX(normToScrX(p.point.getX()) + 8);
-			text.setLayoutY(normToScrY(p.point.getY()) - 24);
-			final Text t = new Text(text.getText());
+//			Label text = new Label(p.type.getStringRep());
+//			text.setPadding(new Insets(2));
+//			text.setBorder(new Border(new BorderStroke(criticalColor, BorderStrokeStyle.SOLID, null, new BorderWidths(1))));
+//			this.getChildren().add(text);
+			double x, y;
+			x = normToScrX(p.point.getX()) + 8;
+			y = normToScrY(p.point.getY()) - 10;
+//			text.setLayoutX(normToScrX(p.point.getX()) + 8);
+//			text.setLayoutY(normToScrY(p.point.getY()) - 24);
+			final Text t = new Text(p.type.getStringRep());
 
-			if (text.getLayoutY() < 0)
-			{
-				text.setLayoutY(normToScrY(p.point.getY()) + 4);
-			}
-			if (text.getLayoutX() + t.getLayoutBounds().getWidth() + 4 > this.getWidth())
-			{
-				text.setLayoutX(normToScrX(p.point.getX()) - 12 - t.getLayoutBounds().getWidth());
-			}
-			text.setTextFill(criticalColor);
+//			if (text.getLayoutY() < 0)
+//			{
+//				text.setLayoutY(normToScrY(p.point.getY()) + 4);
+//			}
+			if(y < 0)
+				y = normToScrY(p.point.getY()) + 18;
+//			if (text.getLayoutX() + t.getLayoutBounds().getWidth() + 4 > this.getWidth())
+//			{
+//				text.setLayoutX(normToScrX(p.point.getX()) - 12 - t.getLayoutBounds().getWidth());
+//			}
+			if(x + t.getLayoutBounds().getWidth() + 4 > this.getWidth())
+				x = normToScrX(p.point.getX()) - 8 - t.getLayoutBounds().getWidth();
+//			text.setTextFill(criticalColor);
 
-			text.setVisible(true);
-			needsReset.add(text);
+//			text.setVisible(true);
+			synchronized (labelCanv)
+			{
+				GraphicsContext gc = labelCanv.getGraphicsContext2D();
+				gc.setStroke(criticalColor);
+				gc.setLineWidth(.5);
+				gc.setFont(new javafx.scene.text.Font(10));
+				gc.strokeText(t.getText(), x, y);
+				System.out.println(x + ", " + y);
+			}
+//			synchronized (needsReset)
+//			{
+//				needsReset.add(text);
+//			}
 		}
 	}
 
 	private void drawGraphs()
 	{
-
-		if(needsReset.size() > 0)
-		{
-			for (Node n : needsReset)
-			{
-				n.setVisible(false);
-			}
-
-			needsReset.clear();
-		}
 		for(InitCond i : initials)
 		{
 			if(Thread.interrupted()) return;
@@ -2610,6 +2643,10 @@ public class OutputPlane extends CoordPlane
 		vertIsos.clear();
 		horizIsos.clear();
 		limCycles.clear();
+		synchronized (labelCanv)
+		{
+			labelCanv.getGraphicsContext2D().clearRect(0, 0, getWidth(), getHeight());
+		}
 		draw();
 	}
 
@@ -2674,11 +2711,23 @@ public class OutputPlane extends CoordPlane
 	@Override
 	public synchronized void draw()
 	{
+
 		solutionArtist.interrupt();
 		solutionArtist = new Thread(() ->
 		{
 			super.draw();
 			updateCritical();
+			synchronized (labelCanv)
+			{
+				labelCanv.getGraphicsContext2D().clearRect(0, 0, getWidth(), getHeight());
+			}
+			for (CriticalPoint p : criticalPoints)
+			{
+				if(Thread.interrupted()) return;
+//			Platform.runLater(() -> labelCritical(p));
+				labelCritical(p);
+			}
+
 			drawGraphs();
 			drawIsoclines();
 			if (drawSep)
@@ -2711,11 +2760,7 @@ public class OutputPlane extends CoordPlane
 //			updateLimCycles();
 		});
 		solutionArtist.start();
-		for (CriticalPoint p : criticalPoints)
-		{
-			if(Thread.interrupted()) return;
-			Platform.runLater(() -> labelCritical(p));
-		}
+
 	}
 	@Override
 	public boolean writePNG(File f)

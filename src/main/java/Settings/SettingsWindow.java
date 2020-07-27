@@ -20,10 +20,12 @@ public class SettingsWindow extends Stage
 	Settings settings;
 	ColorPicker solPick, isoPick, horizIsoPick, vertisoPick, stblSepPick,
 			unstbleSepPick, criticalPick, attrCycPick, repCycPick,
-			saddleNodePick, hopfPick, homoSaddleConPick, heteroSaddleConPick, semiStablePick;
+			saddleNodePick, hopfPick, homoSaddleConPick, heteroSaddleConPick, semiStablePick,
+			divDivPick, divConvPick;
 	Label lblSolPick, lblIsoPick, lblHorizIsoPick, lblVertIsoPick, lblStblSepPick,
 			lblUnstbleSepPick, lblCriticalPick, lblAttrCycPick, lblRepCycPick,
-			lblSaddleNodePick, lblHopfPick, lblHomoSaddleConPick, lblHeteroSaddleConPick, lblSemiStablePick;
+			lblSaddleNodePick, lblHopfPick, lblHomoSaddleConPick, lblHeteroSaddleConPick, lblSemiStablePick,
+			lblDivDivPick, lblDivConvPick;
 
 	public SettingsWindow(Settings s, Language l)
 	{
@@ -100,6 +102,14 @@ public class SettingsWindow extends Stage
 		lblRepCycPick = new Label();
 		GridPane.setConstraints(repCycPick, 1, 12);
 		GridPane.setConstraints(lblRepCycPick, 0, 12);
+		divConvPick = new ColorPicker();
+		lblDivConvPick = new Label();
+		GridPane.setConstraints(divConvPick, 1, 13);
+		GridPane.setConstraints(lblDivConvPick, 0, 13);
+		divDivPick = new ColorPicker();
+		lblDivDivPick = new Label();
+		GridPane.setConstraints(divDivPick, 1, 14);
+		GridPane.setConstraints(lblDivDivPick, 0, 14);
 
 		saddleNodePick = new ColorPicker();
 		lblSaddleNodePick = new Label();
@@ -123,7 +133,7 @@ public class SettingsWindow extends Stage
 		GridPane.setConstraints(lblSemiStablePick, 2, 7);
 
 		resetOut = new Button();
-		GridPane.setConstraints(resetOut, 1, 13);
+		GridPane.setConstraints(resetOut, 1, 15);
 		resetOut.setOnAction(e ->
 		{
 			settings.outPlaneSettings.resetColors();
@@ -145,9 +155,11 @@ public class SettingsWindow extends Stage
 				solPick, isoPick, horizIsoPick, vertisoPick, stblSepPick,
 				unstbleSepPick, criticalPick, attrCycPick, repCycPick,
 				saddleNodePick, hopfPick, homoSaddleConPick, heteroSaddleConPick, semiStablePick,
+				divConvPick, divDivPick,
 				lblHorizIsoPick, lblVertIsoPick, lblSolPick, lblIsoPick, lblStblSepPick,
 				lblUnstbleSepPick, lblCriticalPick, lblAttrCycPick, lblRepCycPick,
-				lblSaddleNodePick, lblHopfPick, lblHomoSaddleConPick, lblHeteroSaddleConPick, lblSemiStablePick);
+				lblSaddleNodePick, lblHopfPick, lblHomoSaddleConPick, lblHeteroSaddleConPick, lblSemiStablePick,
+				lblDivConvPick, lblDivDivPick);
 
 		setTexts(l);
 		setScene(new Scene(main));
@@ -164,6 +176,8 @@ public class SettingsWindow extends Stage
 		criticalPick.setValue(settings.outPlaneSettings.criticalColor);
 		attrCycPick.setValue(settings.outPlaneSettings.attrLimCycleColor);
 		repCycPick.setValue(settings.outPlaneSettings.repLimCycleColor);
+		divConvPick.setValue(settings.outPlaneSettings.divBifConvColor);
+		divDivPick.setValue(settings.outPlaneSettings.divBifDivColor);
 
 		saddleNodePick.setValue(settings.inPlaneSettings.saddleBifColor);
 		hopfPick.setValue(settings.inPlaneSettings.hopfBifColor);
@@ -191,6 +205,8 @@ public class SettingsWindow extends Stage
 		settings.outPlaneSettings.criticalColor = criticalPick.getValue();
 		settings.outPlaneSettings.attrLimCycleColor = attrCycPick.getValue();
 		settings.outPlaneSettings.repLimCycleColor = repCycPick.getValue();
+		settings.outPlaneSettings.divBifConvColor = divConvPick.getValue();
+		settings.outPlaneSettings.divBifDivColor = divDivPick.getValue();
 
 		settings.inPlaneSettings.saddleBifColor = saddleNodePick.getValue();
 		settings.inPlaneSettings.hopfBifColor = hopfPick.getValue();
@@ -296,6 +312,14 @@ public class SettingsWindow extends Stage
 				case "semistable":
 					semiStablePick.setPromptText(split[1]);
 					lblSemiStablePick.setText(split[1]);
+					break;
+				case "divconv":
+					divConvPick.setPromptText(split[1]);
+					lblDivConvPick.setText(split[1]);
+					break;
+				case "divdiv":
+					divDivPick.setPromptText(split[1]);
+					lblDivDivPick.setText(split[1]);
 					break;
 				case "resetin":
 					resetIn.setText(split[1]);

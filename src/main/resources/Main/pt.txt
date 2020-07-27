@@ -31,8 +31,9 @@ basin~Bacia
 cobasin~Co-bacia
 saddlenode~Bifurcação tangencial
 hopf~Bifurcação de Hopf
-saddlecon~Saddle Connection Bifurcation
-semistable~Semi-stable Limit Cycle Bifurcation
+saddlecon~Bifurcação de conexão de selas
+semistable~Bifurcação de ciclo limite semi-estável
+divbif~Bifurcação de divergência
 info~Info
 instr~Instruções
 init~t inicial:

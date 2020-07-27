@@ -33,6 +33,7 @@ saddlenode~Bifurcation of Saddle Node
 hopf~Andronov's and Hopf's Bifurcation
 saddlecon~Connection of Saddles
 semistable~Bifurcation of two Limit Cycles
+divbif~Where do the diverge?
 info~View the Logs
 instr~Compass
 init~Startin' t:

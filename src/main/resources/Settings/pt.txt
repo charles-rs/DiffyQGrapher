@@ -17,7 +17,9 @@ saddlenode~Cor de bifurcação tangencial
 hopf~Cor de bifurcação de Hopf
 homocon~Cor de bifurcação homoclínica
 heterocon~Cor de bifurcação heteroclínica
-semistable~Cor de bifurcação de ciclo limite semi-estavel
+semistable~Cor de bifurcação de ciclo limite semi-estável
+divdiv~Cor de divergência de bifurcação de divergência
+divconv~Cor de convergência de bifurcação de divergência
 resetin~Reiniciar cores das bifurcações
 savepent~Salvar pentagrama
 axesin~Desanhar eixos paramétricos

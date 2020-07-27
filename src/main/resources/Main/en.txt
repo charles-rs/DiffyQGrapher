@@ -33,6 +33,7 @@ saddlenode~Saddle Node Bifurcation
 hopf~Andronov-Hopf Bifurcation
 saddlecon~Saddle Connection Bifurcation
 semistable~Semi-stable Limit Cycle Bifurcation
+divbif~Divergence Bifurcation
 info~Info
 instr~Instructions
 init~Initial t:

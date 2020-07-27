@@ -20,6 +20,8 @@ public class OutPlaneSettings
 	public Color criticalColor;
 	public Color attrLimCycleColor;
 	public Color repLimCycleColor;
+	public Color divBifConvColor;
+	public Color divBifDivColor;
 	private static final Color solutionColorDef = Color.BLACK;
 	private static final Color isoclineColorDef = Color.BLUE;
 	private static final Color horizIsoColorDef = Color.PURPLE;
@@ -29,6 +31,8 @@ public class OutPlaneSettings
 	private static final Color criticalColorDef = Color.RED;
 	private static final Color attrLimCycleColorDef = Color.GREEN;
 	private static final Color repLimCycleColorDef = Color.MAGENTA;
+	private static final Color divBifConvColorDef = Color.NAVY;
+	private static final Color divBifDivColorDef = Color.HOTPINK;
 	private OutPlaneSettings ()
 	{}
 	void resetColors()
@@ -42,6 +46,8 @@ public class OutPlaneSettings
 		criticalColor = criticalColorDef;
 		attrLimCycleColor = attrLimCycleColorDef;
 		repLimCycleColor = repLimCycleColorDef;
+		divBifConvColor = divBifConvColorDef;
+		divBifDivColor = divBifDivColorDef;
 	}
 	public static OutPlaneSettings fromPrefs()
 	{
@@ -60,6 +66,8 @@ public class OutPlaneSettings
 		temp.criticalColor = Settings.getColor("criticalColor", criticalColorDef, prefs);
 		temp.attrLimCycleColor = Settings.getColor("attrLimCycleColor", attrLimCycleColorDef, prefs);
 		temp.repLimCycleColor = Settings.getColor("repLimCycleColor", repLimCycleColorDef, prefs);
+		temp.divBifDivColor = Settings.getColor("divBifDivColor", divBifDivColorDef, prefs);
+		temp.divBifConvColor = Settings.getColor("divBifConvColor", divBifConvColorDef, prefs);
 		temp.drawAxes = prefs.getBoolean("drawAxes", true);
 		return temp;
 	}
@@ -78,6 +86,8 @@ public class OutPlaneSettings
 		Settings.putColor("criticalColor", criticalColor, prefs);
 		Settings.putColor("attrLimCycleColor", attrLimCycleColor, prefs);
 		Settings.putColor("repLimCycleColor", repLimCycleColor, prefs);
+		Settings.putColor("divBifDivColor", divBifDivColor, prefs);
+		Settings.putColor("divBifConvColor", divBifConvColor, prefs);
 		prefs.putBoolean("drawAxes", drawAxes);
 	}
 }

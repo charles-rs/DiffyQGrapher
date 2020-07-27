@@ -92,6 +92,7 @@ public class Main extends Application
 	private MenuItem hopfBif;
 	private MenuItem sdlConBif;
 	private MenuItem cycleBif;
+	private MenuItem divBif;
 	private MenuItem info;
 	private MenuItem instructions;
 
@@ -197,7 +198,8 @@ public class Main extends Application
 		hopfBif = new MenuItem();
 		sdlConBif = new MenuItem();
 		cycleBif = new MenuItem();
-		bifurcation.getItems().addAll(saddleBif, hopfBif, sdlConBif, cycleBif);
+		divBif = new MenuItem();
+		bifurcation.getItems().addAll(saddleBif, hopfBif, sdlConBif, cycleBif, divBif);
 
 		info = new MenuItem();
 		instructions = new MenuItem();
@@ -732,6 +734,8 @@ public class Main extends Application
 				case "semistable":
 					cycleBif.setText(split[1]);
 					break;
+				case "divbif":
+					divBif.setText(split[1]);
 				case "info":
 					info.setText(split[1]);
 					break;

@@ -18,6 +18,8 @@ hopf~Color de bifurcación de Hopf
 homocon~Color de bifurcación homoclínico
 heterocon~Color de bifurcación heteroclínico
 semistable~Color de bifurcación de ciclo límite semi-estable
+divdiv~Color de divergencia de bifurcación de divergencia
+divconv~Color de convergencia de bifurcación de divergencia
 resetin~Reiniciar colores de bifurcaciones
 savepent~Guardar pentagramas
 axesin~Dibujar ejes parametro

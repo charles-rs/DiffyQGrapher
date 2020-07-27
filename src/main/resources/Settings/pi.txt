@@ -18,6 +18,8 @@ hopf~Choose th' Andronov-Hopf Bifurcation Color
 homocon~Choose th' Homoclinic Saddle Connection Color
 heterocon~Choose th' Heteroclinic Saddle Connection Color
 semistable~Choose th' Semistable Limit Cycle Bifurcation Color
+divdiv~Choose th' Divergin' Color
+divconv~Choose th' Convergin' Color
 resetin~Reset me th' input colors
 savepent~Save Satan's Capsules
 axesin~Draw th' Axes Parameter

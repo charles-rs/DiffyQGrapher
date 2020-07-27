@@ -18,6 +18,8 @@ hopf~Andronov-Hopf Bifurcation Color
 homocon~Homoclinic Saddle Connection Color
 heterocon~Heteroclinic Saddle Connection Color
 semistable~Semistable Limit Cycle Bifurcation Color
+divdiv~Divergence Bifurcation Diverge Color
+divconv~Divergence Bifurcation Converge Color
 resetin~Reset Input Colors
 savepent~Save Pentagrams
 axesin~Draw Axes Parameter

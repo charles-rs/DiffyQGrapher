@@ -90,6 +90,8 @@ public abstract class CoordPlane extends Pane
 
 	protected int currentInstrCode;
 
+	private boolean m_dirty = false;
+
 
 	/**
 	 * Constructor for a CoordPlane with the provided side length.
@@ -204,11 +206,10 @@ public abstract class CoordPlane extends Pane
 		sel1.toFront();
 		sel2.toFront();
 
-		addEventFilter(MouseEvent.ANY, mouseEvent ->
+		addEventHandler(MouseEvent.ANY, mouseEvent ->
 		{
 			if(this == selected)
 			{
-
 				if (mouseEvent.getEventType() == MouseEvent.MOUSE_PRESSED)
 				{
 					if(mouseEvent.getY() > getHeight() - 8 && mouseEvent.getX() > getWidth() - 8)
@@ -275,16 +276,32 @@ public abstract class CoordPlane extends Pane
 						yMax.set(yMaxTemp);
 						updateForZoom();
 						draw();
+						mouseEvent.consume();
+					} else if(!activeResize)
+					{
+						handleMouseClick(mouseEvent);
 					}
-					mouseEvent.consume();
+
 				}
-				else if (mouseEvent.getEventType() == MouseEvent.MOUSE_RELEASED)
+				else if (mouseEvent.getEventType() == MouseEvent.MOUSE_RELEASED
+					|| mouseEvent.getEventType() == MouseEvent.MOUSE_EXITED)
 				{
+					zoomBox.setVisible(false);
 					if(activeResize)
 					{
+						if(mouseEvent.getEventType() == MouseEvent.MOUSE_EXITED)
+							m_dirty = true;
 						activeResize = false;
-					} else
-						handleMouseClick(mouseEvent);
+						mouseEvent.consume();
+					} else if (mouseEvent.getEventType() == MouseEvent.MOUSE_RELEASED)
+					{
+						if(m_dirty)
+							m_dirty = false;
+						else
+						{
+							handleMouseClick(mouseEvent);
+						}
+					}
 				}
 			}
 			else if (mouseEvent.getEventType() == MouseEvent.MOUSE_CLICKED)
@@ -382,7 +399,7 @@ public abstract class CoordPlane extends Pane
 
 	/**
 	 * draws the axes with the appropriate labels.
-	 * @param clear
+	 * @param clear whether or not to clear the screen first
 	 */
 	public void drawAxes(boolean clear)
 	{
