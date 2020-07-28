@@ -96,8 +96,8 @@ public class OutputPlane extends CoordPlane
 	private java.awt.Color awtCriticalColor;// = fromFXColor(criticalColor);
 	private java.awt.Color awtAttrLimCycleColor;// = fromFXColor(attrLimCycleColor);
 	private java.awt.Color awtRepLimCycleColor;// = fromFXColor(repLimCycleColor);
-	private java.awt.Color awtDivBifConvColor;
-	private java.awt.Color awtDivBifDivColor;
+	java.awt.Color awtDivBifConvColor;
+	java.awt.Color awtDivBifDivColor;
 
 	public OutPlaneSettings settings;
 
@@ -127,10 +127,10 @@ public class OutputPlane extends CoordPlane
 		this.getChildren().addAll(cycleLine);
 		cycleLine.setVisible(false);
 
-		dSaddleXMax = this.xMax.get();
-		dSaddleXMin = this.xMin.get();
-		dSaddleYMax = this.yMax.get();
-		dSaddleYMin = this.yMin.get();
+		dSaddleXMax = 25;//this.xMax.get();
+		dSaddleXMin = -25;//this.xMin.get();
+		dSaddleYMax = 25;//this.yMax.get();
+		dSaddleYMin = -25;//this.yMin.get();
 
 		evalType = EvalType.RungeKutta;
 		initials = new ArrayList<>();
@@ -147,20 +147,6 @@ public class OutputPlane extends CoordPlane
 //		render();
 		tField.setText(Double.toString(t));
 
-		tField.setOnKeyPressed((e) ->
-		{
-			if (e.getCode() == KeyCode.ENTER)
-			{
-				try
-				{
-					t = Double.parseDouble(tField.getText());
-					drawAxes(true);
-				} catch (NumberFormatException n)
-				{
-					tField.setText(Double.toString(t));
-				}
-			}
-		});
 		setOnKeyPressed((e) ->
 		{
 			if (e.getCode() == left)
@@ -356,6 +342,11 @@ public class OutputPlane extends CoordPlane
 	{
 		this.a = a;
 
+		Platform.runLater(this::draw);
+	}
+	public void updateT(double t)
+	{
+		this.t = t;
 		Platform.runLater(this::draw);
 	}
 
@@ -1379,6 +1370,19 @@ public class OutputPlane extends CoordPlane
 				scrToNorm(new Point2D(cycleLine.getEndX(), cycleLine.getEndY())));
 	}
 
+
+	/**
+	 * shades a divergence bifurcation
+	 */
+	public void drawDivBif()
+	{
+		DivergenceFinder.init(this);
+		for(int i = 0; i < Runtime.getRuntime().availableProcessors(); i++)
+		{
+			new DivergenceFinder().start();
+		}
+	}
+
 	/**
 	 * draws the basin for the point that is the critical point starting at st.
 	 * does nothing if it doesn't solve to a sink.
@@ -1399,7 +1403,7 @@ public class OutputPlane extends CoordPlane
 		}
 		BasinFinder.init(this, crit, true);
 
-		for(int i = 0; i < 8; i++)
+		for(int i = 0; i < Runtime.getRuntime().availableProcessors(); i++)
 		{
 			new BasinFinder().start();
 		}

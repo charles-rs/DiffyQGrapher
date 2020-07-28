@@ -338,7 +338,13 @@ public class Main extends Application
 				outPlane.updateB(Double.parseDouble(t1));
 			} catch (NumberFormatException ignored) {}
 		});
-
+		tField.textProperty().addListener((obs, s, t1) ->
+		{
+			try
+			{
+				outPlane.updateT(Double.parseDouble(t1));
+			} catch (NumberFormatException ignored) {}
+		});
 		inputArea.textProperty().addListener((obs, old, newVal) ->
 		{
 			if(newVal.length() > 0)
@@ -507,6 +513,10 @@ public class Main extends Application
 		cycleBif.setOnAction(e ->
 		{
 			outPlane.setClickMode(ClickModeType.SEMISTABLE);
+		});
+		divBif.setOnAction(e ->
+		{
+			outPlane.drawDivBif();
 		});
 		quit.setOnAction(e ->
 		{
