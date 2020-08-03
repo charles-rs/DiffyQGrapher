@@ -1,8 +1,0 @@
-{
-  "classPath": [
-    "DiffEqGrapher.jar"
-  ],
-  "mainClass": "Main.Starter",
-  "vmArgs": [
-  ]
-}
