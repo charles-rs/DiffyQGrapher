@@ -4,3 +4,6 @@ build/
 out/
 *.class
 output.text
+/exe/
+/jar/
+/wrap/
