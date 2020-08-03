@@ -32,7 +32,6 @@ import javafx.scene.shape.Line;
 import javafx.scene.text.Text;
 
 
-import javax.annotation.Nullable;
 import javax.imageio.ImageIO;
 import java.awt.*;
 import java.awt.geom.AffineTransform;
@@ -917,7 +916,7 @@ public class OutputPlane extends CoordPlane
 		else throw new RootNotFound();
 	}
 	private Point2D semiStableFinitePath(Point2D lnSt, Point2D lnNd, double a, double b,
-										 FinitePathType finitePathType, @Nullable Point2D prev) throws RootNotFound
+										 FinitePathType finitePathType, Point2D prev) throws RootNotFound
 	{
 		double px = ((in.xMax.get() - in.xMin.get() + in.yMax.get() - in.yMin.get())/2) /
 				((in.canv.getWidth() + in.canv.getHeight())/2D);
@@ -1956,7 +1955,7 @@ public class OutputPlane extends CoordPlane
 	}
 
 	Point2D saddleConFinitePath(SepStart s1, SepStart s2, double a, double b,
-								FinitePathType finitePathType, @Nullable Point2D prev, SaddleConTransversal transversal)
+								FinitePathType finitePathType, Point2D prev, SaddleConTransversal transversal)
 			throws RootNotFound
 	{
 

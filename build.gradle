@@ -3,16 +3,24 @@
 plugins {
     id 'java'
     id 'application'
-    id 'org.openjfx.javafxplugin' version '0.0.8' apply false
+    id 'org.openjfx.javafxplugin' version '0.0.8'// apply false
+    id 'org.beryx.jlink' version '2.21.2'
 }
 
+apply plugin: 'idea'
+idea {
+    module {
+        inheritOutputDirs = true
+    }
+}
 
+/*
 if (JavaVersion.current() == JavaVersion.VERSION_11
         || JavaVersion.current() == JavaVersion.VERSION_12){
     apply plugin: 'org.openjfx.javafxplugin'
 }
-
-apply plugin: 'java'
+*/
+//apply plugin: 'java'
 // external repositories where dependencies of your project are found
 repositories {
     // Use 'jcenter' for resolving external dependencies
@@ -21,23 +29,28 @@ repositories {
 }
 
 
-if (JavaVersion.current() == JavaVersion.VERSION_11
-        || JavaVersion.current() == JavaVersion.VERSION_12) {
+//if (JavaVersion.current() == JavaVersion.VERSION_11
+//        || JavaVersion.current() == JavaVersion.VERSION_12) {
     javafx {
-        modules = [ 'javafx.controls', 'javafx.web', 'javafx.fxml', 'javafx.swing' ]
+//        modules = [ 'javafx.controls', 'javafx.web', 'javafx.fxml', 'javafx.swing' ]
+        modules = ['javafx.controls', 'javafx.swing']
     }
-}
+//}
 
+configurations.all {
+    exclude group: 'org.ejml', module: 'ejml-fdense'
+    exclude group: 'org.ejml', module: 'ejml-zdense'
+    exclude group: 'org.ejml', module: 'ejml-cdense'
+}
 
 
 
 dependencies {
-    compile group: 'org.ejml', name: 'ejml-all', version: '0.38'
+    compile group: 'org.ejml', name: 'ejml-simple', version: '0.38'
 
-    testCompile group: 'junit', name: 'junit', version: '4.12'
-
-
+//    testCompile group: 'junit', name: 'junit', version: '4.12'
 }
+/*
 jar {
 
     manifest {
@@ -52,5 +65,46 @@ jar {
     }
     destinationDir = file("$rootDir/jar")
 }
+*/
 
+jlink {
+    options = ['--strip-debug', '--compress', '2', '--no-header-files', '--no-man-pages']
+    mainClass = 'Main.Starter'
+    launcher {
+        name = 'diffyqapp'
+    }
+    jpackage {
+        installerType = 'deb'
+        if (installerType == 'msi') {
+//            imageOptions += ['--icon', 'src/main/resources/pdfdecorator/gui/icon.ico']
+            installerOptions += [
+                    '--win-per-user-install', '--win-dir-chooser',
+                    '--win-menu', '--win-shortcut'
+            ]
+        }
+        if (installerType == 'pkg') {
+//            imageOptions += ['--icon', 'src/main/resources/pdfdecorator/gui/icon.icns']
+        }
+        if (installerType in ['deb', 'rpm']) {
+//            imageOptions += ['--icon', 'src/main/resources/pdfdecorator/gui/icon_256x256.png']
+            installerOptions += [
+                    '--linux-menu-group', 'Office',
+                    '--linux-shortcut'
+            ]
+        }
+        if (installerType == 'deb') {
+            installerOptions += [
+                    '--linux-deb-maintainer', 'office@walczak.it'
+            ]
+        }
+        if (installerType == 'rpm') {
+            installerOptions += [
+                    '--linux-rpm-license-type', 'GPLv3'
+            ]
+        }
+    }
+}
 
+jlinkZip {
+
+}

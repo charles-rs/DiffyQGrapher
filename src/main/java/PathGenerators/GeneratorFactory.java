@@ -2,7 +2,6 @@ package PathGenerators;
 
 import javafx.geometry.Point2D;
 
-import javax.annotation.Nullable;
 
 /**
  * Factory class for path generators
@@ -99,7 +98,7 @@ public class GeneratorFactory
 	 */
 	public static FinitePathGenerator getFinitePathGenerator(
 			FinitePathType ty, double px, Point2D center,
-			double maxDist, @Nullable Point2D old)
+			double maxDist, Point2D old)
 	{
 		switch (ty)
 		{
