@@ -34,6 +34,8 @@ hopf~Bifurcação de Hopf
 saddlecon~Bifurcação de conexão de selas
 semistable~Bifurcação de ciclo limite semi-estável
 divbif~Bifurcação de divergência
+posdivbif~Positiva
+negdivbif~Negativa
 info~Info
 instr~Instruções
 init~t inicial:

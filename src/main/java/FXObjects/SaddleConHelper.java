@@ -15,10 +15,11 @@ public class SaddleConHelper extends Thread
 	private Point2D prev, next, prevOld;
 	private SaddleConTransversal transversal;
 	private SepStart s1, s2;
-	private Color col;
+	private final Color col;
 
 	SaddleConHelper(Point2D st, Point2D nx, SaddleConTransversal transversal, SepStart s1, SepStart s2)
 	{
+		setDaemon(true);
 		prev = st;
 		next = nx;
 		this.transversal = transversal;

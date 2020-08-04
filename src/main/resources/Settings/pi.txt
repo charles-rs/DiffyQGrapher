@@ -24,3 +24,4 @@ resetin~Reset me th' input colors
 savepent~Save Satan's Capsules
 axesin~Draw th' Axes Parameter
 axesout~Draw th' Axes Solution
+tdiff~Divergence point!

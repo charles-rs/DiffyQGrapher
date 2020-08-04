@@ -4,6 +4,7 @@ module DiffEqGrapher.main {
 	requires javafx.swing;
 	requires java.prefs;
 	requires ejml.simple;
+	requires ejml.core;
 
 
 	opens Main to javafx.graphics;

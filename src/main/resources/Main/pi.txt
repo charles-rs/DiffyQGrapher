@@ -34,6 +34,8 @@ hopf~Andronov's and Hopf's Bifurcation
 saddlecon~Connection of Saddles
 semistable~Bifurcation of two Limit Cycles
 divbif~Where do the diverge?
+posdivbif~Plus
+negdivbif~Minus
 info~View the Logs
 instr~Compass
 init~Startin' t:

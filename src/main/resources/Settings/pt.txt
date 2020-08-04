@@ -24,3 +24,4 @@ resetin~Reiniciar cores das bifurcações
 savepent~Salvar pentagrama
 axesin~Desanhar eixos paramétricos
 axesout~Desanhar eixos das soluções
+tdist~Diferença em t de divergência

@@ -20,6 +20,10 @@ public class BasinFinder extends Thread
 	private static float colNum;
 	private static java.awt.Color col;
 
+	public BasinFinder()
+	{
+		setDaemon(true);
+	}
 
 	@Override
 	public void run()

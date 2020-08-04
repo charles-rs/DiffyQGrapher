@@ -24,3 +24,4 @@ resetin~Reset Input Colors
 savepent~Save Pentagrams
 axesin~Draw Axes Parameter
 axesout~Draw Axes Solution
+tdist~Difference in t for divergence

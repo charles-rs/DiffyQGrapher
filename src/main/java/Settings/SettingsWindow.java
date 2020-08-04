@@ -14,8 +14,8 @@ import java.util.Scanner;
 public class SettingsWindow extends Stage
 {
 	CheckBox staticInc;
-	Label lblInc;
-	TextField fldInc;
+	Label lblInc, lbltDist;
+	TextField fldInc, fldTDist;
 	CheckBox boxWriteCrit, boxDrawPent, boxDrawAxesIn, boxDrawAxesOut;
 	Button save, resetOut, resetIn;
 	Settings settings;
@@ -45,10 +45,14 @@ public class SettingsWindow extends Stage
 		GridPane.setConstraints(fldInc, 1, 2);
 		fldInc.setDisable(!s.outPlaneSettings.staticInc);
 		fldInc.disableProperty().bind(staticInc.selectedProperty().not());
+		lbltDist = new Label();
+		fldTDist = new TextField(String.valueOf(s.outPlaneSettings.tDist));
+		GridPane.setConstraints(lbltDist, 0, 3);
+		GridPane.setConstraints(fldTDist, 1, 3);
 		boxWriteCrit = new CheckBox();
 		boxWriteCrit.setAllowIndeterminate(false);
 		boxWriteCrit.setSelected(s.outPlaneSettings.writeCriticalText);
-		GridPane.setConstraints(boxWriteCrit, 0, 3);
+		GridPane.setConstraints(boxWriteCrit, 0, 4);
 		boxDrawAxesOut = new CheckBox();
 		boxDrawAxesOut.setAllowIndeterminate(false);
 		boxDrawAxesOut.setSelected(s.outPlaneSettings.drawAxes);
@@ -66,11 +70,11 @@ public class SettingsWindow extends Stage
 		{
 			save();
 		});
-		GridPane.setConstraints(save, 5, 14);
+		GridPane.setConstraints(save, 5, 15);
 		solPick = new ColorPicker();
 		lblSolPick = new Label();
-		GridPane.setConstraints(solPick, 1, 4);
-		GridPane.setConstraints(lblSolPick, 0, 4);
+		GridPane.setConstraints(solPick, 1, 15);
+		GridPane.setConstraints(lblSolPick, 0, 15);
 		isoPick = new ColorPicker();
 		lblIsoPick = new Label();
 		GridPane.setConstraints(isoPick, 1, 5);
@@ -151,7 +155,7 @@ public class SettingsWindow extends Stage
 
 		updateColorPickers();
 
-		main.getChildren().addAll(staticInc, lblInc, fldInc, boxWriteCrit, boxDrawAxesOut,
+		main.getChildren().addAll(staticInc, lblInc, fldInc, boxWriteCrit, boxDrawAxesOut, lbltDist, fldTDist,
 				save, resetOut, resetIn, boxDrawAxesIn, boxDrawPent,
 				solPick, isoPick, horizIsoPick, vertisoPick, stblSepPick,
 				unstbleSepPick, criticalPick, attrCycPick, repCycPick,
@@ -196,6 +200,10 @@ public class SettingsWindow extends Stage
 		try
 		{
 			settings.outPlaneSettings.inc = Double.parseDouble(fldInc.getText());
+		} catch (NumberFormatException ignored) {}
+		try
+		{
+			settings.outPlaneSettings.tDist = Double.parseDouble(fldTDist.getText());
 		} catch (NumberFormatException ignored) {}
 		settings.outPlaneSettings.solutionColor = solPick.getValue();
 		settings.outPlaneSettings.isoclineColor = isoPick.getValue();
@@ -325,6 +333,8 @@ public class SettingsWindow extends Stage
 				case "resetin":
 					resetIn.setText(split[1]);
 					break;
+				case "tdist":
+					lbltDist.setText(split[1]);
 			}
 		}
 	}

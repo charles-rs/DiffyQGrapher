@@ -94,9 +94,17 @@ public class Main extends Application
 	private MenuItem hopfBif;
 	private MenuItem sdlConBif;
 	private MenuItem cycleBif;
-	private MenuItem divBif;
+	private Menu divBif;
+	private MenuItem positiveDivBif, negativeDivBif;
 	private MenuItem info;
 	private MenuItem instructions;
+
+
+
+	private MenuItem english;
+	private MenuItem pirate;
+	private MenuItem espanol;
+	private MenuItem portugues;
 
 	private Label tLabel;
 	private Button btnClearOut;
@@ -115,6 +123,7 @@ public class Main extends Application
 	@Override
 	public void start(Stage primaryStage) throws Exception
 	{
+
 		prefs = Preferences.userNodeForPackage(getClass());
 
 		this.primaryStage = primaryStage;
@@ -200,17 +209,21 @@ public class Main extends Application
 		hopfBif = new MenuItem();
 		sdlConBif = new MenuItem();
 		cycleBif = new MenuItem();
-		divBif = new MenuItem();
+		divBif = new Menu();
+		positiveDivBif = new MenuItem();
+		negativeDivBif = new MenuItem();
+		divBif.getItems().addAll(positiveDivBif, negativeDivBif);
 		bifurcation.getItems().addAll(saddleBif, hopfBif, sdlConBif, cycleBif, divBif);
 
 		info = new MenuItem();
 		instructions = new MenuItem();
 		help.getItems().addAll(info, instructions);
 
-		MenuItem english = new MenuItem("English");
-		MenuItem pirate = new MenuItem("Pirate");
-		MenuItem espanol = new MenuItem("Español");
-		MenuItem portugues = new MenuItem("Português");
+		english = new MenuItem();
+		pirate = new MenuItem();
+		espanol = new MenuItem();
+		portugues = new MenuItem();
+		initLangNames();
 		language.getItems().addAll(english, pirate, espanol, portugues);
 		////////////////////////////////////////////////////////
 		bar.getMenus().addAll(file, options, view, draw, bifurcation, help, language);
@@ -516,9 +529,13 @@ public class Main extends Application
 		{
 			outPlane.setClickMode(ClickModeType.SEMISTABLE);
 		});
-		divBif.setOnAction(e ->
+		positiveDivBif.setOnAction(e ->
 		{
-			outPlane.drawDivBif();
+			outPlane.drawDivBif(true);
+		});
+		negativeDivBif.setOnAction(e ->
+		{
+			outPlane.drawDivBif(false);
 		});
 		quit.setOnAction(e ->
 		{
@@ -616,6 +633,34 @@ public class Main extends Application
 		update();
 		primaryStage.show();
 //		System.out.println(outP.getHeight());
+	}
+
+	private void initLangNames()
+	{
+		InputStream in = getClass().getResourceAsStream("default.txt");
+		Scanner s = new Scanner(in, StandardCharsets.UTF_8);
+		String temp;
+		String [] split;
+		while(s.hasNext())
+		{
+			temp = s.nextLine();
+			split = temp.split("~");
+			switch (split[0])
+			{
+				case "en":
+					english.setText(split[1]);
+					break;
+				case "es":
+					espanol.setText(split[1]);
+					break;
+				case "pt":
+					portugues.setText(split[1]);
+					break;
+				case "pi":
+					pirate.setText(split[1]);
+					break;
+			}
+		}
 	}
 	private void update()
 	{
@@ -748,6 +793,13 @@ public class Main extends Application
 					break;
 				case "divbif":
 					divBif.setText(split[1]);
+					break;
+				case "posdivbif":
+					positiveDivBif.setText(split[1]);
+					break;
+				case "negdivbif":
+					negativeDivBif.setText(split[1]);
+					break;
 				case "info":
 					info.setText(split[1]);
 					break;

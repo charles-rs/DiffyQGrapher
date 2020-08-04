@@ -13,6 +13,7 @@ public class SemiStableHelper extends Thread
 
 	SemiStableHelper(Point2D st, Point2D nx)
 	{
+		setDaemon(true);
 		prev = st;
 		next = nx;
 	}

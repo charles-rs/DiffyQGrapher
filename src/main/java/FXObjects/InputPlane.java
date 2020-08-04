@@ -666,6 +666,7 @@ public class InputPlane extends CoordPlane
 				}
 				Platform.runLater(() -> loading.setVisible(false));
 			});
+			artist.setDaemon(true);
 			artist.start();
 		}
 		drawDegenSaddleCons();
@@ -684,6 +685,7 @@ public class InputPlane extends CoordPlane
 				}
 				Platform.runLater(() -> loading.setVisible(false));
 			});
+			artist.setDaemon(true);
 			artist.start();
 		}
 	}

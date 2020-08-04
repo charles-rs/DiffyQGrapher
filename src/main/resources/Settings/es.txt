@@ -24,3 +24,4 @@ resetin~Reiniciar colores de bifurcaciones
 savepent~Guardar pentagramas
 axesin~Dibujar ejes parametro
 axesout~Dibujar ejes soluciones
+tdist~Diferencia en t de divergencia

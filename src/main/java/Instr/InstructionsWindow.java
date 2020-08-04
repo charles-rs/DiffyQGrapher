@@ -53,7 +53,7 @@ public class InstructionsWindow extends Stage
 		strings = new HashMap<>();
 		InputStream f;
 		String file = "Instr" + Main.lang.toString() + ".txt";
-		f = (new InstructionsWindow()).getClass().getResourceAsStream(Main.lang.toString() + ".txt");
+		f = InstructionsWindow.class.getResourceAsStream(Main.lang.toString() + ".txt");
 
 		try
 		{

@@ -14,7 +14,12 @@ public class DivergenceFinder extends Thread
 	private static double incY;
 	private static Color divCol;
 	private static Color convCol;
+	private static boolean pos;
 
+	public DivergenceFinder()
+	{
+		setDaemon(true);
+	}
 	@Override
 	public void run()
 	{
@@ -29,10 +34,12 @@ public class DivergenceFinder extends Thread
 				for (double y = o.yMin.get(); y < o.yMax.get(); y += incY)
 				{
 					converged = false;
-					e.initialise(x, y, o.getT(), o.a, o.b, inc);
+					if(pos)
+						e.initialise(x, y, o.getT(), o.a, o.b, inc);
+					else e.initialise(x, y, o.getT(), o.a, o.b, -inc);
 					while (e.getCurrent().distance(x, y) < (o.xMax.get() - o.xMin.get() * 10))
 					{
-						if (e.getT() > 100 + o.getT() || e.getT() < o.getT() - 100)
+						if (e.getT() > o.settings.tDist + o.getT() || e.getT() < o.getT() - o.settings.tDist)
 						{
 							converged = true;
 							break;
@@ -57,10 +64,11 @@ public class DivergenceFinder extends Thread
 		}
 	}
 
-	public static void init(OutputPlane o_)
+	public static void init(OutputPlane o_, boolean pos_)
 	{
 		o = o_;
 		xCurrent = o.xMin.get();
+		pos = pos_;
 		inc = (o.xMax.get() - o.xMin.get())/o.canv.getWidth();
 		incY = (o.yMax.get() - o.yMin.get())/o.canv.getHeight();
 		divCol = new Color(o.awtDivBifDivColor.getRGB() & ((~0) >>> 8) | (1 << 30), true);

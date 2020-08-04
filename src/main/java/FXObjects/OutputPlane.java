@@ -108,9 +108,13 @@ public class OutputPlane extends CoordPlane
 
 	private Thread limCycleArtist = new Thread(), limCycleUpdater = new Thread(), solutionArtist = new Thread();
 
+
 	public OutputPlane(double side, TextField tField, OutPlaneSettings settings)
 	{
 		super(side);
+		limCycleArtist.setDaemon(true);
+		limCycleUpdater.setDaemon(true);
+		solutionArtist.setDaemon(true);
 		labelCanv = new Canvas();
 		labelCanv.widthProperty().bind(widthProperty());
 		labelCanv.heightProperty().bind(heightProperty());
@@ -513,6 +517,7 @@ public class OutputPlane extends CoordPlane
 											}
 											Platform.runLater(() -> in.loading.setVisible(false));
 										});
+										in.artist.setDaemon(true);
 										in.artist.start();
 
 
@@ -552,6 +557,7 @@ public class OutputPlane extends CoordPlane
 						}
 						Platform.runLater(() -> in.loading.setVisible(false));
 					});
+					in.artist.setDaemon(true);
 					in.artist.start();
 					saddleTravStarted = false;
 					setClickMode(ClickModeType.DRAWPATH);
@@ -577,6 +583,7 @@ public class OutputPlane extends CoordPlane
 							}
 							Platform.runLater(() -> in.loading.setVisible(false));
 						});
+						in.artist.setDaemon(true);
 						in.artist.start();
 
 					} catch (BadSaddleTransversalException ignored)
@@ -613,7 +620,7 @@ public class OutputPlane extends CoordPlane
 										scrToNorm(new Point2D(cycleLine.getEndX(), cycleLine.getEndY())), false);
 							Platform.runLater(() -> loading.setVisible(false));
 						});
-
+						limCycleArtist.setDaemon(true);
 						limCycleArtist.start();
 						limCycStep = 0;
 						setClickMode(ClickModeType.DRAWPATH);
@@ -652,6 +659,7 @@ public class OutputPlane extends CoordPlane
 								cycleLine.setVisible(false);
 							}
 						});
+						in.artist.setDaemon(true);
 						in.artist.start();
 						limCycStep = 0;
 						setClickMode(ClickModeType.DRAWPATH);
@@ -1184,6 +1192,7 @@ public class OutputPlane extends CoordPlane
 					render();
 				Platform.runLater(() -> loading.setVisible(false));
 			});
+			limCycleUpdater.setDaemon(true);
 			limCycleUpdater.start();
 	}
 
@@ -1373,9 +1382,9 @@ public class OutputPlane extends CoordPlane
 	/**
 	 * shades a divergence bifurcation
 	 */
-	public void drawDivBif()
+	public void drawDivBif(boolean pos)
 	{
-		DivergenceFinder.init(this);
+		DivergenceFinder.init(this, pos);
 		for(int i = 0; i < Runtime.getRuntime().availableProcessors(); i++)
 		{
 			new DivergenceFinder().start();
@@ -2762,6 +2771,7 @@ public class OutputPlane extends CoordPlane
 			render();
 //			updateLimCycles();
 		});
+		solutionArtist.setDaemon(true);
 		solutionArtist.start();
 
 	}

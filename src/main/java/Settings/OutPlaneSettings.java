@@ -11,6 +11,7 @@ public class OutPlaneSettings
 	public boolean staticInc;
 	public boolean drawAxes;
 	public double inc;
+	public double tDist;
 	public Color solutionColor;
 	public Color isoclineColor;
 	public Color horizIsoColor;
@@ -57,6 +58,7 @@ public class OutPlaneSettings
 		temp.writeCriticalText = true;
 		temp.staticInc = prefs.getBoolean("staticInc", false);
 		temp.inc = prefs.getDouble("inc", .01);
+		temp.tDist = prefs.getDouble("tDist", 20);
 		temp.solutionColor = Settings.getColor("solutionColor", solutionColorDef, prefs);
 		temp.isoclineColor = Settings.getColor("isoclineColor", isoclineColorDef, prefs);
 		temp.horizIsoColor = Settings.getColor("horizIsoColor", horizIsoColorDef, prefs);
@@ -77,6 +79,7 @@ public class OutPlaneSettings
 		prefs.putBoolean("writeCriticalText", writeCriticalText);
 		prefs.putBoolean("staticInc", staticInc);
 		prefs.putDouble("inc", inc);
+		prefs.putDouble("tDist", tDist);
 		Settings.putColor("solutionColor", solutionColor, prefs);
 		Settings.putColor("isoclineColor", isoclineColor, prefs);
 		Settings.putColor("horizIsoColor", horizIsoColor, prefs);
