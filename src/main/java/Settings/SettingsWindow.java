@@ -8,6 +8,7 @@ import javafx.scene.layout.GridPane;
 import javafx.stage.Stage;
 
 import java.io.InputStream;
+import java.nio.charset.StandardCharsets;
 import java.util.Scanner;
 
 public class SettingsWindow extends Stage
@@ -220,7 +221,7 @@ public class SettingsWindow extends Stage
 	private void setTexts(Language l)
 	{
 		InputStream in = getClass().getResourceAsStream(l.toString() + ".txt");
-		Scanner s = new Scanner(in);
+		Scanner s = new Scanner(in, StandardCharsets.UTF_8);
 		String temp;
 		String [] split;
 		while(s.hasNext())

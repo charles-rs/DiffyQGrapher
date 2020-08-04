@@ -1,24 +1,18 @@
-package Main;
+package Instr;
 
 import Events.UpdatedState;
-import FXObjects.CoordPlane;
 import FXObjects.InputPlane;
 import FXObjects.OutputPlane;
+import Main.Main;
 import javafx.event.ActionEvent;
-import javafx.event.Event;
 import javafx.event.EventHandler;
-import javafx.event.EventType;
 import javafx.scene.Scene;
 import javafx.scene.control.TextArea;
 import javafx.scene.layout.Pane;
 import javafx.stage.Stage;
 
-import java.io.File;
-import java.io.FileInputStream;
-import java.io.FileNotFoundException;
 import java.io.InputStream;
-import java.nio.file.FileSystem;
-import java.nio.file.FileSystems;
+import java.nio.charset.StandardCharsets;
 import java.util.HashMap;
 import java.util.Scanner;
 
@@ -28,6 +22,7 @@ public class InstructionsWindow extends Stage
 	private TextArea text;
 
 	static HashMap<Integer, String> strings;
+	private InstructionsWindow(){}
 	public InstructionsWindow(InputPlane ip, OutputPlane op)
 	{
 		Pane p = new Pane();
@@ -57,11 +52,12 @@ public class InstructionsWindow extends Stage
 	{
 		strings = new HashMap<>();
 		InputStream f;
-		String file = "Instr/"+ Main.lang.toString() + ".txt";
-		f = Main.class.getResourceAsStream(file);
+		String file = "Instr" + Main.lang.toString() + ".txt";
+		f = (new InstructionsWindow()).getClass().getResourceAsStream(Main.lang.toString() + ".txt");
+
 		try
 		{
-			Scanner in = new Scanner(f);
+			Scanner in = new Scanner(f, StandardCharsets.UTF_8);
 			int cd;
 			StringBuilder sb;
 			in.useDelimiter("\n");
@@ -82,6 +78,7 @@ public class InstructionsWindow extends Stage
 			in.close();
 		} catch (Exception ignored)
 		{
+			strings.put(-1, "oops");
 			System.out.println("file not found");
 		}
 	}

@@ -14,6 +14,7 @@ idea {
     }
 }
 
+
 /*
 if (JavaVersion.current() == JavaVersion.VERSION_11
         || JavaVersion.current() == JavaVersion.VERSION_12){
@@ -74,7 +75,9 @@ jlink {
         name = 'diffyqapp'
     }
     jpackage {
-        installerType = 'deb'
+
+        jpackageHome = 'C:\\Users\\charl\\.jdks\\openjdk-14.0.2'
+        installerType = 'msi'
         if (installerType == 'msi') {
 //            imageOptions += ['--icon', 'src/main/resources/pdfdecorator/gui/icon.ico']
             installerOptions += [

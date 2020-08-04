@@ -11,6 +11,7 @@ import FXObjects.DerivativeGraph;
 import FXObjects.InClickModeType;
 import FXObjects.InputPlane;
 import FXObjects.OutputPlane;
+import Instr.InstructionsWindow;
 import Parser.Tokenizer;
 import Settings.Settings;
 import Settings.SettingsWindow;
@@ -42,6 +43,7 @@ import javafx.stage.Stage;
 import java.io.File;
 import java.io.InputStream;
 import java.io.StringReader;
+import java.nio.charset.StandardCharsets;
 import java.util.Scanner;
 import java.util.prefs.Preferences;
 
@@ -105,8 +107,8 @@ public class Main extends Application
 	private Button btnResetInZoom;
 
 	private String strEuler, strMidEuler, strRungeKutta;
-	static Language lang;
-	static int instructionCode = -1;
+	public static Language lang;
+	public static int instructionCode = -1;
 	private Preferences prefs;
 	private Stage primaryStage;
 	private Settings settings;
@@ -618,7 +620,7 @@ public class Main extends Application
 	private void update()
 	{
 		InputStream in = getClass().getResourceAsStream(lang.toString() + ".txt");
-		Scanner s = new Scanner(in);
+		Scanner s = new Scanner(in, StandardCharsets.UTF_8);
 		String temp;
 		String [] split;
 		while(s.hasNext())
