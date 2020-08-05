@@ -8,9 +8,12 @@ import javafx.event.ActionEvent;
 import javafx.event.EventHandler;
 import javafx.scene.Scene;
 import javafx.scene.control.TextArea;
+import javafx.scene.control.TextFormatter;
 import javafx.scene.layout.Pane;
 import javafx.stage.Stage;
 
+import java.io.FileNotFoundException;
+import java.io.IOException;
 import java.io.InputStream;
 import java.nio.charset.StandardCharsets;
 import java.util.HashMap;
@@ -52,14 +55,13 @@ public class InstructionsWindow extends Stage
 	{
 		strings = new HashMap<>();
 		InputStream f;
-		String file = "Instr" + Main.lang.toString() + ".txt";
 		f = InstructionsWindow.class.getResourceAsStream(Main.lang.toString() + ".txt");
-
+		if(f == null) strings.put(-1, "well well well");
 		try
 		{
 			Scanner in = new Scanner(f, StandardCharsets.UTF_8);
 			int cd;
-			StringBuilder sb;
+			StringBuilder sb;/*
 			in.useDelimiter("\n");
 			while(in.hasNext())
 			{
@@ -74,11 +76,31 @@ public class InstructionsWindow extends Stage
 					tp = in.next();
 				}
 				strings.put(cd, sb.toString());
+			}*/
+			String temp;
+			String [] split;
+			String [] split2;
+			while(in.hasNext())
+			{
+				temp = in.nextLine();
+				split = temp.split("~");
+				try
+				{
+					cd = Integer.parseInt(split[0]);
+					sb = new StringBuilder();
+					split2 = split[1].split("%");
+					for(int i = 0; i < split2.length - 1; i++)
+					{
+						sb.append(split2[i]);
+						sb.append("\n");
+					}
+					sb.append(split2[split2.length - 1]);
+					strings.put(cd, sb.toString());
+				} catch (NumberFormatException ignored) {}
 			}
 			in.close();
 		} catch (Exception ignored)
 		{
-			strings.put(-1, "oops");
 			System.out.println("file not found");
 		}
 	}

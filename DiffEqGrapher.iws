@@ -23,19 +23,21 @@
   </component>
   <component name="ChangeListManager">
     <list default="true" id="c3e6b1d4-1691-4a0a-8188-3a77cb1c4876" name="Default Changelist" comment="">
-      <change afterPath="$PROJECT_DIR$/DiffEqGrapher.main.iml" afterDir="false" />
-      <change afterPath="$PROJECT_DIR$/DiffEqGrapher.test.iml" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/src/main/resources/Instr/en-old.txt" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/src/main/resources/Instr/en-temp.txt" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/DiffEqGrapher.iml" beforeDir="false" afterPath="$PROJECT_DIR$/DiffEqGrapher.iml" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/DiffEqGrapher.ipr" beforeDir="false" afterPath="$PROJECT_DIR$/DiffEqGrapher.ipr" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/DiffEqGrapher.iws" beforeDir="false" afterPath="$PROJECT_DIR$/DiffEqGrapher.iws" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/DiffEqGrapher.main.iml" beforeDir="false" afterPath="$PROJECT_DIR$/DiffEqGrapher.main.iml" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/DiffEqGrapher.test.iml" beforeDir="false" afterPath="$PROJECT_DIR$/DiffEqGrapher.test.iml" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/build.gradle" beforeDir="false" afterPath="$PROJECT_DIR$/build.gradle" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/src/main/java/Main/InstructionsWindow.java" beforeDir="false" afterPath="$PROJECT_DIR$/src/main/java/Instr/InstructionsWindow.java" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/main/java/Instr/InstructionsWindow.java" beforeDir="false" afterPath="$PROJECT_DIR$/src/main/java/Instr/InstructionsWindow.java" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/src/main/java/Main/Main.java" beforeDir="false" afterPath="$PROJECT_DIR$/src/main/java/Main/Main.java" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/src/main/java/Settings/SettingsWindow.java" beforeDir="false" afterPath="$PROJECT_DIR$/src/main/java/Settings/SettingsWindow.java" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/src/main/resources/Main/Instr/en.txt" beforeDir="false" afterPath="$PROJECT_DIR$/src/main/resources/Instr/en.txt" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/src/main/resources/Main/Instr/es.txt" beforeDir="false" afterPath="$PROJECT_DIR$/src/main/resources/Instr/es.txt" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/src/main/resources/Main/Instr/pi.txt" beforeDir="false" afterPath="$PROJECT_DIR$/src/main/resources/Instr/pi.txt" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/src/main/resources/Main/Instr/pt.txt" beforeDir="false" afterPath="$PROJECT_DIR$/src/main/resources/Instr/pt.txt" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/main/resources/Instr/en.txt" beforeDir="false" afterPath="$PROJECT_DIR$/src/main/resources/Instr/en.txt" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/main/resources/Instr/es.txt" beforeDir="false" afterPath="$PROJECT_DIR$/src/main/resources/Instr/es.txt" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/main/resources/Instr/pi.txt" beforeDir="false" afterPath="$PROJECT_DIR$/src/main/resources/Instr/pi.txt" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/main/resources/Instr/pt.txt" beforeDir="false" afterPath="$PROJECT_DIR$/src/main/resources/Instr/pt.txt" afterDir="false" />
     </list>
     <option name="SHOW_DIALOG" value="false" />
     <option name="HIGHLIGHT_CONFLICTS" value="true" />
@@ -134,7 +136,8 @@
     <property name="SHARE_PROJECT_CONFIGURATION_FILES" value="true" />
     <property name="WebServerToolWindowFactoryState" value="false" />
     <property name="aspect.path.notification.shown" value="true" />
-    <property name="last_opened_file_path" value="$PROJECT_DIR$" />
+    <property name="last.edited.regexp" value="8147981624%01487108%" />
+    <property name="last_opened_file_path" value="$PROJECT_DIR$/src/main/resources/Instr" />
     <property name="nodejs_package_manager_path" value="npm" />
     <property name="project.structure.last.edited" value="SDKs" />
     <property name="project.structure.proportion" value="0.0" />
@@ -142,6 +145,9 @@
     <property name="settings.editor.selected.configurable" value="File.Encoding" />
   </component>
   <component name="RecentsManager">
+    <key name="CopyFile.RECENT_KEYS">
+      <recent name="C:\Users\charl\Documents\Diff\DiffyQGrapher\src\main\resources\Instr" />
+    </key>
     <key name="MoveFile.RECENT_KEYS">
       <recent name="C:\Users\charl\Documents\Diff\DiffyQGrapher\src\main\resources\Instr" />
       <recent name="C:\Users\charl\Documents\Diff\DiffyQGrapher\src\main\resources\Main" />
@@ -196,13 +202,15 @@
         <option name="Make" enabled="true" />
       </method>
     </configuration>
-    <configuration default="true" type="ArquillianJUnit" factoryName="" nameIsGenerated="true">
+    <configuration default="true" type="ArquillianTestNG" factoryName="" nameIsGenerated="true">
       <option name="arquillianRunConfiguration">
         <value>
           <option name="containerStateName" value="" />
         </value>
       </option>
-      <option name="TEST_OBJECT" value="class" />
+      <option name="TEST_OBJECT" value="CLASS" />
+      <properties />
+      <listeners />
       <method v="2">
         <option name="Make" enabled="true" />
       </method>
@@ -341,6 +349,7 @@
       <option name="presentableId" value="Default" />
       <updated>1596513479000</updated>
       <workItem from="1596513483278" duration="6997000" />
+      <workItem from="1596582866011" duration="4807000" />
     </task>
     <servers />
   </component>
@@ -357,6 +366,7 @@
         </entry>
       </map>
     </option>
+    <option name="oldMeFiltersMigrated" value="true" />
   </component>
   <component name="VcsManagerConfiguration">
     <option name="OFFER_MOVE_TO_ANOTHER_CHANGELIST_ON_PARTIAL_COMMIT" value="true" />
@@ -371,22 +381,22 @@
       <screen x="0" y="0" width="1536" height="824" />
     </state>
     <state x="548" y="110" key="FileChooserDialogImpl/0.0.1536.824@0.0.1536.824" timestamp="1596517256812" />
-    <state width="1493" height="210" key="GridCell.Tab.0.bottom" timestamp="1596520438546">
+    <state width="1493" height="210" key="GridCell.Tab.0.bottom" timestamp="1596587433810">
       <screen x="0" y="0" width="1536" height="824" />
     </state>
-    <state width="1493" height="210" key="GridCell.Tab.0.bottom/0.0.1536.824@0.0.1536.824" timestamp="1596520438546" />
-    <state width="1493" height="210" key="GridCell.Tab.0.center" timestamp="1596520438546">
+    <state width="1493" height="210" key="GridCell.Tab.0.bottom/0.0.1536.824@0.0.1536.824" timestamp="1596587433810" />
+    <state width="1493" height="210" key="GridCell.Tab.0.center" timestamp="1596587433810">
       <screen x="0" y="0" width="1536" height="824" />
     </state>
-    <state width="1493" height="210" key="GridCell.Tab.0.center/0.0.1536.824@0.0.1536.824" timestamp="1596520438546" />
-    <state width="1493" height="210" key="GridCell.Tab.0.left" timestamp="1596520438546">
+    <state width="1493" height="210" key="GridCell.Tab.0.center/0.0.1536.824@0.0.1536.824" timestamp="1596587433810" />
+    <state width="1493" height="210" key="GridCell.Tab.0.left" timestamp="1596587433810">
       <screen x="0" y="0" width="1536" height="824" />
     </state>
-    <state width="1493" height="210" key="GridCell.Tab.0.left/0.0.1536.824@0.0.1536.824" timestamp="1596520438546" />
-    <state width="1493" height="210" key="GridCell.Tab.0.right" timestamp="1596520438546">
+    <state width="1493" height="210" key="GridCell.Tab.0.left/0.0.1536.824@0.0.1536.824" timestamp="1596587433810" />
+    <state width="1493" height="210" key="GridCell.Tab.0.right" timestamp="1596587433810">
       <screen x="0" y="0" width="1536" height="824" />
     </state>
-    <state width="1493" height="210" key="GridCell.Tab.0.right/0.0.1536.824@0.0.1536.824" timestamp="1596520438546" />
+    <state width="1493" height="210" key="GridCell.Tab.0.right/0.0.1536.824@0.0.1536.824" timestamp="1596587433810" />
     <state x="277" y="0" key="SettingsEditor" timestamp="1596517258344">
       <screen x="0" y="0" width="1536" height="824" />
     </state>

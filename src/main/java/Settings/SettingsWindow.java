@@ -1,5 +1,6 @@
 package Settings;
 
+import Instr.InstructionsWindow;
 import Main.Language;
 import javafx.geometry.Insets;
 import javafx.scene.Scene;
@@ -228,7 +229,7 @@ public class SettingsWindow extends Stage
 	}
 	private void setTexts(Language l)
 	{
-		InputStream in = getClass().getResourceAsStream(l.toString() + ".txt");
+		InputStream in = Settings.class.getResourceAsStream(l.toString() + ".txt");
 		Scanner s = new Scanner(in, StandardCharsets.UTF_8);
 		String temp;
 		String [] split;

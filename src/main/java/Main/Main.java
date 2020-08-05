@@ -664,7 +664,7 @@ public class Main extends Application
 	}
 	private void update()
 	{
-		InputStream in = getClass().getResourceAsStream(lang.toString() + ".txt");
+		InputStream in = Main.class.getResourceAsStream(lang.toString() + ".txt");
 		Scanner s = new Scanner(in, StandardCharsets.UTF_8);
 		String temp;
 		String [] split;

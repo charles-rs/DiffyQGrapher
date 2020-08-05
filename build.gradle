@@ -79,8 +79,8 @@ jlink {
     }
     jpackage {
 
-//        jpackageHome = 'C:\\Users\\charl\\.jdks\\openjdk-14.0.2'
-        installerType = 'deb'
+        jpackageHome = 'C:\\Users\\charl\\.jdks\\openjdk-14.0.2'
+        installerType = 'msi'
         installerOptions = [
                 '--app-version', version,
         ]
