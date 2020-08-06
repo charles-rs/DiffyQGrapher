@@ -347,6 +347,7 @@ public class OutputPlane extends CoordPlane
 		{
 			this.a = a;
 			Platform.runLater(this::draw);
+//			draw();
 		}
 	}
 	public void updateT(double t)
@@ -364,6 +365,7 @@ public class OutputPlane extends CoordPlane
 		{
 			this.b = b;
 			Platform.runLater(this::draw);
+//			draw();
 		}
 	}
 
@@ -417,6 +419,7 @@ public class OutputPlane extends CoordPlane
 				{
 					System.out.println("Root not found");
 				}
+				setClickMode(ClickModeType.DRAWPATH);
 				break;
 			case DRAWHORIZISO:
 				drawHorizIso(pt);
@@ -2776,7 +2779,8 @@ public class OutputPlane extends CoordPlane
 					}
 				}
 			}
-			render();
+			if (!Thread.interrupted())
+				render();
 //			updateLimCycles();
 		});
 		solutionArtist.setDaemon(true);

@@ -2,23 +2,25 @@ package FXObjects;
 
 import Evaluation.CriticalPoint;
 import javafx.geometry.Insets;
+import javafx.geometry.Point2D;
 import javafx.geometry.Pos;
 import javafx.scene.Group;
 import javafx.scene.Scene;
 import javafx.scene.control.Label;
-import javafx.scene.control.Separator;
+import javafx.scene.control.Tooltip;
 import javafx.scene.input.Clipboard;
 import javafx.scene.input.ClipboardContent;
 import javafx.scene.layout.*;
 import javafx.scene.shape.Line;
 import javafx.scene.shape.QuadCurve;
 import javafx.stage.Stage;
+import javafx.util.Duration;
 import org.ejml.data.Complex_F64;
-
-import java.text.DecimalFormat;
 
 public class LinearisationWindow extends Stage
 {
+	private static final Tooltip click_to_copy = new Tooltip("Click to copy LaTeX");
+	private static final Tooltip copied = new Tooltip("Copied!");
 	public LinearisationWindow(CriticalPoint c)
 	{
 		setTitle("Linearisation of the " + c.type.getStringRep()  +" (" + c.point.getX() + ", " + c.point.getY() + ")");
@@ -124,8 +126,13 @@ public class LinearisationWindow extends Stage
 			bottomRight.endXProperty().bind(right.startXProperty().subtract(4));
 			bottomRight.startYProperty().bind(right.startYProperty());
 			bottomRight.endYProperty().bind(right.startYProperty());
+			Tooltip.install(main, click_to_copy);
 			setOnMouseClicked(e ->
 			{
+				Tooltip.install(main, copied);
+				Tooltip.uninstall(main, click_to_copy);
+				copied.setShowDuration(new Duration(2000));
+				copied.show(main, 0, 0);
 				ClipboardContent temp = new ClipboardContent();
 				temp.putString("\\begin{bmatrix}\n" + vals[0] + " & " + vals[1] + " \\\\ " + vals[2] + " & " + vals[3] + "\n\\end{bmatrix}");
 				Clipboard.getSystemClipboard().setContent(temp);
@@ -165,8 +172,14 @@ public class LinearisationWindow extends Stage
 			right.controlYProperty().bind(heightProperty().divide(2));
 			right.endXProperty().bind(widthProperty().subtract(4));
 			right.endYProperty().bind(heightProperty());
+			Tooltip.install(mainH, click_to_copy);
+
 			setOnMouseClicked(e ->
 			{
+				Tooltip.install(mainH, copied);
+				Tooltip.uninstall(mainH, click_to_copy);
+				copied.setShowDuration(new Duration(2000));
+				copied.show(mainH, 0, 0);
 				ClipboardContent temp = new ClipboardContent();
 				temp.putString("\\begin{pmatrix}\n" + x + " \\\\ " + y + "\n\\end{pmatrix}");
 				Clipboard.getSystemClipboard().setContent(temp);

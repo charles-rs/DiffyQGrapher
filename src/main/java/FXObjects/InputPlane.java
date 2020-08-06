@@ -55,8 +55,8 @@ public class InputPlane extends CoordPlane
 	/**
 	 * a and b are the parameters, initialised to (0,0)
 	 */
-	private volatile double a = 0;
-	private volatile double b = 0;
+	private double a = 0;
+	private double b = 0;
 	/**
 	 * carries a pointer to the outputplane for communication purposes
 	 */
@@ -140,21 +140,41 @@ public class InputPlane extends CoordPlane
 		setOnKeyPressed((e) ->
 		{
 			KeyCode temp = e.getCode();
+			double deltaA = (xMax.get() - xMin.get()) / 1000;
+			double deltaB = (yMax.get() - yMin.get()) / 1000;
+			if(e.isMetaDown() || e.isControlDown())
+			{
+				deltaA *= 20;
+				deltaB *= 20;
+			}
 			if (temp == right)
 			{
-				a += (xMax.get() - xMin.get()) / 1000;
+				a += deltaA;
+//				a += (xMax.get() - xMin.get()) / 1000;
 			} else if (temp == left)
 			{
-				a -= (xMax.get() - xMin.get()) / 1000;
+				a -= deltaA;
+//				a -= (xMax.get() - xMin.get()) / 1000;
 			} else if (temp == up)
 			{
-				b += (yMax.get() - yMin.get()) / 1000;
+				b += deltaB;
+//				b += (yMax.get() - yMin.get()) / 1000;
 			} else if (temp == down)
 			{
-				b -= (yMax.get() - yMin.get()) / 1000;
+				b -= deltaB;
+//				b -= (yMax.get() - yMin.get()) / 1000;
 			}
 			e.consume();
 			render();
+		});
+		setOnKeyReleased(e ->
+		{
+			KeyCode temp = e.getCode();
+			if(temp == left || temp == right || temp == up || temp == down)
+			{
+				showValues();
+				render();
+			}
 		});
 /*
 		aField.textProperty().addListener((obs, s, t1) ->
@@ -260,6 +280,7 @@ public class InputPlane extends CoordPlane
 				case MOVEPOINT:
 					a = scrToNormX(e.getX());
 					b = scrToNormY(e.getY());
+					showValues();
 					break;
 				case PLACEPENT:
 					getInfoAndAddPentagram(e.getX(), e.getY());
@@ -624,7 +645,7 @@ public class InputPlane extends CoordPlane
 	public void render()
 	{
 		super.render();
-		showValues();
+//		showValues();
 		drawPoint();
 		drawPentagrams();
 	}

@@ -173,7 +173,7 @@ public class Parser
 			case LN:
 				return new Function(Functions.LN, temp);
 			default:
-				throw new SyntaxError("bad function");
+				throw new SyntaxError("bad function" + temp.toString());
 		}
 	}
 
