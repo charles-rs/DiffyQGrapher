@@ -20,15 +20,7 @@ import javafx.event.ActionEvent;
 import javafx.event.EventHandler;
 import javafx.geometry.Pos;
 import javafx.scene.Scene;
-import javafx.scene.control.Button;
-import javafx.scene.control.Label;
-import javafx.scene.control.Menu;
-import javafx.scene.control.MenuBar;
-import javafx.scene.control.MenuItem;
-import javafx.scene.control.Separator;
-import javafx.scene.control.SeparatorMenuItem;
-import javafx.scene.control.TextArea;
-import javafx.scene.control.TextField;
+import javafx.scene.control.*;
 import javafx.scene.input.KeyCode;
 import javafx.scene.input.KeyEvent;
 import javafx.scene.layout.AnchorPane;
@@ -44,6 +36,8 @@ import java.io.File;
 import java.io.InputStream;
 import java.io.StringReader;
 import java.nio.charset.StandardCharsets;
+import java.text.DecimalFormat;
+import java.text.ParsePosition;
 import java.util.Scanner;
 import java.util.prefs.Preferences;
 
@@ -319,9 +313,12 @@ public class Main extends Application
 		VBox rightBox = new VBox();
 		rightBox.setSpacing(10);
 		rightBox.setAlignment(Pos.TOP_CENTER);
+
 //		rightBox.getChildren().addAll(outP, outPButtonBox);
 		rightBox.getChildren().addAll(outPlane, outPButtonBox);
-//		VBox.setVgrow(outPlane, Priority.SOMETIMES);
+		rightBox.setFillWidth(false);
+		leftBox.setFillWidth(false);
+//		VBox.setVgrow(outPlane, Priority.NEVER);
 //		VBox.setVgrow(inPlane, Priority.SOMETIMES);
 //		HBox.setHgrow(leftBox, Priority.SOMETIMES);
 //		HBox.setHgrow(rightBox, Priority.SOMETIMES);
@@ -336,29 +333,58 @@ public class Main extends Application
 		AnchorPane.setTopAnchor(mainH, 20.0);
 
 		anchor.getChildren().addAll(mainH);
-
-
-
-		aField.textProperty().addListener((obs, s, t1) ->
+		TextField [] fields = new TextField[] {aField, bField, tField};
+		for(TextField fld : fields)
 		{
-			try
+			fld.setOnMouseClicked(e -> fld.selectAll());
+		}
+
+		aField.textProperty().addListener((observable, oldValue, newValue) ->
+		{
+			if (!newValue.matches("-?[0-9]*(\\.)?[0-9]*"))
+				aField.setText(oldValue);
+			else
 			{
-				outPlane.updateA(Double.parseDouble(t1));
-			} catch (NumberFormatException ignored) {}
+				try
+				{
+					outPlane.updateA(Double.parseDouble(newValue));
+					inPlane.updateA(Double.parseDouble(newValue));
+				} catch (Exception e)
+				{
+					System.out.println("\"" + newValue + "\"");
+				}
+			}
 		});
-		bField.textProperty().addListener((obs, s, t1) ->
+		bField.textProperty().addListener((observable, oldValue, newValue) ->
 		{
-			try
+			if (!newValue.matches("-?[0-9]*(\\.)?[0-9]*"))
+				bField.setText(oldValue);
+			else
 			{
-				outPlane.updateB(Double.parseDouble(t1));
-			} catch (NumberFormatException ignored) {}
+				try
+				{
+					outPlane.updateB(Double.parseDouble(newValue));
+					inPlane.updateB(Double.parseDouble(newValue));
+				} catch (Exception e)
+				{
+					System.out.println("\"" + newValue + "\"");
+				}
+			}
 		});
-		tField.textProperty().addListener((obs, s, t1) ->
+		tField.textProperty().addListener((observable, oldValue, newValue) ->
 		{
-			try
+			if (!newValue.matches("-?[0-9]*(\\.)?[0-9]*"))
+				tField.setText(oldValue);
+			else
 			{
-				outPlane.updateT(Double.parseDouble(t1));
-			} catch (NumberFormatException ignored) {}
+				try
+				{
+					outPlane.updateT(Double.parseDouble(newValue));
+				} catch (Exception e)
+				{
+					System.out.println("\"" + newValue + "\"");
+				}
+			}
 		});
 		inputArea.textProperty().addListener((obs, old, newVal) ->
 		{
@@ -432,7 +458,7 @@ public class Main extends Application
 		});
 		root.setOnKeyPressed((k) ->
 		{
-			if(k.getCode() == KeyCode.T && k.isControlDown())
+			if(k.getCode() == KeyCode.T && (k.isControlDown() || k.isMetaDown()))
 			{
 				switch (outPlane.getClickMode())
 				{

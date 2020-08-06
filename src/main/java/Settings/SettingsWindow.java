@@ -5,6 +5,8 @@ import Main.Language;
 import javafx.geometry.Insets;
 import javafx.scene.Scene;
 import javafx.scene.control.*;
+import javafx.scene.input.KeyCode;
+import javafx.scene.input.KeyEvent;
 import javafx.scene.layout.GridPane;
 import javafx.stage.Stage;
 
@@ -71,7 +73,7 @@ public class SettingsWindow extends Stage
 		{
 			save();
 		});
-		GridPane.setConstraints(save, 5, 15);
+		GridPane.setConstraints(save, 5, 16);
 		solPick = new ColorPicker();
 		lblSolPick = new Label();
 		GridPane.setConstraints(solPick, 1, 15);
@@ -139,7 +141,7 @@ public class SettingsWindow extends Stage
 		GridPane.setConstraints(lblSemiStablePick, 2, 7);
 
 		resetOut = new Button();
-		GridPane.setConstraints(resetOut, 1, 15);
+		GridPane.setConstraints(resetOut, 1, 16);
 		resetOut.setOnAction(e ->
 		{
 			settings.outPlaneSettings.resetColors();
@@ -168,6 +170,11 @@ public class SettingsWindow extends Stage
 				lblDivConvPick, lblDivDivPick);
 
 		setTexts(l);
+		this.addEventHandler(KeyEvent.KEY_PRESSED, k ->
+		{
+			if(k.getCode() == KeyCode.S && (k.isControlDown() || k.isMetaDown()))
+				save();
+		});
 		setScene(new Scene(main));
 		showAndWait();
 	}
@@ -336,6 +343,7 @@ public class SettingsWindow extends Stage
 					break;
 				case "tdist":
 					lbltDist.setText(split[1]);
+					break;
 			}
 		}
 	}

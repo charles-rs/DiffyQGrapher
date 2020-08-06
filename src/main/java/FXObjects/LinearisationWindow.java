@@ -15,6 +15,8 @@ import javafx.scene.shape.QuadCurve;
 import javafx.stage.Stage;
 import org.ejml.data.Complex_F64;
 
+import java.text.DecimalFormat;
+
 public class LinearisationWindow extends Stage
 {
 	public LinearisationWindow(CriticalPoint c)

@@ -246,7 +246,7 @@ public abstract class CoordPlane extends Pane
 					if(zoomBox.getWidth() > 5 && zoomBox.getHeight() > 5)
 					{
 						double xMinTemp, xMaxTemp, yMinTemp, yMaxTemp;
-						if(mouseEvent.isControlDown())
+						if(mouseEvent.isControlDown() || mouseEvent.isMetaDown())
 						{
 							xMaxTemp = (xMax.get() - scrToNormX(zoomBox.getX() + zoomBox.getWidth())) *
 									(xMax.get() - xMin.get()) / (scrToNormX(zoomBox.getX() + zoomBox.getWidth()) -

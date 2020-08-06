@@ -343,20 +343,28 @@ public class OutputPlane extends CoordPlane
 
 	public void updateA(double a)
 	{
-		this.a = a;
-
-		Platform.runLater(this::draw);
+		if(a != this.a)
+		{
+			this.a = a;
+			Platform.runLater(this::draw);
+		}
 	}
 	public void updateT(double t)
 	{
-		this.t = t;
-		Platform.runLater(this::draw);
+		if(t != this.t)
+		{
+			this.t = t;
+			Platform.runLater(this::draw);
+		}
 	}
 
 	public void updateB(double b)
 	{
-		this.b = b;
-		Platform.runLater(this::draw);
+		if(b != this.b)
+		{
+			this.b = b;
+			Platform.runLater(this::draw);
+		}
 	}
 
 	public void updateDX(Derivative temp)
@@ -489,7 +497,7 @@ public class OutputPlane extends CoordPlane
 						draw();
 						if (selectedSeps.size() == 2)
 						{
-							if (e.isControlDown())
+							if (e.isControlDown() || e.isMetaDown())
 							{
 								limCycStep = 0;
 								setClickMode(ClickModeType.SETTRAVERSAL);
@@ -2620,7 +2628,7 @@ public class OutputPlane extends CoordPlane
 		int xScr = imgNormToScrX(x);
 		int yScr = imgNormToScrY(y);
 		double finalAngle = angle;
-		Platform.runLater(() ->
+//		Platform.runLater(() ->
 		{
 			synchronized (g)
 			{
@@ -2632,7 +2640,7 @@ public class OutputPlane extends CoordPlane
 				g.drawLine(xScr, yScr, xScr - 10, yScr - 6);
 				g.setTransform(saveAt);
 			}
-		});
+		}//);
 
 	}
 

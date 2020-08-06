@@ -5,6 +5,8 @@ import AST.Node;
 import Exceptions.EvaluationException;
 import Settings.InPlaneSettings;
 import javafx.application.Platform;
+import javafx.beans.value.ChangeListener;
+import javafx.beans.value.ObservableValue;
 import javafx.geometry.Insets;
 import javafx.geometry.Point2D;
 import javafx.geometry.Pos;
@@ -12,6 +14,7 @@ import javafx.scene.Scene;
 import javafx.scene.canvas.Canvas;
 import javafx.scene.control.Label;
 import javafx.scene.control.TextField;
+import javafx.scene.control.TextFormatter;
 import javafx.scene.input.KeyCode;
 import javafx.scene.input.KeyEvent;
 import javafx.scene.input.MouseEvent;
@@ -29,6 +32,8 @@ import java.awt.*;
 import java.awt.image.BufferedImage;
 import java.io.File;
 import java.io.IOException;
+import java.text.DecimalFormat;
+import java.text.ParsePosition;
 import java.util.ArrayList;
 import java.util.List;
 
@@ -43,12 +48,15 @@ public class InputPlane extends CoordPlane
 
 	List<Pentagram> pentlist;
 
+
+	private static DecimalFormat format = new DecimalFormat("#");
+
 	private final Circle pt;
 	/**
 	 * a and b are the parameters, initialised to (0,0)
 	 */
-	private double a = 0;
-	private double b = 0;
+	private volatile double a = 0;
+	private volatile double b = 0;
 	/**
 	 * carries a pointer to the outputplane for communication purposes
 	 */
@@ -148,7 +156,7 @@ public class InputPlane extends CoordPlane
 			e.consume();
 			render();
 		});
-
+/*
 		aField.textProperty().addListener((obs, s, t1) ->
 		{
 			try
@@ -172,7 +180,7 @@ public class InputPlane extends CoordPlane
 				if (b != 0.0)
 					bField.setText(Double.toString(b));
 			}
-		});
+		});*/
 //		addEventFilter(MouseEvent.MOUSE_RELEASED, me ->
 //		{
 //			if(zoomBox.isVisible() && zoomBox.getWidth() > 0 && zoomBox.getHeight() > 0)
@@ -199,6 +207,23 @@ public class InputPlane extends CoordPlane
 		heteroSaddleConColor = settings.heteroSaddleConColor;
 		semiStableColor = settings.semiStableColor;
 		initColors();
+	}
+
+	public void updateA(double a)
+	{
+		if(this.a != a)
+		{
+			this.a = a;
+			render();
+		}
+	}
+	public void updateB(double b)
+	{
+		if(this.b != b)
+		{
+			this.b = b;
+			render();
+		}
 	}
 
 	public void setClickMode(InClickModeType ty)
@@ -238,7 +263,6 @@ public class InputPlane extends CoordPlane
 					break;
 				case PLACEPENT:
 					getInfoAndAddPentagram(e.getX(), e.getY());
-					//TODO do shit, open a pentagram dialog and get that shit on the screen
 			}
 			render();
 		}
@@ -800,6 +824,19 @@ public class InputPlane extends CoordPlane
 					txtSad = new TextField("0"),
 					txtAttr = new TextField("0"),
 					txtRep = new TextField("0");
+			TextField [] lst = new TextField[] {txtSink, txtSource, txtSad, txtAttr, txtRep};
+			for(TextField fld : lst)
+			{
+				fld.textProperty().addListener((observable, oldValue, newValue) ->
+				{
+					if (!newValue.matches("([1-9][0-9]+)|[0-9]"))
+						fld.setText(oldValue);
+				});
+				fld.setOnMouseClicked(e ->
+				{
+					fld.selectAll();
+				});
+			}
 			double w = 50;
 			txtSink.setMaxWidth(w);
 			txtSource.setMaxWidth(w);
@@ -813,21 +850,26 @@ public class InputPlane extends CoordPlane
 					vSad = new VBox(lblSad, txtSad),
 					vAttr = new VBox(lblAttr, txtAttr),
 					vRep = new VBox(lblRep, txtRep);
+
 			vSink.setAlignment(Pos.TOP_LEFT);
 			vSource.setAlignment(Pos.TOP_RIGHT);
 			vSad.setAlignment(Pos.CENTER);
 			vAttr.setAlignment(Pos.BOTTOM_LEFT);
 			vRep.setAlignment(Pos.BOTTOM_RIGHT);
-
-			double anchor = 15;
+			vSink.setPickOnBounds(false);
+			vSource.setPickOnBounds(false);
+			vSad.setPickOnBounds(false);
+			vAttr.setPickOnBounds(false);
+			vRep.setPickOnBounds(false);
 
 			mainStack.setPadding(new Insets(15));
 			mainStack.getChildren().addAll(vSink, vSource, vSad, vAttr, vRep);
-			mainStack.setMinWidth(350);
-			mainStack.setMinHeight(200);
+			newWindow.setMinWidth(350);
+			newWindow.setMinHeight(200);
 
 			Scene newScene = new Scene(mainStack);
 			newWindow.setScene(newScene);
+
 			newWindow.addEventHandler(KeyEvent.KEY_PRESSED, keyEvent ->
 			{
 				if(keyEvent.getCode() == KeyCode.ENTER)
@@ -876,6 +918,7 @@ public class InputPlane extends CoordPlane
 					newWindow.fireEvent(new WindowEvent(newWindow, WindowEvent.WINDOW_CLOSE_REQUEST));
 				}
 			});
+
 			newWindow.setOnCloseRequest((e) ->
 			{
 				setClickMode(InClickModeType.MOVEPOINT);
