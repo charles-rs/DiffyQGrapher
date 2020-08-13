@@ -5,7 +5,7 @@ import Evaluation.CriticalPoint;
 import Exceptions.BadSaddleTransversalException;
 import Exceptions.RootNotFound;
 import javafx.geometry.Point2D;
-
+import javafx.scene.canvas.GraphicsContext;
 
 
 public class SaddleConTransversal implements Cloneable
@@ -32,6 +32,9 @@ public class SaddleConTransversal implements Cloneable
 		try
 		{
 			this.central = central.clone();
+		} catch (NullPointerException ignored) {}
+		try
+		{
 			this.saddle = saddle.clone();
 		} catch (NullPointerException ignored) {}
 		try
@@ -48,12 +51,14 @@ public class SaddleConTransversal implements Cloneable
 
 	SaddleConTransversal(Point2D relativeDir, CriticalPoint saddle) throws BadSaddleTransversalException
 	{
-		if(saddle.type != CritPointTypes.SADDLE) throw new BadSaddleTransversalException();
+		if(saddle == null || saddle.type != CritPointTypes.SADDLE) throw new BadSaddleTransversalException();
 		homo = true;
 		mode = Mode.FIXEDDIR;
 		p1 = relativeDir.normalize();
 		p2 = null;
-		this.saddle = saddle.clone();
+//		this.saddle = saddle.clone();
+		this.saddle = saddle;
+//		System.out.println("IS THE FUCKING SADDLE NULL " + (this.saddle == null));
 	}
 
 	SaddleConTransversal(Point2D p1, Point2D p2, boolean homo)
@@ -141,8 +146,18 @@ public class SaddleConTransversal implements Cloneable
 					s1 = o.critical(s1.point, p.getX(), p.getY());
 					s2 = o.critical(s2.point, p.getX(), p.getY());
 				}
-			case FIXEDDIR:
-				saddle = o.critical(saddle.point, p);
+				return;
+			case FIXEDDIR:/*
+				GraphicsContext g = o.labelCanv.getGraphicsContext2D();
+				Point2D p1 = o.normToScr(getStart());
+				Point2D p2 = o.normToScr(getEnd());
+				g.strokeLine(p1.getX(), p1.getY(), p2.getX(), p2.getY());*/
+				if(saddle == null)
+					System.out.println("encountered null saddle");
+				saddle = o.critical(saddle.point, p.getX(), p.getY());
+				if(saddle == null)
+					System.out.println("WHAT THE ACtUAL fUcK");
+				return;
 		}
 	}
 	

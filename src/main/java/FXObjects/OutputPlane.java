@@ -278,6 +278,9 @@ public class OutputPlane extends CoordPlane
 			case SETTRAVERSAL:
 				fireUpdate(30);
 				break;
+			case SETDIRECTION:
+				fireUpdate(35);
+				break;
 			case SEMISTABLE:
 				fireUpdate(40);
 				break;
@@ -495,7 +498,7 @@ public class OutputPlane extends CoordPlane
 								setClickMode(ClickModeType.SETTRAVERSAL);
 							} else if(e.isAltDown())
 							{
-								//TODO WORK OUT RELATIVE DIRECTION TRAVERSALS
+								setClickMode(ClickModeType.SETDIRECTION);
 							} else
 							{
 								if (selectedSeps.get(0).saddle.point.distance(selectedSeps.get(1).saddle.point) < inc / 100)
@@ -535,6 +538,28 @@ public class OutputPlane extends CoordPlane
 						} else fireUpdate(21);
 					}
 				} catch (RootNotFound ignored) {}
+				break;
+			case SETDIRECTION:
+				try
+				{
+					SaddleConTransversal transversal = new SaddleConTransversal(pt, selectedSeps.get(0).saddle);
+					in.artist = new Thread(() ->
+					{
+						Platform.runLater(() -> in.loading.setVisible(true));
+						synchronized (selectedSeps)
+						{
+							synchronized (in)
+							{
+								renderSaddleCon(new Point2D(a, b), selectedSeps.get(0), selectedSeps.get(1), true, transversal);
+								selectedSeps.clear();
+							}
+						}
+						Platform.runLater((() -> in.loading.setVisible(false)));
+					});
+					in.artist.setDaemon(true);
+					in.artist.start();
+					setClickMode(ClickModeType.DRAWPATH);
+				} catch (BadSaddleTransversalException ignored) {}
 				break;
 			case SETTRAVERSAL:
 				if(!saddleTravStarted)
@@ -1277,6 +1302,7 @@ public class OutputPlane extends CoordPlane
 				p2 = getNextIsectLn(eval, lnSt, lnNd);
 			} catch (RootNotFound r2)
 			{
+				cycleLine.setVisible(false);
 				return false;
 			}
 		}
@@ -1506,6 +1532,9 @@ public class OutputPlane extends CoordPlane
 				System.out.println("circle failed");
 				return;
 			}
+		drawLine(circ[0], circ[1], in.awtHomoSaddleConColor);
+		if(false)
+			return;
 		SaddleConHelper.init(this, Thread.currentThread());
 		SaddleConHelper sad1 = new SaddleConHelper(st, circ[0], transversal.clone(), s1, s2);
 		SaddleConHelper sad2 = new SaddleConHelper(st, circ[1], transversal.clone(), s1, s2);
@@ -1592,7 +1621,8 @@ public class OutputPlane extends CoordPlane
 //			e1.advance(10);
 			if(e1.stuck())
 			{
-				System.out.println("STUCK");
+				System.out.println("STUCK at " + e1.getCurrent());
+				System.out.println("params: " + a + ", " + b);
 				return 0;
 			}
 			System.out.println("are we here?");
@@ -1631,7 +1661,8 @@ public class OutputPlane extends CoordPlane
 //			e2.advance(10);
 			if(e2.stuck())
 			{
-				System.out.println("STUCK (x2)");
+				System.out.println("STUCK (x2) at " + e2.getCurrent());
+				System.out.println("params: " + a + ", " + b);
 				return 0;
 			}
 			System.out.println("or here?");
@@ -1801,8 +1832,9 @@ public class OutputPlane extends CoordPlane
 	private Point2D saddleConLoop(SepStart s1, SepStart s2, Point2D center, SaddleConTransversal transversal,
 								  LoopType lty) [] throws RootNotFound
 	{
-		double px = ((in.xMax.get() - in.xMin.get() + in.yMax.get() - in.yMin.get())/10) /
+		double px = ((in.xMax.get() - in.xMin.get() + in.yMax.get() - in.yMin.get())) /
 				((in.getWidth() + in.getHeight())/2D);
+		if(transversal.mode == SaddleConTransversal.Mode.FIXEDDIR) px /= 30.;
 		Point2D pts [] = new Point2D[4];
 		pts[0] = center.add(4 * px, 0);
 		pts[1] = center.add(0, 4 * px);
@@ -1824,14 +1856,16 @@ public class OutputPlane extends CoordPlane
 			if(cds[i] == -1 * cds[(i + 1) % 4])
 			{
 				int finalI = i;
+				double finalPx = px;
 				System.out.println("THE INDEX IS " + i);
 				if(firstAdded)
 				{
+
 					t2 = new Thread(() ->
 					{
 						try
 						{
-							p2.set(saddleConMidpointPath(s1, s2, transversal, GeneratorFactory.getMidpointArcGenerator(px, center, thetas[finalI + 1] + .1, thetas[finalI] - .1)));
+							p2.set(saddleConMidpointPath(s1, s2, transversal, GeneratorFactory.getMidpointArcGenerator(finalPx /20, center, thetas[finalI + 1] + .1, thetas[finalI] - .1)));
 						} catch (RootNotFound ignored)
 						{}
 					});
@@ -1843,7 +1877,7 @@ public class OutputPlane extends CoordPlane
 					{
 						try
 						{
-							p1.set(saddleConMidpointPath(s1, s2, transversal, GeneratorFactory.getMidpointArcGenerator(px, center, thetas[finalI + 1] + .1, thetas[finalI] - .1)));
+							p1.set(saddleConMidpointPath(s1, s2, transversal, GeneratorFactory.getMidpointArcGenerator(finalPx/20, center, thetas[finalI + 1] + .1, thetas[finalI] - .1)));
 						} catch (RootNotFound ignored)
 						{}
 					});
@@ -2076,15 +2110,6 @@ public class OutputPlane extends CoordPlane
 			try
 			{
 				transversal.update(p);
-				/*if (transversal.homo)
-				{
-					transversal.saddle = critical(transversal.saddle.point, p.getX(), p.getY());
-					transversal.central = critical(transversal.central.point, p.getX(), p.getY());
-				} else
-				{
-					transversal.s1 = critical(transversal.s1.point, p.getX(), p.getY());
-					transversal.s2 = critical(transversal.s2.point, p.getX(), p.getY());
-				}*/
 				ready = false;
 			} catch (RootNotFound r)
 			{
@@ -2103,16 +2128,6 @@ public class OutputPlane extends CoordPlane
 			try
 			{
 				transversal.update(p);
-				/*
-				if(transversal.homo)
-				{
-					transversal.saddle = critical(transversal.saddle.point, p.getX(), p.getY());
-					transversal.central = critical(transversal.central.point, p.getX(), p.getY());
-				} else
-				{
-					transversal.s1 = critical(transversal.s1.point, p.getX(), p.getY());
-					transversal.s2 = critical(transversal.s2.point, p.getX(), p.getY());
-				}*/
 				s1 = s1.updateSaddle(critical(s1.saddle.point, p));
 				s2 = s2.updateSaddle(critical(s2.saddle.point, p));
 				cd = saddlePass(s1, s2, p, transversal);
