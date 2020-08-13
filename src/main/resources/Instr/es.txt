@@ -13,7 +13,7 @@
 11~Elige el otro lado de la linea transversal del ciclo límite
 12~Elige el comienzo de una solución que debería converger al ciclo límite desirado.
 20~Elige el primer separatriz
-21~Elige el segundo separatriz%Manten presionada la tecla ctrl si quieres una linea transversal estático
+21~Elige el segundo separatriz%Manten presionada la tecla ctrl si quieres una linea transversal estático%Manten presionada la tecla alt si quieres una linea transversal con dirección constante
 25~Elige el punto critical dentro de la conección de sillas homoclínica
 30~Elige el primer punto de tu linea transversal estático
 31~Elige el segundo punto de tu linea transversal estático

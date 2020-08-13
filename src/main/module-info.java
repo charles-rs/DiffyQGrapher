@@ -9,3 +9,9 @@ module DiffEqGrapher.main {
 
 	opens Main to javafx.graphics;
 }
+
+/*
+
+dx/dt = (y - a)cos b - (y - x^3 + 3x)sin b
+dy/dt = (y - a)sin b + (y - x^3 + 3x)cos b
+ */

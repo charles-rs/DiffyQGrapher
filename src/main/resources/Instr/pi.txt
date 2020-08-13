@@ -13,7 +13,7 @@
 11~Click th' other end of yer transversal line, hoping the solution will cross it like you crossed the old captain in last year's mutiny!
 12~Start a solution that'll get to the limit cycle like you get to yer buried treasure!
 20~Get ye th' initial separatrix with a bottle of rum!
-21~Now for another round!%(Keep ya ctrl key down for a static transversal)
+21~Now for another round!%(Keep ya ctrl key down for a static transversal)%(Or ya alt key for a fixed direction)
 25~Finally almost to shore! Click the point in th' middle of yer homoclinic saddle connection!
 30~Get yer initial point of the static transversal, but remember, a true pirate doesn't use static anything!
 31~Get the other point of th' non-pirate transversal

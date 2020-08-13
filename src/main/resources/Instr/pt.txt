@@ -13,7 +13,7 @@
 11~Escolhe a outra extremidade da transversa do ciclo limite
 12~Escolhe início da solução que deveria convergir ao ciclo limite desejado
 20~Escolhe o primeiro separatriz
-21~Escohle o segundo separatriz%Segure a tecla ctrl se quiser uma transversa estática
+21~Escohle o segundo separatriz%Segure a tecla ctrl se quiser uma transversa estática%Segure a tecla alt se quiser uma transversa com direção constante
 25~Escolhe o ponto crítico dentro do bifurcação homoclínico
 30~Escolhe a primeira extremidade da sua transversa estática
 31~Escolhe a outra extremidade da sua transversa estática

@@ -13,7 +13,7 @@
 11~Select the other end of the limit cycle transversal
 12~Select the start of a solution that should converge to the desired limit cycle
 20~Select the first separatrix
-21~Select the second separatrix%Hold ctrl if you would like a static transversal
+21~Select the second separatrix%Hold ctrl if you would like a static transversal%Hold alt if you would like a fixed direction traversal from the saddle
 25~Select the critical point within the loop of the homoclinic saddle connection
 30~Select the first point of your static transversal
 31~Select the second point of your static transversal

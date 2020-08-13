@@ -16,13 +16,18 @@ public class SaddleConTransversal implements Cloneable
 	CriticalPoint s1, s2;
 	private  static OutputPlane o;
 	final Point2D p1, p2;
-	final boolean stat;
+//	final boolean stat;
+	final Mode mode;
+	public enum Mode
+	{
+		DYNAMIC, STATIC, FIXEDDIR
+	};
 	private SaddleConTransversal(CriticalPoint central, CriticalPoint saddle, CriticalPoint s1, CriticalPoint s2,
-								 boolean homo, Point2D p1, Point2D p2, boolean stat)
+								 boolean homo, Point2D p1, Point2D p2, Mode mode)
 	{
 		this.p1 = p1;
 		this.p2 = p2;
-		this.stat = stat;
+		this.mode = mode;
 		this.homo = homo;
 		try
 		{
@@ -40,9 +45,20 @@ public class SaddleConTransversal implements Cloneable
 		o = _o;
 	}
 
+
+	SaddleConTransversal(Point2D relativeDir, CriticalPoint saddle) throws BadSaddleTransversalException
+	{
+		if(saddle.type != CritPointTypes.SADDLE) throw new BadSaddleTransversalException();
+		homo = true;
+		mode = Mode.FIXEDDIR;
+		p1 = relativeDir.normalize();
+		p2 = null;
+		this.saddle = saddle.clone();
+	}
+
 	SaddleConTransversal(Point2D p1, Point2D p2, boolean homo)
 	{
-		this.stat = true;
+		this.mode = Mode.STATIC;
 		this.p1 = p1;
 		this.p2 = p2;
 		this.homo = homo;
@@ -52,7 +68,7 @@ public class SaddleConTransversal implements Cloneable
 	{
 		this.p1 = null;
 		this.p2 = null;
-		stat = false;
+		mode = Mode.DYNAMIC;
 		if(p1.type == CritPointTypes.SADDLE)
 		{
 			if(p2.type == CritPointTypes.SADDLE)
@@ -76,48 +92,63 @@ public class SaddleConTransversal implements Cloneable
 	}
 	Point2D getStart()
 	{
-		if(stat)
-			return p1;
-		else
+		switch (mode)
 		{
-			if (homo)
-				return central.point;
-			else
-				return s1.point.midpoint(s2.point).add(4096,
-						-4096D * ((s2.point.getX() - s1.point.getX()) / (s2.point.getY() - s1.point.getY())));
+			case STATIC:
+				return p1;
+			case DYNAMIC:
+				if (homo)
+					return central.point;
+				else
+					return s1.point.midpoint(s2.point).add(4096,
+							-4096D * ((s2.point.getX() - s1.point.getX()) / (s2.point.getY() - s1.point.getY())));
+			case FIXEDDIR:
+				return saddle.point.add(p1.multiply(.0001));
 		}
+		return null;
 	}
 	Point2D getEnd()
 	{
-		if(stat)
-			return p2;
+		switch (mode)
 		{
-			if (homo)
-				return central.point.add(central.point.subtract(saddle.point).normalize().multiply(4096D));
-			else
-				return s1.point.midpoint(s2.point).add(-4096,
-						4096D * ((s2.point.getX() - s1.point.getX()) / (s2.point.getY() - s1.point.getY())));
+			case STATIC:
+				return p2;
+			case DYNAMIC:
+				if (homo)
+					return central.point.add(central.point.subtract(saddle.point).normalize().multiply(4096D));
+				else
+					return s1.point.midpoint(s2.point).add(-4096,
+							4096D * ((s2.point.getX() - s1.point.getX()) / (s2.point.getY() - s1.point.getY())));
+			case FIXEDDIR:
+				return saddle.point.add(p1.multiply(4096));
 		}
-
+		return null;
 	}
 
 	public void update(Point2D p) throws RootNotFound
 	{
-		if(stat) return;
-		if (homo)
+		switch (mode)
 		{
-			saddle = o.critical(saddle.point, p.getX(), p.getY());
-			central = o.critical(central.point, p.getX(), p.getY());
-		} else
-		{
-			s1 = o.critical(s1.point, p.getX(), p.getY());
-			s2 = o.critical(s2.point, p.getX(), p.getY());
+			case STATIC:
+				return;
+			case DYNAMIC:
+				if (homo)
+				{
+					saddle = o.critical(saddle.point, p.getX(), p.getY());
+					central = o.critical(central.point, p.getX(), p.getY());
+				} else
+				{
+					s1 = o.critical(s1.point, p.getX(), p.getY());
+					s2 = o.critical(s2.point, p.getX(), p.getY());
+				}
+			case FIXEDDIR:
+				saddle = o.critical(saddle.point, p);
 		}
 	}
 	
 	@Override
 	public SaddleConTransversal clone()
 	{
-		return new SaddleConTransversal(central, saddle, s1, s2, homo, p1, p2, stat);
+		return new SaddleConTransversal(central, saddle, s1, s2, homo, p1, p2, mode);
 	}
 }
