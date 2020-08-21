@@ -103,7 +103,7 @@ public class SaddleConTransversal implements Cloneable
 				return p1;
 			case DYNAMIC:
 				if (homo)
-					return central.point;
+					return central.point.midpoint(saddle.point);
 				else
 					return s1.point.midpoint(s2.point).add(4096,
 							-4096D * ((s2.point.getX() - s1.point.getX()) / (s2.point.getY() - s1.point.getY())));

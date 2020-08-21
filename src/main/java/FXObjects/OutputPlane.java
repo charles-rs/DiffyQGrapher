@@ -1399,6 +1399,8 @@ public class OutputPlane extends CoordPlane
 				}
 			}
 		}
+		System.out.println("START: " + st);
+		System.out.println("END: " + nd);
 		throw new RootNotFound();
 	}
 
@@ -1636,6 +1638,14 @@ public class OutputPlane extends CoordPlane
 				} catch (RootNotFound r1)
 				{
 					System.out.println("really hope we aren't here");
+					System.out.println("params: " + a + ", " + b);
+					System.out.println("location1: " + e1.getCurrent());
+					System.out.println("location2: " + e2.getCurrent());
+					System.out.println("trans start: " + lnSt);
+					System.out.println("trans end: " + lnNd);
+					System.out.println("saddle: " + s1.saddle.point);
+					System.out.println("start 1:  " + s1.getStart(inc) + s1.posEig());
+					System.out.println("start 2: " + s2.getStart(inc) + s2.posEig());
 					return 0;
 				}
 			}
@@ -1666,6 +1676,9 @@ public class OutputPlane extends CoordPlane
 				return 0;
 			}
 			System.out.println("or here?");
+			System.out.println("params: " + a + ", " + b);
+			System.out.println("location: " + e2.getCurrent());
+			System.out.println("line: " + lnSt + "-->" + lnNd);
 			if(traversal.homo)
 			{
 				if(s1.posEig()) return 1;
@@ -1960,8 +1973,18 @@ public class OutputPlane extends CoordPlane
 	{
 		double px = ((in.xMax.get() - in.xMin.get() + in.yMax.get() - in.yMin.get())/2) /
 				((in.canv.getWidth() + in.canv.getHeight())/2D);
+//		px /= 4;
 		MidpointPathGenerator gen = GeneratorFactory.getMidpointArcGenerator(px, prev1, prev2);
-		return saddleConMidpointPath(s1, s2, transversal, gen);
+		try
+		{
+			return saddleConMidpointPath(s1, s2, transversal, gen);
+		} catch (RootNotFound r)
+		{
+			System.out.println("refining generator");
+			px /= 3;
+			gen = GeneratorFactory.getMidpointArcGenerator(px, prev1, prev2);
+			return saddleConMidpointPath(s1, s2, transversal, gen);
+		}
 	}
 	Point2D saddleConMidpointPath(SepStart s1, SepStart s2, SaddleConTransversal transversal, MidpointPathGenerator gen) throws RootNotFound
 	{
@@ -2461,7 +2484,6 @@ public class OutputPlane extends CoordPlane
 				gc.setLineWidth(.5);
 				gc.setFont(new javafx.scene.text.Font(10));
 				gc.strokeText(t.getText(), x, y);
-				System.out.println(x + ", " + y);
 			}
 //			synchronized (needsReset)
 //			{

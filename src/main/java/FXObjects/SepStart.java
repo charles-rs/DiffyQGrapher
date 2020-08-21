@@ -134,8 +134,23 @@ public class SepStart implements Cloneable
 	 */
 	public SepStart updateSaddle(CriticalPoint sad) throws RootNotFound
 	{
+
 		if(sad.type == CritPointTypes.SADDLE)
+		{
+			if(sad.matrix.getEigenVector(0).minus(saddle.matrix.getEigenVector(0)).normF() >
+					sad.matrix.getEigenVector(0).minus(saddle.matrix.getEigenVector(0).negative()).normF())
+			{
+				System.out.println("negated first");
+				sad.matrix.getEigenVector(0).set(sad.matrix.getEigenVector(0).negative());
+			}
+			if(sad.matrix.getEigenVector(1).minus(saddle.matrix.getEigenVector(1)).normF() >
+					sad.matrix.getEigenVector(1).minus(saddle.matrix.getEigenVector(1).negative()).normF())
+			{
+				System.out.println("negated second");
+				sad.matrix.getEigenVector(1).set(sad.matrix.getEigenVector(1).negative());
+			}
 			return new SepStart(sad, this.state);
+		}
 		else throw new RootNotFound();
 	}
 	@Override
