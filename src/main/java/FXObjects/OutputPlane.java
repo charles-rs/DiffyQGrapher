@@ -1847,7 +1847,8 @@ public class OutputPlane extends CoordPlane
 	{
 		double px = ((in.xMax.get() - in.xMin.get() + in.yMax.get() - in.yMin.get())) /
 				((in.getWidth() + in.getHeight())/2D);
-		if(transversal.mode == SaddleConTransversal.Mode.FIXEDDIR) px /= 30.;
+		px /= 100;
+//		if(transversal.mode == SaddleConTransversal.Mode.FIXEDDIR) px /= 30.;
 		Point2D pts [] = new Point2D[4];
 		pts[0] = center.add(4 * px, 0);
 		pts[1] = center.add(0, 4 * px);
@@ -1864,6 +1865,7 @@ public class OutputPlane extends CoordPlane
 		AtomicReference<Point2D> p1 = new AtomicReference<>(null);
 		AtomicReference<Point2D> p2 = new AtomicReference<>(null);
 		Thread t1 = null, t2 = null;
+		Point2D pt1 = null, pt2 = null;
 		for(int i = 0; i < 4; i++)
 		{
 			if(cds[i] == -1 * cds[(i + 1) % 4])
@@ -1874,32 +1876,34 @@ public class OutputPlane extends CoordPlane
 				if(firstAdded)
 				{
 
-					t2 = new Thread(() ->
+					/*t2 = new Thread(() ->
 					{
 						try
 						{
 							p2.set(saddleConMidpointPath(s1, s2, transversal, GeneratorFactory.getMidpointArcGenerator(finalPx /20, center, thetas[finalI + 1] + .1, thetas[finalI] - .1)));
 						} catch (RootNotFound ignored)
 						{}
-					});
+					});*/
+					pt2 = pts[finalI].midpoint(pts[(finalI+1) % 4]);
 					break;
 				} else
 				{
 
-					t1 = new Thread(() ->
+					/*t1 = new Thread(() ->
 					{
 						try
 						{
 							p1.set(saddleConMidpointPath(s1, s2, transversal, GeneratorFactory.getMidpointArcGenerator(finalPx/20, center, thetas[finalI + 1] + .1, thetas[finalI] - .1)));
 						} catch (RootNotFound ignored)
 						{}
-					});
+					});*/
+					pt1 = pts[finalI].midpoint(pts[(finalI+1) % 4]);
 					firstAdded = true;
 				}
 			}
 
 		}
-		if(t1 == null || t2 == null) throw new RootNotFound();
+		/*if(t1 == null || t2 == null) throw new RootNotFound();
 		t1.start();
 
 		try
@@ -1921,10 +1925,10 @@ public class OutputPlane extends CoordPlane
 			t1.interrupt();
 			t2.interrupt();
 			throw new RootNotFound();
-		}
-		Point2D pt1, pt2;
-		pt1 = p1.get();
-		pt2 = p2.get();
+		}*/
+
+//		pt1 = p1.get();
+//		pt2 = p2.get();
 		if(pt1 == null || pt2 == null) throw new RootNotFound();
 		System.out.println(pt1);
 		System.out.println(center);

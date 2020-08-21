@@ -345,7 +345,6 @@ public class InputPlane extends CoordPlane
 	 */
 	private void saddleBifHelp(double start [], boolean add)
 	{
-
 		Node dx = op.getDx();
 		Node dy = op.getDy();
 		Node det = Maths.minus(Maths.mult(dx.diff('x'), dy.diff('y')),
@@ -370,10 +369,9 @@ public class InputPlane extends CoordPlane
 		boolean isA = true;
 		double first[] = start;
 		double second[];
-		try
 		{
 			second = bifHelp(first[0], first[1], first[2], first[3], dx, dy, det, derivative, 'a');
-		} catch (SingularMatrixException s)
+		} if(second == null)
 		{
 			isA = false;
 			second = bifHelp(first[0], first[1], first[2], first[3], dx, dy, det, derivative, 'b');
@@ -392,10 +390,10 @@ public class InputPlane extends CoordPlane
 			drawLine(first[2], first[3], second[2], second[3], awtSaddleBifColor, 3);
 		}
 		first = start;
-		try
 		{
 			second = bifHelp(first[0], first[1], first[2], first[3], dx, dy, det, derivative, 'a');
-		} catch (SingularMatrixException s)
+		}
+		if(second == null)
 		{
 			isA = false;
 			second = bifHelp(first[0], first[1], first[2], first[3], dx, dy, det, derivative, 'b');
@@ -490,10 +488,9 @@ public class InputPlane extends CoordPlane
 		boolean isA = true;
 		double first[] = start;
 		double second[];
-		try
 		{
 			second = bifHelp(first[0], first[1], first[2], first[3], dx, dy, tr, derivative, 'a');
-		} catch (SingularMatrixException s)
+		} if(second == null)
 		{
 			isA = false;
 			second = bifHelp(first[0], first[1], first[2], first[3], dx, dy, tr, derivative, 'b');
@@ -527,10 +524,9 @@ public class InputPlane extends CoordPlane
 				drawLine(first[2], first[3], second[2], second[3], awtHopfBifColor, 3);
 			}
 			first = start;
-			try
 			{
 				second = bifHelp(first[0], first[1], first[2], first[3], dx, dy, tr, derivative, 'a');
-			} catch (SingularMatrixException s)
+			} if(second == null)
 			{
 				isA = false;
 				second = bifHelp(first[0], first[1], first[2], first[3], dx, dy, tr, derivative, 'b');
