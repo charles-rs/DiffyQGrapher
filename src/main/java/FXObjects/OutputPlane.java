@@ -229,6 +229,8 @@ public class OutputPlane extends CoordPlane
 		divBifConvColor = settings.divBifConvColor;
 		divBifDivColor = settings.divBifDivColor;
 		initColors();
+		this.drawAxes = settings.drawAxes;
+		drawAxes(false);
 
 	}
 	public void setClickMode(ClickModeType cl)
@@ -1288,7 +1290,11 @@ public class OutputPlane extends CoordPlane
 				}
 			}
 		}
-		if(isect == null) return false;
+		if(isect == null)
+		{
+			cycleLine.setVisible(false);
+			return false;
+		}
 		p1 = isect;
 		eval.initialise(isect, 0, a, b, eval.getInc());
 		try

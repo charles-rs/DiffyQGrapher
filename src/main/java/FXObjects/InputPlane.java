@@ -227,6 +227,8 @@ public class InputPlane extends CoordPlane
 		heteroSaddleConColor = settings.heteroSaddleConColor;
 		semiStableColor = settings.semiStableColor;
 		initColors();
+		this.drawAxes = settings.drawAxes;
+		drawAxes(false);
 	}
 
 	public void updateA(double a)

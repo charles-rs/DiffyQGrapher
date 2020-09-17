@@ -92,6 +92,8 @@ public abstract class CoordPlane extends Pane
 
 	private boolean m_dirty = false;
 
+	protected boolean drawAxes = true;
+
 
 	/**
 	 * Constructor for a CoordPlane with the provided side length.
@@ -404,27 +406,7 @@ public abstract class CoordPlane extends Pane
 	public void drawAxes(boolean clear)
 	{
 
-		String strxMin, strxMax, stryMin, stryMax;
-		strxMin = String.valueOf(xMin.get());
-		strxMax = String.valueOf(xMax.get());
-		stryMin = String.valueOf(yMin.get());
-		stryMax = String.valueOf(yMax.get());
-		try
-		{
-			strxMin = strxMin.substring(0, 8);
-		} catch (StringIndexOutOfBoundsException ignored) {}
-		try
-		{
-			strxMax = strxMax.substring(0, 8);
-		} catch (StringIndexOutOfBoundsException ignored) {}
-		try
-		{
-			stryMin = stryMin.substring(0, 8);
-		} catch (StringIndexOutOfBoundsException ignored) {}
-		try
-		{
-			stryMax = stryMax.substring(0, 8);
-		} catch (StringIndexOutOfBoundsException ignored) {}
+
 
 		if(clear)
 			synchronized (g)
@@ -436,7 +418,7 @@ public abstract class CoordPlane extends Pane
 		double x0 = normToScrX(0);
 		synchronized (yAxis)
 		{
-			yAxis.setVisible(inBounds(0, scrToNormY(this.getHeight() / 2)));
+			yAxis.setVisible(this.drawAxes && inBounds(0, scrToNormY(this.getHeight() / 2)));
 			yAxis.setStartX(x0);
 			yAxis.setEndX(x0);
 			yAxis.setStartY(0);
@@ -446,7 +428,7 @@ public abstract class CoordPlane extends Pane
 		double y0 = normToScrY(0);
 		synchronized (xAxis)
 		{
-			xAxis.setVisible(inBounds(scrToNormX(this.getWidth() / 2), 0));
+			xAxis.setVisible(this.drawAxes && inBounds(scrToNormX(this.getWidth() / 2), 0));
 			xAxis.setStartY(y0);
 			xAxis.setEndY(y0);
 			xAxis.setStartX(0);
