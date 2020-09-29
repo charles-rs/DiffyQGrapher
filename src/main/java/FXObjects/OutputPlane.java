@@ -320,6 +320,10 @@ public class OutputPlane extends CoordPlane
 		synchronized (labelCanv)
 		{
 			labelCanv.getGraphicsContext2D().clearRect(0, 0, getWidth(), getHeight());
+			for(var c : criticalPoints)
+			{
+				labelCritical(c);
+			}
 		}
 	}
 
@@ -1359,6 +1363,7 @@ public class OutputPlane extends CoordPlane
 				cycleLine.setVisible(false);
 			}
 		}
+		cycleLine.setVisible(false);
 		return false;
 	}
 

@@ -12,9 +12,7 @@ module DiffEqGrapher.main {
 
 /*
 
-dx/dt = (y - a)cos b - (y - x^3 + 3x)sin b
-dy/dt = (y - a)sin b + (y - x^3 + 3x)cos b
-
+. I
 
 dx/dt = (y - a x)cos b - (y^2 + y x^2 - 3x)sin b
 dy/dt = (y - a x)sin b + (y^2 + y x^2 - 3x)cos b

@@ -219,7 +219,7 @@ public class InputPlane extends CoordPlane
 		awtSemiStableColor = fromFXColor(semiStableColor);
 	}
 
-	private void updateSettings()
+	public void updateSettings()
 	{
 		saddleBifColor = settings.saddleBifColor;
 		hopfBifColor = settings.hopfBifColor;

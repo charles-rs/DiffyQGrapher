@@ -371,6 +371,8 @@ public class Main extends Application
 				}
 			}
 		});
+		aField.setText("0.0");
+		bField.setText("0.0");
 		tField.textProperty().addListener((observable, oldValue, newValue) ->
 		{
 			if (!newValue.matches("-?[0-9]*(\\.)?[0-9]*"))
@@ -598,6 +600,7 @@ public class Main extends Application
 		{
 			new SettingsWindow(settings, lang);
 			outPlane.updateSettings();
+			inPlane.updateSettings();
 		});
 		english.setOnAction(e ->
 		{
