@@ -23,6 +23,7 @@ import javafx.scene.Scene;
 import javafx.scene.control.*;
 import javafx.scene.input.KeyCode;
 import javafx.scene.input.KeyEvent;
+import javafx.scene.input.MouseEvent;
 import javafx.scene.layout.AnchorPane;
 import javafx.scene.layout.HBox;
 import javafx.scene.layout.Priority;
@@ -414,6 +415,7 @@ public class Main extends Application
 				}
 			}
 		});
+
 		euler.setOnAction((e) ->
 		{
 			euler.setText(strEuler + " x");

@@ -1448,17 +1448,10 @@ public class OutputPlane extends CoordPlane
 	 */
 	public void drawBasin(Point2D st)
 	{
-		Point2D crit;
-		try
-		{
-			CriticalPoint temp = critical(st);
-			if(!temp.type.isSink()) return;
-			crit = temp.point;
-		} catch (RootNotFound r)
-		{
-			System.out.println("haha no");
-			return;
-		}
+		Evaluator tmp = EvaluatorFactory.getBestEvaluator(dx, dy);
+		tmp.initialise(st, t, a, b, inc);
+		tmp.advance(10000);
+		Point2D crit = tmp.getCurrent();
 		BasinFinder.init(this, crit, true);
 
 		for(int i = 0; i < Runtime.getRuntime().availableProcessors(); i++)
@@ -1473,22 +1466,15 @@ public class OutputPlane extends CoordPlane
 	 */
 	public void drawCoBasin(Point2D st)
 	{
-		Point2D crit;
-		try
-		{
-			CriticalPoint temp = critical(st);
-			if(!temp.type.isSource()) return;
-			crit = temp.point;
-		} catch (RootNotFound r)
-		{
-			return;
-		}
+		Evaluator tmp = EvaluatorFactory.getBestEvaluator(dx, dy);
+		tmp.initialise(st, t, a, b, -inc);
+		tmp.advance(10000);
+		Point2D crit = tmp.getCurrent();
 		BasinFinder.init(this, crit, false);
+
+		for(int i = 0; i < Runtime.getRuntime().availableProcessors(); i++)
 		{
-			for(int i = 0; i < 8; i++)
-			{
-				new BasinFinder().start();
-			}
+			new BasinFinder().start();
 		}
 	}
 

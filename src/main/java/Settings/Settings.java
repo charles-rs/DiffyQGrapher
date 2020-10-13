@@ -33,7 +33,6 @@ public class Settings
 			return new Color(r, g, b, a);
 		else
 		{
-			System.out.println("wtf");
 			return def;
 		}
 	}

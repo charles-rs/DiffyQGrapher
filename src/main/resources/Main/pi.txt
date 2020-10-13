@@ -3,7 +3,7 @@ file~Archives
 options~Me Settings
 view~Through the Telescope
 draw~Design the Treasure Map
-bifurcation~Find Bifurcation
+bifurcation~Find Bifarrrcation
 help~Help Matey!
 language~Speakin
 save in~Save th' Parameter Space

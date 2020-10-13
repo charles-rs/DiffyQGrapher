@@ -269,18 +269,18 @@
         <root url="jar://$USER_HOME$/.gradle/caches/modules-2/files-2.1/org.openjfx/javafx-base/12.0.1/eb73441f6bc350c75995da1e64396be5f6d61fde/javafx-base-12.0.1-sources.jar!/" />
       </SOURCES>
     </library>
-    <library name="Gradle: org.openjfx:javafx-base:win:12.0.1">
+    <library name="Gradle: org.openjfx:javafx-base:linux:12.0.1">
       <CLASSES>
-        <root url="jar://$USER_HOME$/.gradle/caches/modules-2/files-2.1/org.openjfx/javafx-base/12.0.1/6f5947b255bb26e072862b3bb0c32d54d8effe84/javafx-base-12.0.1-win.jar!/" />
+        <root url="jar://$USER_HOME$/.gradle/caches/modules-2/files-2.1/org.openjfx/javafx-base/12.0.1/bacd11da7c8f80868508aaa89b8b22c282dddaf7/javafx-base-12.0.1-linux.jar!/" />
       </CLASSES>
       <JAVADOC />
       <SOURCES>
         <root url="jar://$USER_HOME$/.gradle/caches/modules-2/files-2.1/org.openjfx/javafx-base/12.0.1/eb73441f6bc350c75995da1e64396be5f6d61fde/javafx-base-12.0.1-sources.jar!/" />
       </SOURCES>
     </library>
-    <library name="Gradle: org.openjfx:javafx-controls:win:12.0.1">
+    <library name="Gradle: org.openjfx:javafx-controls:linux:12.0.1">
       <CLASSES>
-        <root url="jar://$USER_HOME$/.gradle/caches/modules-2/files-2.1/org.openjfx/javafx-controls/12.0.1/838555460c025b8df0fbc0fa03bf3f3767698f89/javafx-controls-12.0.1-win.jar!/" />
+        <root url="jar://$USER_HOME$/.gradle/caches/modules-2/files-2.1/org.openjfx/javafx-controls/12.0.1/705ca40565f7cff44fbd6aeae1876de06975bc8c/javafx-controls-12.0.1-linux.jar!/" />
       </CLASSES>
       <JAVADOC />
       <SOURCES>
@@ -296,18 +296,18 @@
         <root url="jar://$USER_HOME$/.gradle/caches/modules-2/files-2.1/org.openjfx/javafx-graphics/12.0.1/eb2eebbd957e5519332cec722ccf485674d65b4a/javafx-graphics-12.0.1-sources.jar!/" />
       </SOURCES>
     </library>
-    <library name="Gradle: org.openjfx:javafx-graphics:win:12.0.1">
+    <library name="Gradle: org.openjfx:javafx-graphics:linux:12.0.1">
       <CLASSES>
-        <root url="jar://$USER_HOME$/.gradle/caches/modules-2/files-2.1/org.openjfx/javafx-graphics/12.0.1/18a01ffdd4edb82e7da3bc99937c6a608d1eaaa6/javafx-graphics-12.0.1-win.jar!/" />
+        <root url="jar://$USER_HOME$/.gradle/caches/modules-2/files-2.1/org.openjfx/javafx-graphics/12.0.1/16cecc736fb34c555b7bd669a89820b9d0fce3f/javafx-graphics-12.0.1-linux.jar!/" />
       </CLASSES>
       <JAVADOC />
       <SOURCES>
         <root url="jar://$USER_HOME$/.gradle/caches/modules-2/files-2.1/org.openjfx/javafx-graphics/12.0.1/eb2eebbd957e5519332cec722ccf485674d65b4a/javafx-graphics-12.0.1-sources.jar!/" />
       </SOURCES>
     </library>
-    <library name="Gradle: org.openjfx:javafx-swing:win:12.0.1">
+    <library name="Gradle: org.openjfx:javafx-swing:linux:12.0.1">
       <CLASSES>
-        <root url="jar://$USER_HOME$/.gradle/caches/modules-2/files-2.1/org.openjfx/javafx-swing/12.0.1/e5fa6fd0fb54ed498e3e40b0788856430202c6b7/javafx-swing-12.0.1-win.jar!/" />
+        <root url="jar://$USER_HOME$/.gradle/caches/modules-2/files-2.1/org.openjfx/javafx-swing/12.0.1/c359661bc4f5b8464ee0ea7c80e0ad526fe27149/javafx-swing-12.0.1-linux.jar!/" />
       </CLASSES>
       <JAVADOC />
       <SOURCES>
