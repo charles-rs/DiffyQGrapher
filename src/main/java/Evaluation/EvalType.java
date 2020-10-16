@@ -7,5 +7,6 @@ public enum EvalType
 {
 	Euler,
 	MidEuler,
-	RungeKutta;
+	RungeKutta,
+	RKF56;
 }

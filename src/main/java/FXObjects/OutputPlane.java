@@ -124,7 +124,7 @@ public class OutputPlane extends CoordPlane
 		dSaddleYMax = 25;//this.yMax.get();
 		dSaddleYMin = -25;//this.yMin.get();
 
-		evalType = EvalType.RungeKutta;
+		evalType = EvalType.RKF56;
 		initials = new ArrayList<>();
 		criticalPoints = new CopyOnWriteArrayList<>();
 		isoclines = new ArrayList<>();
@@ -2516,7 +2516,7 @@ public class OutputPlane extends CoordPlane
 		y = init.y;
 		t = init.t;
 		Evaluator eval = EvaluatorFactory.getEvaluator(evalType, dx, dy);
-		Point2D initialDir = eval.evaluate(x, y, a, b, t, inc);
+		Point2D initialDir = EvaluatorFactory.getEvaluator(EvalType.Euler, dx, dy).evaluate(x, y, a, b, t, inc);
 		if (arrow) drawArrow(x, y, initialDir.getX(), initialDir.getY(), color);
 		Point2D prev;
 		Point2D next;

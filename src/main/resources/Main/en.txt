@@ -12,6 +12,7 @@ quit~Quit
 euler~Euler's Method
 mideuler~Midpoint Euler's Method
 runge~Runge-Kutta Method
+rkf56~Runge-Kutta-Fehlberg 5-6 Method
 evalopt~Change Evaluator
 clickopt~Change Mode
 drawpath~Draw Path
