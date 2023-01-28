@@ -15,6 +15,7 @@ public class BasinFinder extends Thread
 	private static Point2D crit;
 	private static AtomicBoolean doneLeft, doneRight;
 	private static Double left, right;
+	private static final Object leftLock = new Object(), rightLock = new Object();
 	private static Side s;
 	private static double inc;
 	private static float colNum;
@@ -107,7 +108,7 @@ public class BasinFinder extends Thread
 		switch (s)
 		{
 			case LEFT:
-				synchronized (left)
+				synchronized (leftLock)
 				{
 					temp = left;
 					left -= inc;
@@ -116,7 +117,7 @@ public class BasinFinder extends Thread
 				if(!doneRight.get()) s = Side.RIGHT;
 				break;
 			case RIGHT:
-				synchronized (right)
+				synchronized (rightLock)
 				{
 					temp = right;
 					right += inc;
