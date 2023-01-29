@@ -5,6 +5,7 @@ plugins {
     id 'application'
     id 'org.openjfx.javafxplugin' version '0.0.8'// apply false
     id 'org.beryx.jlink' version '2.21.2'
+    id "edu.sc.seis.macAppBundle" version "2.3.0"
 }
 
 apply plugin: 'idea'
