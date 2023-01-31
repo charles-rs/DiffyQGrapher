@@ -2,7 +2,7 @@ plugins {
     id 'java'
     id 'application'
     id 'org.openjfx.javafxplugin' version '0.0.8'// apply false
-    id 'org.beryx.jlink' version '2.21.2'
+    id 'org.beryx.jlink' version '2.26.0'
 }
 
 apply plugin: 'idea'
@@ -87,7 +87,7 @@ jlink {
     jpackage {
 
 //        jpackageHome = 'C:\\Users\\charl\\.jdks\\openjdk-14.0.2'
-        installerType = 'deb'
+        installerType = 'dmg'
         installerOptions = [
                 '--app-version', version,
         ]
