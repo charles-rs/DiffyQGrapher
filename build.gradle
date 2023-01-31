@@ -87,7 +87,7 @@ jlink {
     jpackage {
 
 //        jpackageHome = 'C:\\Users\\charl\\.jdks\\openjdk-14.0.2'
-        installerType = 'dmg'
+
         installerOptions = [
                 '--app-version', version,
         ]
