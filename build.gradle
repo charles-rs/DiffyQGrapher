@@ -1,7 +1,7 @@
 plugins {
     id 'java'
     id 'application'
-    id 'org.openjfx.javafxplugin' version '0.0.8'// apply false
+    id 'org.openjfx.javafxplugin' version '0.0.13'// apply false
     id 'org.beryx.jlink' version '2.26.0'
 }
 
@@ -20,28 +20,15 @@ task runApp(type: JavaExec) {
 }
 
 
-/*
-if (JavaVersion.current() == JavaVersion.VERSION_11
-        || JavaVersion.current() == JavaVersion.VERSION_12){
-    apply plugin: 'org.openjfx.javafxplugin'
-}
-*/
-//apply plugin: 'java'
-// external repositories where dependencies of your project are found
 repositories {
-    // Use 'jcenter' for resolving external dependencies
-//    jcenter()
     mavenCentral()
 }
 
 
-//if (JavaVersion.current() == JavaVersion.VERSION_11
-//        || JavaVersion.current() == JavaVersion.VERSION_12) {
-    javafx {
-//        modules = [ 'javafx.controls', 'javafx.web', 'javafx.fxml', 'javafx.swing' ]
-        modules = ['javafx.controls', 'javafx.swing']
-    }
-//}
+javafx {
+    version = "12"
+    modules = ['javafx.controls', 'javafx.swing']
+}
 
 configurations.all {
     exclude group: 'org.ejml', module: 'ejml-fdense'
@@ -53,29 +40,9 @@ configurations.all {
 
 dependencies {
     implementation group: 'org.ejml', name: 'ejml-simple', version: '0.38'
-
-//    classpath 'com.github.zutherb.gradle:gradle-macappbundle:0.1'
-
-//    testCompile group: 'junit', name: 'junit', version: '4.12'
 }
 
 
-/*
-jar {
-
-    manifest {
-        attributes ('Class-Path': configurations.compile.collect { it.getName() }.join(' '),
-                'Main-Class': 'Main.Starter'//,
-               // 'Implementation-Title': 'DiffyQGrapher'
-        )
-    }
-    from {
-        configurations.compile.collect { entry -> zipTree(entry) }
-        configurations.runtimeClasspath.collect {it.isDirectory() ? it : zipTree(it)}
-    }
-    destinationDir = file("$rootDir/jar")
-}
-*/
 
 
 version = '1.0.0'
@@ -117,33 +84,6 @@ jlink {
         if (installerType == 'rpm') {
             installerOptions += [
             ]
-        }
-    }
-}
-
-jlinkZip {
-
-}
-
-task osxApp {
-    dependsOn jar
-    
-    doLast {
-        def dist = "${buildDir}/app/${project.name}.app"
-        mkdir("$dist/Contents/MacOS")
-        mkdir("$dist/Contents/Resources")
-        ant.copy(file: "src/main/app/Info.plist", todir: "$dist/Contents")
-        ant.copy(file: "src/main/app/launcher", todir: "$dist/Contents/MacOS") {
-            filterset {
-                filter(token: 'APP_JAR', value: "${project.name}-${version}.jar")
-                filter(token: 'APP_NAME', value: project.name)
-                filter(token: 'JAVA_VERSION', value: jvm_version)
-            }
-        }
-        ant.copy(file: "src/main/app/application.icns", todir: "$dist/Contents/Resources")
-        ant.copy(file: "build/libs/${project.name}-${version}.jar", todir: "$dist/Contents/MacOS")
-        project.exec {
-            commandLine('chmod', '+x', "$dist/Contents/MacOS/launcher")
         }
     }
 }
