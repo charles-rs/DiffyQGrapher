@@ -376,7 +376,7 @@ public class Main extends Application {
                 tokyBoi = new Tokenizer(new StringReader(inputArea.getText()));
                 while (tokyBoi.hasNext()) {
                     try {
-                        Derivative temp = Parser.Parser.parseDerivative(tokyBoi);
+                        Derivative temp = Parser.Parser.parseDerivative(tokyBoi).collapse();
                         switch (temp.getType()) {
                             case 'y':
                                 outPlane.updateDY(temp);
@@ -385,6 +385,7 @@ public class Main extends Application {
                                 outPlane.updateDX(temp);
                                 break;
                         }
+                        System.out.println(temp.prettyPrint(new StringBuilder()));
                     } catch (SyntaxError syntaxError) {
                         // inputArea.setText(inputArea.getText() + "\n\n" +
                         // syntaxError.getMessage());

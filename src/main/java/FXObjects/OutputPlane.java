@@ -359,8 +359,9 @@ public class OutputPlane extends CoordPlane {
     public void handleMouseClick(MouseEvent e) {
         double x = scrToNormX(e.getX());
         double y = scrToNormY(e.getY());
-        InitCond temp = new InitCond(x, y, t);
-        Point2D pt = new Point2D(x, y);
+        double r2 = 1;// x * x + y * y;
+        InitCond temp = new InitCond(x / r2, y / r2, t);
+        Point2D pt = new Point2D(x / r2, y / r2);
         switch (clickMode) {
 
             case DRAWPATH:
@@ -758,9 +759,19 @@ public class OutputPlane extends CoordPlane {
             throws RootNotFound {
         double px = ((in.xMax.get() - in.xMin.get() + in.yMax.get() - in.yMin.get()) / 2)
                 / ((in.getWidth() + in.getHeight()) / 2D);
-        LoopGenerator gen = GeneratorFactory.getLoopGenerator(lty, px / 5, center, 20);
+        LoopGenerator gen = GeneratorFactory.getLoopGenerator(lty, px / 3, center, 6);
         int cd1;
         int cd2 = hasLimCycle(lnSt, lnNd, gen.getCurrent());;
+        for (int i = 0; i < 10 && cd2 < 0; ++i) {
+            System.out.println("retrying: " + i);
+            if (cd2 == -1)
+                lnSt = lnSt.multiply(0.9).add(lnNd.multiply(0.1));
+            else
+                lnNd = lnNd.multiply(0.9).add(lnSt.multiply(0.1));
+            cd2 = hasLimCycle(lnSt, lnNd, gen.getCurrent());
+
+        }
+
         Point2D temp[] = new Point2D[2];
         int currentVal = 0;
         // assertCode(cd2);
@@ -864,6 +875,15 @@ public class OutputPlane extends CoordPlane {
                 / ((in.canv.getWidth() + in.canv.getHeight()) / 2D);
         Point2D p = new Point2D(a, b);
         int current = hasLimCycle(lnSt, lnNd, p);
+        for (int i = 0; i < 10 && current < 0; ++i) {
+            System.out.println("retrying: " + i);
+            if (current == -1)
+                lnSt = lnSt.multiply(0.9).add(lnNd.multiply(0.1));
+            else
+                lnNd = lnNd.multiply(0.9).add(lnSt.multiply(0.1));
+            current = hasLimCycle(lnSt, lnNd, p);
+
+        }
         if (current != 0 && current != 2 && finitePathType == FinitePathType.SPIRAL) {
             System.out.println("bad init state spiral: " + current);
             throw new RootNotFound();
@@ -1034,7 +1054,7 @@ public class OutputPlane extends CoordPlane {
                 getNextIsectLn(e2, lnSt, lnNd);
                 System.out.println("1134");
             } catch (RootNotFound r1) {
-                return -1;
+                return -2;
             }
         }
         Point2D pOld1, pNew1, pOld2, pNew2;
@@ -2183,6 +2203,8 @@ public class OutputPlane extends CoordPlane {
     }
 
     private void labelCritical(CriticalPoint p) {
+        double r2 = 1;// p.point.getX() * p.point.getX() + p.point.getY() * p.point.getY();
+        p.point = p.point.multiply(1 / r2);
         if (inBounds(p.point)) {
             // c.getGraphicsContext2D().setFill(criticalColor);
             // c.getGraphicsContext2D().fillOval(normToScrX(p.point.getX()) - 2.5,
@@ -2264,8 +2286,6 @@ public class OutputPlane extends CoordPlane {
         prev = new Point2D(x, y);
         if (dir != '-')
             while (eval.getT() < 100 + t) {
-                if (Double.isNaN(prev.getX()) || Double.isNaN(prev.getY()))
-                    throw new RuntimeException("wtf");
                 if (Thread.interrupted()) {
                     return;
                 }

@@ -547,13 +547,19 @@ public abstract class CoordPlane extends Pane {
 
     protected void drawLine(double x1, double y1, double x2, double y2, java.awt.Color color,
             float width) {
+        double r21 = 1;// x1 * x1 + y1 * y1;
+        double r22 = 1;// x2 * x2 + y2 * y2;
+        final double x1_ = x1 / r21;
+        final double y1_ = y1 / r21;
+        final double x2_ = x2 / r22;
+        final double y2_ = y2 / r22;
         if (!Thread.interrupted())
             Platform.runLater(() -> {
                 synchronized (g) {
                     g.setStroke(new BasicStroke(width));
                     g.setColor(color);
-                    g.drawLine(imgNormToScrX(x1), imgNormToScrY(y1), imgNormToScrX(x2),
-                            imgNormToScrY(y2));
+                    g.drawLine(imgNormToScrX(x1_), imgNormToScrY(y1_), imgNormToScrX(x2_),
+                            imgNormToScrY(y2_));
                 }
             });
     }
