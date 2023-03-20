@@ -22,7 +22,7 @@ public class EvaluatorFactory {
                 return new MidEulerEvaluator(dx, dy);
             case RungeKutta:
                 return new RungeKuttaEvaluator(dx, dy);
-            case RKF56:
+            case RKF45:
                 return new RKF45eval(dx, dy);
             default:
                 throw new Error();
@@ -37,6 +37,6 @@ public class EvaluatorFactory {
      * @return the new evaluator
      */
     public static Evaluator getBestEvaluator(Derivative dx, Derivative dy) {
-        return new RungeKuttaEvaluator(dx, dy);
+        return new RKF45eval(dx, dy);
     }
 }

@@ -7,6 +7,7 @@ import Exceptions.RootNotFound;
 import javafx.geometry.Point2D;
 import org.ejml.simple.SimpleEVD;
 import org.ejml.simple.SimpleMatrix;
+import FXObjects.Intersections;
 
 /**
  * The abstract class of evaluators
@@ -34,11 +35,11 @@ public abstract class Evaluator {
     /**
      * Evaluates a diffyQ with the specified initial conditions
      * 
-     * @param x   the x val
-     * @param y   the y val
-     * @param a   the a param
-     * @param b   the b param
-     * @param t   the time value
+     * @param x the x val
+     * @param y the y val
+     * @param a the a param
+     * @param b the b param
+     * @param t the time value
      * @param inc the increment
      * @return the point which it evaluates to
      */
@@ -47,14 +48,12 @@ public abstract class Evaluator {
     /**
      * Function to return the next value in an evaluator
      * 
-     * @return the next value
-     *         Sideeffects: moves the current state of the evaluator forward.
+     * @return the next value Sideeffects: moves the current state of the evaluator forward.
      */
     abstract public Point2D next();
 
     /**
-     * Advances the evaluator the given number of steps, returning the point it
-     * lands on
+     * Advances the evaluator the given number of steps, returning the point it lands on
      * 
      * @param steps the number of steps to advance. Treats negative numbers as 0
      * @return the point that is given as a result of evaluating 'steps' steps
@@ -70,8 +69,7 @@ public abstract class Evaluator {
     }
 
     /**
-     * Jumps the evaluator to the provided point so that evaluation can continue
-     * therefrom
+     * Jumps the evaluator to the provided point so that evaluation can continue therefrom
      * 
      * @param pt the point to jump to
      */
@@ -90,11 +88,11 @@ public abstract class Evaluator {
     /**
      * Initialises the evaluator with certain important information
      * 
-     * @param x   the starting x
-     * @param y   the starting y
-     * @param t   the starting t
-     * @param a   the a param
-     * @param b   the b param
+     * @param x the starting x
+     * @param y the starting y
+     * @param t the starting t
+     * @param a the a param
+     * @param b the b param
      * @param inc the increment to be used
      */
     public void initialise(double x, double y, double t, double a, double b, double inc) {
@@ -109,10 +107,10 @@ public abstract class Evaluator {
     /**
      * Initialises the evaluator with a point object
      * 
-     * @param p   the starting point
-     * @param t   the t val
-     * @param a   the a param
-     * @param b   the b param
+     * @param p the starting point
+     * @param t the t val
+     * @param a the a param
+     * @param b the b param
      * @param inc the increment to be used
      */
     public void initialise(Point2D p, double t, double a, double b, double inc) {
@@ -160,17 +158,18 @@ public abstract class Evaluator {
     }
 
     /**
-     * Uses Newton's method to find a critical point starting at start, with other
-     * initial conditions
+     * Uses Newton's method to find a critical point starting at start, with other initial
+     * conditions
      * 
      * @param start the start point
-     * @param a     the a param
-     * @param b     the b param
-     * @param t     the start time
+     * @param a the a param
+     * @param b the b param
+     * @param t the start time
      * @return the resulting critical point
      * @throws RootNotFound whenever no critical point is found
      */
-    public CriticalPoint findCritical(Point2D start, double a, double b, double t) throws RootNotFound {
+    public CriticalPoint findCritical(Point2D start, double a, double b, double t)
+            throws RootNotFound {
         Point2D sol = NewtonEvaluator.solve(20, start, a, b, t, dx, dy, 'x', 'y');
         {
             CritPointTypes type;
@@ -183,11 +182,13 @@ public abstract class Evaluator {
 
                 SimpleEVD<SimpleMatrix> evd = deriv.eig();
 
-                if (Math.abs(evd.getEigenvalue(0).getImaginary()) < TOLERANCE &&
-                        Math.abs(evd.getEigenvalue(1).getImaginary()) < TOLERANCE) {
-                    if (evd.getEigenvalue(0).getReal() > TOLERANCE && evd.getEigenvalue(1).getReal() > TOLERANCE)
+                if (Math.abs(evd.getEigenvalue(0).getImaginary()) < TOLERANCE
+                        && Math.abs(evd.getEigenvalue(1).getImaginary()) < TOLERANCE) {
+                    if (evd.getEigenvalue(0).getReal() > TOLERANCE
+                            && evd.getEigenvalue(1).getReal() > TOLERANCE)
                         type = CritPointTypes.NODESOURCE;
-                    else if (evd.getEigenvalue(0).getReal() < -TOLERANCE && evd.getEigenvalue(1).getReal() < -TOLERANCE)
+                    else if (evd.getEigenvalue(0).getReal() < -TOLERANCE
+                            && evd.getEigenvalue(1).getReal() < -TOLERANCE)
                         type = CritPointTypes.NODESINK;
                     else
                         type = CritPointTypes.SADDLE;
@@ -204,6 +205,40 @@ public abstract class Evaluator {
                 throw new RootNotFound();
             }
         }
+    }
+
+    public Point2D getNextIsectLn(Point2D st, Point2D nd) throws RootNotFound {
+        resetT();
+        Point2D p1 = getCurrent();
+        Point2D p2 = next();
+        double tInc = getInc();
+        // TODO maybe add another setting for limcycle bounds
+        for (int i = 0; i < 1000; ++i)
+            // System.out.println(eval.getCurrent());
+            try {
+                return Intersections.getIntersection(p1, p2, st, nd);
+            } catch (RootNotFound r) {
+                p1 = p2;
+                p2 = next();
+            }
+        if (p2.distance(p1) == 0 || Double.isInfinite(p2.getX()) || Double.isInfinite(p2.getY()))
+            throw new RootNotFound();
+        CriticalPoint temp = null;
+        try {
+            temp = findCritical(p2, a, b, t);
+        } catch (RootNotFound ignored) {
+        }
+        if (temp != null) {
+            // System.out.println("point: " + p2 + "\nroot: " + temp.point + "\ninc: " + tInc);
+            if ((tInc >= 0 && temp.type.isSink()) || (tInc <= 0 && temp.type.isSource())) {
+                // System.out.println("testing");
+                if (p2.distance(temp.point) < inc / 10)
+                    throw new RootNotFound();
+            }
+        }
+        throw new RootNotFound();
+
+
     }
 
 }

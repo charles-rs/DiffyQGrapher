@@ -7,3 +7,8 @@ output.text
 /exe/
 /jar/
 /wrap/
+*~
+bin/
+.classpath
+.project
+.settings/

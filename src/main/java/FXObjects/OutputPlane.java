@@ -128,7 +128,7 @@ public class OutputPlane extends CoordPlane {
         dSaddleYMax = 25;// this.yMax.get();
         dSaddleYMin = -25;// this.yMin.get();
 
-        evalType = EvalType.RungeKutta;
+        evalType = EvalType.RKF45;
         initials = new ArrayList<>();
         criticalPoints = new CopyOnWriteArrayList<>();
         isoclines = new ArrayList<>();
@@ -926,6 +926,7 @@ public class OutputPlane extends CoordPlane {
      * @return a point in the parameter space with a semistable limit cycle bifurcation
      * @throws RootNotFound if no semistable limit cycle is found
      */
+
     private Point2D semiStable(Point2D lnSt, Point2D lnNd, double a, double b, int code)
             throws RootNotFound {
         boolean isA, lookPos;
@@ -994,7 +995,7 @@ public class OutputPlane extends CoordPlane {
         e1.next();
         e2.next();
         try {
-            getNextIsectLn(e1, lnSt, lnNd);
+            e1.getNextIsectLn(lnSt, lnNd);
         } catch (RootNotFound r) {
             System.out.println("negating");
             e1.negate();
@@ -1004,8 +1005,8 @@ public class OutputPlane extends CoordPlane {
         }
         try {
             for (int i = 0; i < 20; i++) {
-                p1 = getNextIsectLn(e1, lnSt, lnNd);
-                p2 = getNextIsectLn(e2, lnSt, lnNd);
+                p1 = e1.getNextIsectLn(lnSt, lnNd);
+                p2 = e2.getNextIsectLn(lnSt, lnNd);
             }
         } catch (RootNotFound r) {
             System.out.println("problem.");
@@ -1031,13 +1032,13 @@ public class OutputPlane extends CoordPlane {
         e1.initialise(lnNd, 0, a, b, -inc);
         try {
             e1.next();
-            getNextIsectLn(e1, lnSt, lnNd);
+            e1.getNextIsectLn(lnSt, lnNd);
             System.out.println("1108");
         } catch (RootNotFound r) {
             e1.initialise(lnSt, 0, a, b, -inc);
             e1.next();
             try {
-                getNextIsectLn(e1, lnSt, lnNd);
+                e1.getNextIsectLn(lnSt, lnNd);
                 System.out.println("1116");
             } catch (RootNotFound r1) {
                 return -1;
@@ -1045,13 +1046,13 @@ public class OutputPlane extends CoordPlane {
         }
         try {
             e2.next();
-            getNextIsectLn(e2, lnSt, lnNd);
+            e2.getNextIsectLn(lnSt, lnNd);
             System.out.println("1126");
         } catch (RootNotFound r) {
             e2.initialise(lnNd, 0, a, b, inc);
             e2.next();
             try {
-                getNextIsectLn(e2, lnSt, lnNd);
+                e2.getNextIsectLn(lnSt, lnNd);
                 System.out.println("1134");
             } catch (RootNotFound r1) {
                 return -2;
@@ -1065,8 +1066,8 @@ public class OutputPlane extends CoordPlane {
                 System.out.println(pNew1);
                 pOld1 = pNew1;
                 pOld2 = pNew2;
-                pNew1 = getNextIsectLn(e1, lnSt, lnNd);
-                pNew2 = getNextIsectLn(e2, lnSt, lnNd);
+                pNew1 = e1.getNextIsectLn(lnSt, lnNd);
+                pNew2 = e2.getNextIsectLn(lnSt, lnNd);
                 if (pOld1.distance(pNew1) < inc / 1000 && pOld2.distance(pNew2) < inc / 1000
                         || Thread.interrupted())
                     break;
@@ -1092,11 +1093,10 @@ public class OutputPlane extends CoordPlane {
         }
         eval.advance(2);
         Point2D p1 = lc.st;
-        Point2D p2 = getNextIsectLn(eval, lc.refLine[0], lc.refLine[1]);
+        Point2D p2 = eval.getNextIsectLn(lc.refLine[0], lc.refLine[1]);
         while (p2.distance(p1) > inc / 1000 && !Thread.interrupted()) {
-            eval.resetT();
             p1 = p2;
-            p2 = getNextIsectLn(eval, lc.refLine[0], lc.refLine[1]);
+            p2 = eval.getNextIsectLn(lc.refLine[0], lc.refLine[1]);
         }
         return new LimCycleStart(p2, lc.isPositive, lc.refLine[0], lc.refLine[1]);
     }
@@ -1155,7 +1155,7 @@ public class OutputPlane extends CoordPlane {
         Point2D isect = null;
         while (eval.getT() < 100) {
             try {
-                isect = getIntersection(p1, p2, lnSt, lnNd);
+                isect = Intersections.getIntersection(p1, p2, lnSt, lnNd);
                 break;
             } catch (RootNotFound r) {
                 p1 = p2;
@@ -1166,7 +1166,7 @@ public class OutputPlane extends CoordPlane {
             eval.initialise(start, 0, a, b, -inc);
             while (eval.getT() < 100) {
                 try {
-                    isect = getIntersection(p1, p2, lnSt, lnNd);
+                    isect = Intersections.getIntersection(p1, p2, lnSt, lnNd);
                     break;
                 } catch (RootNotFound r) {
                     p1 = p2;
@@ -1181,11 +1181,11 @@ public class OutputPlane extends CoordPlane {
         p1 = isect;
         eval.initialise(isect, 0, a, b, eval.getInc());
         try {
-            p2 = getNextIsectLn(eval, lnSt, lnNd);
+            p2 = eval.getNextIsectLn(lnSt, lnNd);
         } catch (RootNotFound r) {
             eval.initialise(isect, 0, a, b, -eval.getInc());
             try {
-                p2 = getNextIsectLn(eval, lnSt, lnNd);
+                p2 = eval.getNextIsectLn(lnSt, lnNd);
             } catch (RootNotFound r2) {
                 cycleLine.setVisible(false);
                 return false;
@@ -1196,9 +1196,9 @@ public class OutputPlane extends CoordPlane {
             while (inBounds(p2) && !Thread.interrupted()) {
                 try {
                     p1 = p2;
-                    p2 = getNextIsectLn(eval, lnSt, lnNd);
+                    p2 = eval.getNextIsectLn(lnSt, lnNd);
                     if (Math.abs(eval.getT()) < 3 * Math.abs(eval.getInc()))
-                        p2 = getNextIsectLn(eval, lnSt, lnNd);
+                        p2 = eval.getNextIsectLn(lnSt, lnNd);
                     eval.resetT();
                     if (p1.distance(p2) < inc / 10000) {
                         if (eval.getInc() > 0)
@@ -1233,51 +1233,6 @@ public class OutputPlane extends CoordPlane {
     }
 
     /**
-     * gets the next intersection of the provided evaluator with the provided line
-     * 
-     * @param eval the evaluator to use
-     * @param st the start of the line
-     * @param nd the end of the line
-     * @return the next intersection with the line
-     * @throws RootNotFound if it doesn't intersect
-     */
-    private Point2D getNextIsectLn(Evaluator eval, Point2D st, Point2D nd) throws RootNotFound {
-        eval.resetT();
-        Point2D p1 = eval.getCurrent();
-        Point2D p2 = eval.next();
-        double tInc = eval.getInc();
-        // TODO maybe add another setting for limcycle bounds
-        while (Math.abs(eval.getT()) < 80) {
-            // System.out.println(eval.getCurrent());
-            try {
-                return getIntersection(p1, p2, st, nd);
-            } catch (RootNotFound r) {
-                p1 = p2;
-                p2 = eval.next();
-            }
-            if (p2.distance(p1) == 0 || Double.isInfinite(p2.getX())
-                    || Double.isInfinite(p2.getY()))
-                throw new RootNotFound();
-            CriticalPoint temp = null;
-            try {
-                temp = critical(p2);
-            } catch (RootNotFound ignored) {
-            }
-            if (temp != null) {
-                // System.out.println("point: " + p2 + "\nroot: " + temp.point + "\ninc: " + tInc);
-                if ((tInc >= 0 && temp.type.isSink()) || (tInc <= 0 && temp.type.isSource())) {
-                    // System.out.println("testing");
-                    if (p2.distance(temp.point) < inc / 10)
-                        throw new RootNotFound();
-                }
-            }
-        }
-        System.out.println("START: " + st);
-        System.out.println("END: " + nd);
-        throw new RootNotFound();
-    }
-
-    /**
      * gets the next intersection of the provided evaluator with the cycle line
      * 
      * @param eval the evaluator to use
@@ -1285,7 +1240,7 @@ public class OutputPlane extends CoordPlane {
      * @throws RootNotFound if it doesn't intersect
      */
     private Point2D getNextIsectCyc(Evaluator eval) throws RootNotFound {
-        return getNextIsectLn(eval,
+        return eval.getNextIsectLn(
                 scrToNorm(new Point2D(cycleLine.getStartX(), cycleLine.getStartY())),
                 scrToNorm(new Point2D(cycleLine.getEndX(), cycleLine.getEndY())));
     }
@@ -1335,13 +1290,22 @@ public class OutputPlane extends CoordPlane {
     public void drawCoBasin(Point2D st) {
         Evaluator tmp = EvaluatorFactory.getBestEvaluator(dx, dy);
         tmp.initialise(st, t, a, b, -inc);
-        tmp.advance(10000);
-        Point2D crit = tmp.getCurrent();
-        BasinFinder.init(this, crit, false);
+        var crit = tmp.advance(10000);
+        // Point2D crit = tmp.getCurrent();
+        // getChildren().add(new Circle(scr.getX(), scr.getY(), 5.0));
 
-        for (int i = 0; i < Runtime.getRuntime().availableProcessors(); i++) {
-            new BasinFinder().start();
-        }
+        var f = new BasinFinderDispatcher(this, crit, false);
+        f.start();
+
+        // Evaluator tmp = EvaluatorFactory.getBestEvaluator(dx, dy);
+        // tmp.initialise(st, t, a, b, -inc);
+        // tmp.advance(10000);
+        // Point2D crit = tmp.getCurrent();
+        // BasinFinder.init(this, crit, false);
+
+        // for (int i = 0; i < Runtime.getRuntime().availableProcessors(); i++) {
+        // new BasinFinder().start();
+        // }
     }
 
 
@@ -1475,7 +1439,7 @@ public class OutputPlane extends CoordPlane {
 
         Point2D p1, p2;
         try {
-            p1 = getNextIsectLn(e1, lnSt, lnNd);
+            p1 = e1.getNextIsectLn(lnSt, lnNd);
         } catch (RootNotFound r) {
             // e1.advance(10);
             if (e1.stuck()) {
@@ -1486,7 +1450,7 @@ public class OutputPlane extends CoordPlane {
             System.out.println("are we here?");
             if (traversal.homo) {
                 try {
-                    getNextIsectLn(e2, lnSt, lnNd);
+                    e2.getNextIsectLn(lnSt, lnNd);
                     if (s2.posEig())
                         return 1;
                     else
@@ -1519,7 +1483,7 @@ public class OutputPlane extends CoordPlane {
             }
         }
         try {
-            p2 = getNextIsectLn(e2, lnSt, lnNd);
+            p2 = e2.getNextIsectLn(lnSt, lnNd);
         } catch (RootNotFound r) {
             // e2.advance(10);
             if (e2.stuck()) {
@@ -2269,6 +2233,10 @@ public class OutputPlane extends CoordPlane {
         drawGraphBack(init, arrow, '1', color);
     }
 
+    private boolean ptIsNan(Point2D pt) {
+        return Double.isNaN(pt.getX()) || Double.isNaN(pt.getY());
+    }
+
     private void drawGraphBack(InitCond init, boolean arrow, char dir, java.awt.Color color,
             float width) {
         double x, y;
@@ -2285,11 +2253,13 @@ public class OutputPlane extends CoordPlane {
         eval.initialise(x, y, t, a, b, inc);
         prev = new Point2D(x, y);
         if (dir != '-')
-            while (eval.getT() < 100 + t) {
+            for (int i = 0; i < 1000; ++i) {
                 if (Thread.interrupted()) {
                     return;
                 }
                 next = eval.next();
+                if (ptIsNan(next))
+                    break;
                 if (inBounds(prev) || inBounds(next))
                     drawLine(prev, next, color, width);
                 prev = next;
@@ -2297,11 +2267,13 @@ public class OutputPlane extends CoordPlane {
         eval.initialise(x, y, t, a, b, -inc);
         prev = new Point2D(x, y);
         if (dir != '+')
-            while (eval.getT() > t - 100) {
+            for (int i = 0; i < 1000; ++i) {
                 if (Thread.interrupted()) {
                     return;
                 }
                 next = eval.next();
+                if (ptIsNan(next))
+                    break;
                 if (inBounds(prev) || inBounds(next))
                     drawLine(prev, next, color, width);
                 prev = next;
@@ -2666,91 +2638,6 @@ public class OutputPlane extends CoordPlane {
     }
 
 
-    /**
-     * test if q lies on segment pr if they are colinear
-     * 
-     * @param p start
-     * @param q point to test
-     * @param r end
-     * @return whether or not q is on pr
-     */
-    boolean onSegment(Point2D p, Point2D q, Point2D r) {
-        return q.getX() <= Math.max(p.getX(), r.getX()) && q.getX() >= Math.min(p.getX(), r.getX())
-                && q.getY() <= Math.max(p.getY(), r.getY())
-                && q.getY() >= Math.min(p.getY(), r.getY());
-    }
-
-    /**
-     * To find orientation of ordered triplet (p, q, r). The function returns following values 0 -->
-     * p, q and r are colinear 1 --> Clockwise 2 --> Counterclockwise
-     */
-    int orientation(Point2D p, Point2D q, Point2D r) {
-        double val = (q.getY() - p.getY()) * (r.getX() - q.getX())
-                - (q.getX() - p.getX()) * (r.getY() - q.getY());
-
-        if (val == 0/* < Math.ulp(1.0) */)
-            return 0; // colinear
-
-        return (val > 0) ? 1 : 2; // clock or counterclock wise
-    }
-
-    /**
-     * The main function that returns true if line segment 'p1q1' and 'p2q2' intersect.
-     * 
-     * @param p1 first start
-     * @param q1 first end
-     * @param p2 second start
-     * @param q2 second end
-     * @return the intersection
-     * @throws RootNotFound if they dont intersect
-     */
-    Point2D getIntersection(Point2D p1, Point2D q1, Point2D p2, Point2D q2) throws RootNotFound {
-        // Find the four orientations needed for general and
-        // special cases
-        int o1 = orientation(p1, q1, p2);
-        int o2 = orientation(p1, q1, q2);
-        int o3 = orientation(p2, q2, p1);
-        int o4 = orientation(p2, q2, q1);
-
-        // General case
-        if (o1 != o2 && o3 != o4)
-            return new Point2D(
-                    ((p1.getX() * q1.getY() - p1.getY() * q1.getX()) * (p2.getX() - q2.getX())
-                            - (p1.getX() - q1.getX())
-                                    * (p2.getX() * q2.getY() - p2.getY() * q2.getX()))
-                            / ((p1.getX() - q1.getX()) * (p2.getY() - q2.getY())
-                                    - (p1.getY() - q1.getY()) * (p2.getX() - q2.getX())),
-                    ((p1.getX() * q1.getY() - p1.getY() * q1.getX()) * (p2.getY() - q2.getY())
-                            - (p1.getY() - q1.getY())
-                                    * (p2.getX() * q2.getY() - p2.getY() * q2.getX()))
-                            / ((p1.getX() - q1.getX()) * (p2.getY() - q2.getY())
-                                    - (p1.getY() - q1.getY()) * (p2.getX() - q2.getX())));
-
-        // Special Cases
-        // p1, q1 and p2 are colinear and p2 lies on segment p1q1
-        if (o1 == 0 && onSegment(p1, p2, q1))
-            return p2;
-
-        // p1, q1 and q2 are colinear and q2 lies on segment p1q1
-        if (o2 == 0 && onSegment(p1, q2, q1))
-            return q2;
-
-        // p2, q2 and p1 are colinear and p1 lies on segment p2q2
-        if (o3 == 0 && onSegment(p2, p1, q2))
-            return p1;
-
-        // p2, q2 and q1 are colinear and q1 lies on segment p2q2
-        if (o4 == 0 && onSegment(p2, q1, q2))
-            return q1;
-
-        throw new RootNotFound();
-    }
-
-    @Deprecated
-    private Point2D getIntersectionCycleLine(Point2D p1, Point2D p2) throws RootNotFound {
-        return getIntersection(scrToNorm(new Point2D(cycleLine.getStartX(), cycleLine.getStartY())),
-                scrToNorm(new Point2D(cycleLine.getEndX(), cycleLine.getEndY())), p1, p2);
-    }
 
     /*
      * private Point2D semiStable(LimCycleStart l1, LimCycleStart l2, boolean isA, double a, double
@@ -2786,7 +2673,7 @@ public class OutputPlane extends CoordPlane {
         Point2D p2 = eval.next();
         while (eval.getT() < 100 && !Thread.interrupted()) {
             try {
-                isectStbl = getIntersection(p1, p2, lnSt, lnNd);
+                isectStbl = Intersections.getIntersection(p1, p2, lnSt, lnNd);
                 break;
             } catch (RootNotFound r) {
                 p1 = p2;
@@ -2798,7 +2685,7 @@ public class OutputPlane extends CoordPlane {
         p2 = eval.next();
         while (eval.getT() < 100 && !Thread.interrupted()) {
             try {
-                isectUnstbl = getIntersection(p1, p2, lnSt, lnNd);
+                isectUnstbl = Intersections.getIntersection(p1, p2, lnSt, lnNd);
                 break;
             } catch (RootNotFound r) {
                 p1 = p2;
@@ -2810,10 +2697,10 @@ public class OutputPlane extends CoordPlane {
             throw new RootNotFound();
         p1 = isectStbl;
         eval.initialise(isectStbl, 0, a, b, inc);
-        p2 = getNextIsectLn(eval, lnSt, lnNd);
+        p2 = eval.getNextIsectLn(lnSt, lnNd);
         while (p1.distance(p2) > inc / 1000 && !Thread.interrupted()) {
             p1 = p2;
-            p2 = getNextIsectLn(eval, lnSt, lnNd);
+            p2 = eval.getNextIsectLn(lnSt, lnNd);
             eval.resetT();
         }
         System.out.println("hopefully i get here");
@@ -2821,14 +2708,14 @@ public class OutputPlane extends CoordPlane {
         p1 = isectUnstbl;
         eval.initialise(isectUnstbl, 0, a, b, -inc);
         try {
-            p2 = getNextIsectLn(eval, lnSt, lnNd);
+            p2 = eval.getNextIsectLn(lnSt, lnNd);
         } catch (RootNotFound r) {
             System.out.println(isectUnstbl);
         }
         while (p1.distance(p2) > inc / 1000 && !Thread.interrupted()) {
             p1 = p2;
             try {
-                p2 = getNextIsectLn(eval, lnSt, lnNd);
+                p2 = eval.getNextIsectLn(lnSt, lnNd);
                 eval.resetT();
             } catch (RootNotFound r) {
                 System.out.println("well it went wrong at " + eval.getT());

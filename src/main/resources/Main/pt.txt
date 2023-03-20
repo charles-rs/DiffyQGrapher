@@ -12,7 +12,7 @@ quit~Sair
 euler~Método de Euler
 mideuler~Método de Euler central
 runge~Método de Runge-Kutta
-rkf56~Método de Runge-Kutta-Fehlberg 5-6
+rkf45~Método de Runge-Kutta-Fehlberg 4-5
 evalopt~Mudar de avaliador
 clickopt~Mudar de modo
 drawpath~Desenhar solução

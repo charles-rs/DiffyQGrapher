@@ -69,7 +69,7 @@ public class Main extends Application {
     private MenuItem euler;
     private MenuItem midEuler;
     private MenuItem rungeKutta;
-    private MenuItem rkf56;
+    private MenuItem rkf45;
     private MenuItem drawPath;
     private MenuItem findCritical;
     private MenuItem drawIso;
@@ -107,7 +107,7 @@ public class Main extends Application {
     private Button btnInterruptSadCon;
     private Button btnResetInZoom;
 
-    private String strEuler, strMidEuler, strRungeKutta, strRkf56;
+    private String strEuler, strMidEuler, strRungeKutta, strRkf45;
     public static Language lang;
     public static int instructionCode = -1;
     private Preferences prefs;
@@ -158,8 +158,8 @@ public class Main extends Application {
         euler = new MenuItem();
         midEuler = new MenuItem();
         rungeKutta = new MenuItem();
-        rkf56 = new MenuItem();
-        evalOpt.getItems().addAll(euler, midEuler, rungeKutta, rkf56);
+        rkf45 = new MenuItem();
+        evalOpt.getItems().addAll(euler, midEuler, rungeKutta, rkf45);
 
         sets = new MenuItem();
         clickOpt = new Menu();
@@ -398,7 +398,7 @@ public class Main extends Application {
             euler.setText(strEuler + " x");
             midEuler.setText(strMidEuler);
             rungeKutta.setText(strRungeKutta);
-            rkf56.setText(strRkf56);
+            rkf45.setText(strRkf45);
             outPlane.evalType = EvalType.Euler;
         });
 
@@ -406,7 +406,7 @@ public class Main extends Application {
             euler.setText(strEuler);
             midEuler.setText(strMidEuler + "  x");
             rungeKutta.setText(strRungeKutta);
-            rkf56.setText(strRkf56);
+            rkf45.setText(strRkf45);
             outPlane.evalType = EvalType.MidEuler;
         });
 
@@ -414,15 +414,15 @@ public class Main extends Application {
             euler.setText(strEuler);
             midEuler.setText(strMidEuler);
             rungeKutta.setText(strRungeKutta + "  x");
-            rkf56.setText(strRkf56);
+            rkf45.setText(strRkf45);
             outPlane.evalType = EvalType.RungeKutta;
         });
-        rkf56.setOnAction(e -> {
+        rkf45.setOnAction(e -> {
             euler.setText(strEuler);
             midEuler.setText(strMidEuler);
             rungeKutta.setText(strRungeKutta);
-            rkf56.setText(rkf56 + " x");
-            outPlane.evalType = EvalType.RKF56;
+            rkf45.setText(strRkf45 + " x");
+            outPlane.evalType = EvalType.RKF45;
         });
         drawPath.setOnAction((e) -> {
             // drawPath.setText(strDrawGraph + " x");
@@ -454,6 +454,8 @@ public class Main extends Application {
                         // drawPath.setText(strDrawGraph + " x");
                         // findCritical.setText(strFindCritical);
                         outPlane.setClickMode(ClickModeType.DRAWPATH);
+                        break;
+                    default:
                         break;
                 }
             }
@@ -700,12 +702,12 @@ public class Main extends Application {
                     else
                         rungeKutta.setText(strRungeKutta);
                     break;
-                case "rkf56":
-                    strRkf56 = split[1];
-                    if (outPlane.evalType == EvalType.RKF56)
-                        rkf56.setText(strRkf56 + " x");
+                case "rkf45":
+                    strRkf45 = split[1];
+                    if (outPlane.evalType == EvalType.RKF45)
+                        rkf45.setText(strRkf45 + " x");
                     else
-                        rkf56.setText(strRkf56);
+                        rkf45.setText(strRkf45);
                     break;
                 case "evalopt":
                     evalOpt.setText(split[1]);

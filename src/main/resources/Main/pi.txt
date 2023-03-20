@@ -12,7 +12,7 @@ quit~Leave the Math for a bottle of Rum!
 euler~Euler's Technique
 mideuler~Midpoint Euler's Technique
 runge~Runge-Kutta Technique
-rkf56~Runge-Kutta-Fehlberg 5-6 Technique
+rkf45~Runge-Kutta-Fehlberg 4-5 Technique
 evalopt~Types of Evaluation
 clickopt~Hap'nigns on Click!
 drawpath~Draw Ye A Solution!
