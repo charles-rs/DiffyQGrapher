@@ -7,7 +7,6 @@ import javafx.beans.property.SimpleDoubleProperty;
 import javafx.embed.swing.SwingFXUtils;
 import javafx.geometry.Point2D;
 import javafx.scene.canvas.Canvas;
-import javafx.scene.canvas.GraphicsContext;
 import javafx.scene.image.ImageView;
 import javafx.scene.image.WritableImage;
 import javafx.scene.input.KeyCode;
@@ -17,8 +16,8 @@ import javafx.scene.paint.Color;
 import javafx.scene.shape.Circle;
 import javafx.scene.shape.Line;
 import javafx.scene.shape.Rectangle;
-import javafx.scene.text.Text;
 import javafx.scene.text.Font;
+import javafx.scene.text.Text;
 
 import java.awt.*;
 import java.awt.image.BufferedImage;
@@ -27,7 +26,7 @@ import java.io.File;
 /**
  * abstract class representing a coordinate plane. Does lots of coordinate plane stuff, but has to
  * be extended to do anything truly useful
- *
+ * <p>
  * Class keeps track of the current selected plane with the static variable selected.
  */
 public abstract class CoordPlane extends Pane {
@@ -102,7 +101,7 @@ public abstract class CoordPlane extends Pane {
      * box is too small, the program assumes that the user meant to click, but just to be safe
      * throws away the event and lets the user try again. The zoomBox is only visible during zooming
      * so that it isn't annoying in the way
-     * 
+     *
      * @param side the side length (in pixels)
      */
     public CoordPlane(double side) {
@@ -128,7 +127,7 @@ public abstract class CoordPlane extends Pane {
         yMin = new SimpleDoubleProperty(-5);
         xMax = new SimpleDoubleProperty(5);
         yMax = new SimpleDoubleProperty(5);
-        initZoom = new double[] {-5D, 5D, -5D, 5D};
+        initZoom = new double[]{-5D, 5D, -5D, 5D};
 
         loading = new Circle();
         loading.centerXProperty().bind(this.widthProperty().subtract(5));
@@ -240,24 +239,24 @@ public abstract class CoordPlane extends Pane {
                                     (xMax.get() - scrToNormX(zoomBox.getX() + zoomBox.getWidth()))
                                             * (xMax.get() - xMin.get())
                                             / (scrToNormX(zoomBox.getX() + zoomBox.getWidth())
-                                                    - scrToNormX(zoomBox.getX()))
+                                            - scrToNormX(zoomBox.getX()))
                                             + xMax.get();
                             xMinTemp = (xMin.get() - scrToNormX(zoomBox.getX()))
                                     * (xMax.get() - xMin.get())
                                     / (scrToNormX(zoomBox.getX() + zoomBox.getWidth())
-                                            - scrToNormX(zoomBox.getX()))
+                                    - scrToNormX(zoomBox.getX()))
                                     + xMin.get();
 
                             yMaxTemp = (yMax.get() - scrToNormY(zoomBox.getY()))
                                     * (yMax.get() - yMin.get())
                                     / (scrToNormY(zoomBox.getY() - zoomBox.getHeight())
-                                            - scrToNormY(zoomBox.getY()))
+                                    - scrToNormY(zoomBox.getY()))
                                     + yMax.get();
                             yMinTemp =
                                     (yMin.get() - scrToNormY(zoomBox.getY() + zoomBox.getHeight()))
                                             * (yMax.get() - yMin.get())
                                             / (scrToNormY(zoomBox.getY() - zoomBox.getHeight())
-                                                    - scrToNormY(zoomBox.getY()))
+                                            - scrToNormY(zoomBox.getY()))
                                             + yMin.get();
                         } else {
                             xMaxTemp = scrToNormX(zoomBox.getX() + zoomBox.getWidth());
@@ -325,9 +324,9 @@ public abstract class CoordPlane extends Pane {
 
     /**
      * selects the current window. Also bothers with shifting the JavaFX focus.
-     * 
+     *
      * @param e is the mouse event that fired the selection. Consumes so that no action is taken in
-     *        the newly selected window.
+     *          the newly selected window.
      */
     protected void selectMe(MouseEvent e) {
         requestFocus();
@@ -367,6 +366,14 @@ public abstract class CoordPlane extends Pane {
         drawBorders();
     }
 
+    public double getPxX() {
+        return (xMax.get() - xMin.get()) / canv.getWidth();
+    }
+
+    public double getPxY() {
+        return (yMax.get() - yMin.get()) / canv.getHeight();
+    }
+
     /**
      * renders the canv bufferedImage to the screen
      */
@@ -381,11 +388,10 @@ public abstract class CoordPlane extends Pane {
 
     /**
      * draws the axes with the appropriate labels.
-     * 
+     *
      * @param clear whether or not to clear the screen first
      */
     public void drawAxes(boolean clear) {
-
 
 
         if (clear)
@@ -416,7 +422,7 @@ public abstract class CoordPlane extends Pane {
 
     /**
      * Checks whether the point (x, y) lies within the window
-     * 
+     *
      * @param x the x coord
      * @param y the y coord
      * @return true if they are in bounds, false otherwise
@@ -427,7 +433,7 @@ public abstract class CoordPlane extends Pane {
 
     /**
      * determines whether or not the point p is in bounds in the window.
-     * 
+     *
      * @param p the point to check
      * @return true if inside, false if outside.
      */
@@ -437,14 +443,14 @@ public abstract class CoordPlane extends Pane {
 
     /**
      * takes appropriate action when a mouseevent comes through.
-     * 
+     *
      * @param e the mouseevent to pass along
      */
     public abstract void handleMouseClick(MouseEvent e);
 
     /**
      * converts a screen (pixel) coordinate to the current mathematical coordinates.
-     * 
+     *
      * @param x the x value to convert.
      * @return the x value in mathematical coordinates
      */
@@ -455,7 +461,7 @@ public abstract class CoordPlane extends Pane {
 
     /**
      * converts a screen (pixel) coordinate to the current mathematical coordinates.
-     * 
+     *
      * @param y the y value to convert.
      * @return the y value in mathematical coordinates
      */
@@ -476,7 +482,7 @@ public abstract class CoordPlane extends Pane {
 
     /**
      * converts a screen (pixel) point to the current mathematical coordinates
-     * 
+     *
      * @param other the point to convert
      * @return the converted point
      */
@@ -486,7 +492,7 @@ public abstract class CoordPlane extends Pane {
 
     /**
      * converts a mathematical coordinate to the screen (pixel) coordinates.
-     * 
+     *
      * @param x the x value to convert.
      * @return the x value in screen (pixel) coordinates
      */
@@ -497,7 +503,7 @@ public abstract class CoordPlane extends Pane {
 
     /**
      * converts a mathematical coordinate to the screen (pixel) coordinates.
-     * 
+     *
      * @param y the y value to convert.
      * @return the y value in screen (pixel) coordinates
      */
@@ -519,12 +525,12 @@ public abstract class CoordPlane extends Pane {
     }
 
     public int[] imgNormToScreen(Point2D pt) {
-        return new int[] {imgNormToScrX(pt.getX()), imgNormToScrY(pt.getY())};
+        return new int[]{imgNormToScrX(pt.getX()), imgNormToScrY(pt.getY())};
     }
 
     /**
      * converts a mathematical point to the screen (pixel) coordinate point
-     * 
+     *
      * @param other the point to convert
      * @return the converted point
      */
@@ -534,11 +540,11 @@ public abstract class CoordPlane extends Pane {
 
     /**
      * draws a line from (x1, y1) to (x2, y2), with the inputs in mathematical coordinates
-     * 
-     * @param x1 the x coord of the first point
-     * @param y1 the y coord of the first point
-     * @param x2 the x coord of the second point
-     * @param y2 the y coord of the second point
+     *
+     * @param x1    the x coord of the first point
+     * @param y1    the y coord of the first point
+     * @param x2    the x coord of the second point
+     * @param y2    the y coord of the second point
      * @param color the color to draw in
      */
     protected void drawLine(double x1, double y1, double x2, double y2, java.awt.Color color) {
@@ -546,7 +552,7 @@ public abstract class CoordPlane extends Pane {
     }
 
     protected void drawLine(double x1, double y1, double x2, double y2, java.awt.Color color,
-            float width) {
+                            float width) {
         double r21 = 1;// x1 * x1 + y1 * y1;
         double r22 = 1;// x2 * x2 + y2 * y2;
         final double x1_ = x1 / r21;
@@ -575,9 +581,9 @@ public abstract class CoordPlane extends Pane {
 
     /**
      * draws a line between p1 and p2, with input in mathematical coordinates
-     * 
-     * @param p1 the first point
-     * @param p2 the second point
+     *
+     * @param p1    the first point
+     * @param p2    the second point
      * @param color
      */
     protected void drawLine(Point2D p1, Point2D p2, java.awt.Color color) {
@@ -587,11 +593,11 @@ public abstract class CoordPlane extends Pane {
 
     /**
      * Draws a line with mathematical coordinates on another canvas
-     * 
-     * @param x1 the x coord of the first point
-     * @param y1 the y coord of the first point
-     * @param x2 the x coord of the second point
-     * @param y2 the y coord of the second point
+     *
+     * @param x1  the x coord of the first point
+     * @param y1  the y coord of the first point
+     * @param x2  the x coord of the second point
+     * @param y2  the y coord of the second point
      * @param can the canvas to draw on
      */
     protected void drawLine(double x1, double y1, double x2, double y2, Canvas can) {
@@ -601,9 +607,9 @@ public abstract class CoordPlane extends Pane {
 
     /**
      * Draws a line with mathematical coordinates from Point2Ds on another canvas
-     * 
-     * @param p1 the first point
-     * @param p2 the second point
+     *
+     * @param p1  the first point
+     * @param p2  the second point
      * @param can the canvas to draw on
      */
     protected void drawLine(Point2D p1, Point2D p2, Canvas can) {
@@ -617,7 +623,7 @@ public abstract class CoordPlane extends Pane {
 
     /**
      * writes this to the provided file
-     * 
+     *
      * @param f the file to write to
      * @return whether or not the write succeeded
      */

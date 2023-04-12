@@ -4,10 +4,10 @@ import AST.Derivative;
 import AST.Node;
 import Exceptions.EvaluationException;
 import Exceptions.RootNotFound;
+import FXObjects.Intersections;
 import javafx.geometry.Point2D;
 import org.ejml.simple.SimpleEVD;
 import org.ejml.simple.SimpleMatrix;
-import FXObjects.Intersections;
 
 /**
  * The abstract class of evaluators
@@ -34,12 +34,12 @@ public abstract class Evaluator {
 
     /**
      * Evaluates a diffyQ with the specified initial conditions
-     * 
-     * @param x the x val
-     * @param y the y val
-     * @param a the a param
-     * @param b the b param
-     * @param t the time value
+     *
+     * @param x   the x val
+     * @param y   the y val
+     * @param a   the a param
+     * @param b   the b param
+     * @param t   the time value
      * @param inc the increment
      * @return the point which it evaluates to
      */
@@ -47,14 +47,14 @@ public abstract class Evaluator {
 
     /**
      * Function to return the next value in an evaluator
-     * 
+     *
      * @return the next value Sideeffects: moves the current state of the evaluator forward.
      */
     abstract public Point2D next();
 
     /**
      * Advances the evaluator the given number of steps, returning the point it lands on
-     * 
+     *
      * @param steps the number of steps to advance. Treats negative numbers as 0
      * @return the point that is given as a result of evaluating 'steps' steps
      */
@@ -70,7 +70,7 @@ public abstract class Evaluator {
 
     /**
      * Jumps the evaluator to the provided point so that evaluation can continue therefrom
-     * 
+     *
      * @param pt the point to jump to
      */
     public void movePoint(Point2D pt) {
@@ -87,12 +87,12 @@ public abstract class Evaluator {
 
     /**
      * Initialises the evaluator with certain important information
-     * 
-     * @param x the starting x
-     * @param y the starting y
-     * @param t the starting t
-     * @param a the a param
-     * @param b the b param
+     *
+     * @param x   the starting x
+     * @param y   the starting y
+     * @param t   the starting t
+     * @param a   the a param
+     * @param b   the b param
      * @param inc the increment to be used
      */
     public void initialise(double x, double y, double t, double a, double b, double inc) {
@@ -106,11 +106,11 @@ public abstract class Evaluator {
 
     /**
      * Initialises the evaluator with a point object
-     * 
-     * @param p the starting point
-     * @param t the t val
-     * @param a the a param
-     * @param b the b param
+     *
+     * @param p   the starting point
+     * @param t   the t val
+     * @param a   the a param
+     * @param b   the b param
      * @param inc the increment to be used
      */
     public void initialise(Point2D p, double t, double a, double b, double inc) {
@@ -128,7 +128,7 @@ public abstract class Evaluator {
 
     /**
      * gets the current location
-     * 
+     *
      * @return the current location of the evaluator
      */
     public Point2D getCurrent() {
@@ -137,7 +137,7 @@ public abstract class Evaluator {
 
     /**
      * gets the current time of the evaluator
-     * 
+     *
      * @return the current t
      */
     public double getT() {
@@ -146,7 +146,7 @@ public abstract class Evaluator {
 
     /**
      * gets the inc of the evaluator (that it was last initialised with)
-     * 
+     *
      * @return the current inc
      */
     public double getInc() {
@@ -160,11 +160,11 @@ public abstract class Evaluator {
     /**
      * Uses Newton's method to find a critical point starting at start, with other initial
      * conditions
-     * 
+     *
      * @param start the start point
-     * @param a the a param
-     * @param b the b param
-     * @param t the start time
+     * @param a     the a param
+     * @param b     the b param
+     * @param t     the start time
      * @return the resulting critical point
      * @throws RootNotFound whenever no critical point is found
      */
@@ -213,7 +213,7 @@ public abstract class Evaluator {
         Point2D p2 = next();
         double tInc = getInc();
         // TODO maybe add another setting for limcycle bounds
-        for (int i = 0; i < 1000; ++i)
+        for (int i = 0; i < 1000; ++i) {
             // System.out.println(eval.getCurrent());
             try {
                 return Intersections.getIntersection(p1, p2, st, nd);
@@ -221,21 +221,27 @@ public abstract class Evaluator {
                 p1 = p2;
                 p2 = next();
             }
-        if (p2.distance(p1) == 0 || Double.isInfinite(p2.getX()) || Double.isInfinite(p2.getY()))
-            throw new RootNotFound();
-        CriticalPoint temp = null;
-        try {
-            temp = findCritical(p2, a, b, t);
-        } catch (RootNotFound ignored) {
-        }
-        if (temp != null) {
-            // System.out.println("point: " + p2 + "\nroot: " + temp.point + "\ninc: " + tInc);
-            if ((tInc >= 0 && temp.type.isSink()) || (tInc <= 0 && temp.type.isSource())) {
-                // System.out.println("testing");
-                if (p2.distance(temp.point) < inc / 10)
-                    throw new RootNotFound();
+            if (p2.distance(p1) == 0 || Double.isInfinite(p2.getX()) || Double.isInfinite(p2.getY())) {
+                // System.out.println("infinite or stopped moving");
+                throw new RootNotFound();
+            }
+            CriticalPoint temp = null;
+            try {
+                temp = findCritical(p2, a, b, t);
+            } catch (RootNotFound ignored) {
+            }
+            if (temp != null) {
+                // System.out.println("point: " + p2 + "\nroot: " + temp.point + "\ninc: " + tInc);
+                if ((tInc >= 0 && temp.type.isSink()) || (tInc <= 0 && temp.type.isSource())) {
+                    // System.out.println("testing");
+                    if (p2.distance(temp.point) < inc / 10) {
+                        // System.out.println("got stuck");
+                        throw new RootNotFound();
+                    }
+                }
             }
         }
+        // System.out.println("out of time at" + p2);
         throw new RootNotFound();
 
 

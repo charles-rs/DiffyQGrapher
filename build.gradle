@@ -40,6 +40,7 @@ configurations.all {
 
 dependencies {
     implementation group: 'org.ejml', name: 'ejml-simple', version: '0.38'
+    implementation 'org.jetbrains:annotations:23.0.0'
 }
 
 

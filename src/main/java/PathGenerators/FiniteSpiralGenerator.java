@@ -2,26 +2,25 @@ package PathGenerators;
 
 import javafx.geometry.Point2D;
 
-public class FiniteSpiralGenerator extends SpiralGenerator implements FinitePathGenerator
-{
-	final double finalDist;
-	protected FiniteSpiralGenerator(double inc, Point2D start, double radius, double finalDist)
-	{
-		super(inc, start, radius);
-		this.finalDist = finalDist;
-	}
+public class FiniteSpiralGenerator extends SpiralGenerator implements FinitePathGenerator {
+    final double maxTurns;
 
-	@Override
-	public boolean done()
-	{
-		return start.distance(current) >= finalDist;
-	}
-	@Override
-	public Point2D next()
-	{
-		if(!done())
-			return super.next();
-		else return current;
-	}
+    protected FiniteSpiralGenerator(double inc, Point2D start, double radX, double radY, double maxTurns) {
+        super(inc, start, radX, radY);
+        this.maxTurns = maxTurns;
+    }
+
+    @Override
+    public boolean done() {
+        return theta / (2 * Math.PI) >= maxTurns;
+    }
+
+    @Override
+    public Point2D next() {
+        ++steps;
+        if (!done())
+            return super.next();
+        else return current;
+    }
 
 }

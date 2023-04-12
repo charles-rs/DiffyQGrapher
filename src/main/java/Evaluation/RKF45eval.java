@@ -5,7 +5,7 @@ import Exceptions.EvaluationException;
 import javafx.geometry.Point2D;
 
 public class RKF45eval extends Evaluator {
-    private double dynInc;
+    private double dynInc, tolerance;
 
     protected RKF45eval(Derivative dx, Derivative dy) {
         super(dx, dy);
@@ -95,10 +95,10 @@ public class RKF45eval extends Evaluator {
         double TE = new Point2D(
                 CT(1) * x1 + CT(2) * x2 + CT(3) * x3 + CT(4) * x4 + CT(5) * x5 + CT(6) * x6,
                 CT(1) * y1 + CT(2) * y2 + CT(3) * y3 + CT(4) * y4 + CT(5) * y5 + CT(6) * y6)
-                        .magnitude();
-        dynInc = 0.9 * h * Math.pow(inc / TE, .2);
+                .magnitude();
+        dynInc = 0.9 * h * Math.pow(tolerance / TE, .2);
         // System.out.println("inc is now: " + dynInc);
-        if (TE > inc)
+        if (TE > tolerance)
             return nextHelper();
         x = xnext;
         y = ynext;
@@ -180,12 +180,33 @@ public class RKF45eval extends Evaluator {
         return tmp;
     }
 
+    private void resetInc() {
+        dynInc = inc;
+    }
+
+    @Override
+    public void resetT() {
+        super.resetT();
+        resetInc();
+    }
+
+    @Override
+    public void movePoint(Point2D pt) {
+        super.movePoint(pt);
+        resetInc();
+    }
+
+    @Override
+    public void negate() {
+        super.negate();
+        resetInc();
+    }
 
     @Override
     public void initialise(double x, double y, double t, double a, double b, double inc) {
         super.initialise(x, y, t, a, b, inc);
         this.dynInc = inc;
-        this.inc = Math.abs(inc) / 10000;
+        this.tolerance = Math.abs(inc) / 10000;
         // System.out.println("inc: " + inc);
     }
 }

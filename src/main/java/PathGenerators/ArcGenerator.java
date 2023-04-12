@@ -2,54 +2,60 @@ package PathGenerators;
 
 import javafx.geometry.Point2D;
 
-public class ArcGenerator extends FinitePathGeneratorImpl
-{
-	final double thetaEnd, radius;
-	double theta;
-	double thetaInc;
-	Point2D center;
+public class ArcGenerator extends FinitePathGeneratorImpl {
+    final double thetaEnd, radX, radY;
+    double theta;
+    final double thetaInc;
+    Point2D center;
 
-	/**
-	 * Constructor for an arc generator
-	 * @implNote always goes anti-clockwise
-	 * @param inc the increment along the arc
-	 * @param center the center point
-	 * @param rad the radius
-	 * @param thetaStart the starting theta
-	 * @param thetaEnd the ending theta
-	 */
-	protected ArcGenerator(double inc, Point2D center, double rad, double thetaStart, double thetaEnd)
-	{
-		super(inc, center.add(new Point2D(rad * Math.cos(thetaStart), rad * Math.sin(thetaStart))));
-		this.center = center;
-		this.theta = thetaStart;
-		if(thetaEnd < thetaStart)
-			thetaEnd += 2 * Math.PI;
-		this.thetaEnd = thetaEnd;
-		this.radius = rad;
-		this.thetaInc = Math.asin(inc/(2 * rad));
-	}
+    ArcDirection dir;
 
-	@Override
-	public boolean done()
-	{
-		return theta >= thetaEnd;
-	}
+    /**
+     * Constructor for an arc generator
+     *
+     * @param center     the center point
+     * @param thetaStart the starting theta
+     * @param thetaEnd   the ending theta
+     * @param dir
+     * @implNote always goes anti-clockwise
+     */
+    protected ArcGenerator(double thetaInc, Point2D center, double radX, double radY, double thetaStart, double thetaEnd, ArcDirection dir) {
+        super(thetaInc, center.add(new Point2D(radX * Math.cos(thetaStart), radY * Math.sin(thetaStart))));
+        this.center = center;
+        this.theta = thetaStart;
+        switch (dir) {
+            case ANTICLOCKWISE -> {
+                if (thetaEnd < thetaStart)
+                    thetaEnd += 2 * Math.PI;
+            }
+            case CLOCKWISE -> {
+                if (thetaEnd > thetaStart)
+                    thetaEnd -= 2 * Math.PI;
+            }
+        }
+
+        this.thetaEnd = thetaEnd;
+        this.radX = radX;
+        this.radY = radY;
+        this.thetaInc = dir.equals(ArcDirection.CLOCKWISE) ? thetaInc * -1 : thetaInc;
+        this.dir = dir;
+    }
+
+    @Override
+    public boolean done() {
+        return switch (dir) {
+            case ANTICLOCKWISE -> theta >= thetaEnd;
+            case CLOCKWISE -> theta <= thetaEnd;
+        };
+    }
 
 
-	@Override
-	public Point2D next()
-	{
-		if(!done())
-		{
-			theta += thetaInc;
-			current = center.add(new Point2D(radius * Math.cos(theta), radius * Math.sin(theta)));
-		}
-		return current;
-	}
-
-	public double getTheta()
-	{
-		return theta;
-	}
+    @Override
+    public Point2D next() {
+        if (!done()) {
+            theta += thetaInc;
+            current = center.add(new Point2D(radX * Math.cos(theta), radY * Math.sin(theta)));
+        }
+        return current;
+    }
 }

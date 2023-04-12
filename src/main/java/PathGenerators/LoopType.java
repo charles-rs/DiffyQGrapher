@@ -1,6 +1,5 @@
 package PathGenerators;
 
-public enum LoopType
-{
-	CIRCLE;
+public enum LoopType {
+    CIRCLE, ELLIPSE;
 }
