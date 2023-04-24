@@ -33,7 +33,7 @@ public class SegmentGenerator extends FinitePathGeneratorImpl {
         if (!done()) {
             ++steps;
             double fracAlong = ((double) steps) / ((double) totalSteps);
-            current = start.multiply(fracAlong).add(end.multiply(1 - fracAlong));
+            current = start.multiply(1 - fracAlong).add(end.multiply(fracAlong));
         }
         return current;
     }

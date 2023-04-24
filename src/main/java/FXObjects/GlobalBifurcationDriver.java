@@ -5,26 +5,26 @@ import Exceptions.RootNotFound;
 import javafx.application.Platform;
 import javafx.geometry.Point2D;
 
-public class SemiStableHelper extends Thread {
+public class GlobalBifurcationDriver extends Thread {
 
     private static OutputPlane o;
-    private static SemiStableFinder finder;
-    private static Thread parent;
+    private final GlobalBifurcationFinder finder;
+    public static Thread parent;
     private Point2D prev, prevOld;
 
-    SemiStableFinder.NoCycles orient;
+    GlobalBifurcationFinder.Orientation orient;
 
-    SemiStableHelper(Point2D st, Point2D nx, SemiStableFinder.NoCycles orient) {
+    GlobalBifurcationDriver(GlobalBifurcationFinder finder, Point2D st, Point2D nx, GlobalBifurcationFinder.Orientation orient) {
         //setDaemon(true);
         System.out.println("st: " + st);
         System.out.println("nx: " + nx);
         prevOld = st;
         prev = nx;
         this.orient = orient;
+        this.finder = finder;
     }
 
-    static void init(OutputPlane _o, SemiStableFinder _finder, Thread _parent) {
-        finder = _finder;
+    static void init(OutputPlane _o, Thread _parent) {
         o = _o;
         parent = _parent;
     }
@@ -42,7 +42,7 @@ public class SemiStableHelper extends Thread {
         while (o.in.inBounds(prev.getX(), prev.getY()) && !parent.isInterrupted()
                 && !Thread.interrupted()) {
             try {
-                var next = finder.semiStablePred(prev, prevOld, orient);
+                var next = finder.globalBifPred(prev, prevOld, orient);
                 //next = finder.semiStableFinitePath(prev.getX(), prev.getY(), FinitePathType.ARC, prevOld);
                 //next = finder.semiStableMidpointPath(prev, prevOld);
                 o.in.drawLine(prev, next, o.in.awtSemiStableColor, 3);
@@ -52,6 +52,9 @@ public class SemiStableHelper extends Thread {
                 System.out.println(prev);
             } catch (RootNotFound r) {
                 System.out.println("breaking");
+                break;
+            } catch (NullPointerException npe) {
+                parent.interrupt();
                 break;
             }
         }

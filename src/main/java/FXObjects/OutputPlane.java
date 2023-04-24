@@ -656,12 +656,7 @@ public class OutputPlane extends CoordPlane {
                             try {
                                 Platform.runLater(() -> in.loading.setVisible(true));
                                 synchronized (in) {
-                                    renderSemiStable(
-                                            scrToNorm(new Point2D(cycleLine.getStartX(),
-                                                    cycleLine.getStartY())),
-                                            scrToNorm(new Point2D(cycleLine.getEndX(),
-                                                    cycleLine.getEndY())),
-                                            new Point2D(a, b), true);
+                                    renderSemiStable();
                                 }
                                 Platform.runLater(() -> in.loading.setVisible(false));
                             } finally {
@@ -678,367 +673,18 @@ public class OutputPlane extends CoordPlane {
 
     }
 
+    public void interrupt() {
+        if (GlobalBifurcationDriver.parent != null) {
+            GlobalBifurcationDriver.parent.interrupt();
+        }
+    }
 
-    public void renderSemiStable(Point2D lnSt, Point2D lnNd, Point2D start, boolean add) {
-        double aInc = 2D * (in.xMax.get() - in.xMin.get()) / in.getWidth();
-        double bInc = 2D * (in.yMax.get() - in.yMin.get()) / in.getHeight();
-        double otherInc = 0D;
-        Point2D prev;
-        Point2D prevOld;
-        Point2D next;
-        Point2D temp;
-        Point2D st = null;
-        Point2D diff;
-        int throwCount = 0;
-        int code = 0;
+
+    public void renderSemiStable() {
         var finder = new SemiStableFinder(this, semiStableInner, semiStableOuter);
-
-        /*
-         * for(int i = 0; i < 4; i++) { try { st = semiStable(lnSt, lnNd, start.getX(),
-         * start.getY(), i); code = i; break; } catch (RootNotFound ignored) {} } if(st == null)
-         * return;
-         */
-        System.out.println("starting semistable");
-        try {
-            //st = semiStableFinitePath(lnSt, lnNd, a, b, FinitePathType.SPIRAL, null);
-            st = finder.semiStableFinitePath(a, b, FinitePathType.SPIRAL, null);
-        } catch (RootNotFound r) {
-            return;
-        }
-        System.out.println("yay");
-        System.out.println(st);
-        Point2D sides[];
-
-        try {
-            //sides = semiStableLoop(lnSt, lnNd, st, LoopType.CIRCLE);
-            sides = finder.semiStableLoop(st);
-        } catch (RootNotFound r) {
-            System.out.println("oops, circle didn't work");
-            return;
-        }
-        System.out.println("yay!!!");
-        System.out.println("no1: " + sides[0] + "\nno2: " + sides[1]);
-        boolean isA;
-        if (add) {
-            in.semiStables.add(new SemiStableStart(lnSt, lnNd, st));
-        }
-        SemiStableHelper.init(this, finder, Thread.currentThread());
-        SemiStableHelper s1, s2;
-        s1 = new SemiStableHelper(st, sides[0], SemiStableFinder.NoCycles.RIGHT);
-        s2 = new SemiStableHelper(st, sides[1], SemiStableFinder.NoCycles.LEFT);
-        s1.start();
-        s2.start();
-        try {
-            s1.join();
-        } catch (InterruptedException i) {
-            s1.interrupt();
-            s2.interrupt();
-        }
-        try {
-            s2.join();
-        } catch (InterruptedException i) {
-            s1.interrupt();
-            s2.interrupt();
-        }
-        /*
-         * for (int i = 0; i < 2; i++) { prev = st; next = sides[i]; in.drawLine(prev, next,
-         * in.awtSemiStableColor, 3); Platform.runLater(in::render); diff = next.subtract(prev);
-         * prevOld = st; prev = next; while (in.inBounds(prev.getX(), prev.getY()) &&
-         * !Thread.interrupted()) { isA = (code & 1) == 1; if(isA) { otherInc = bInc *
-         * diff.getX()/diff.getY(); } else { otherInc = aInc * diff.getY()/diff.getX(); } if (isA)
-         * temp = new Point2D(prev.getX() + otherInc, prev.getY() + bInc); else temp = new
-         * Point2D(prev.getX() + aInc, prev.getY() + otherInc); try { System.out.println("i: " + i);
-         * // next = semiStable(lnSt, lnNd, temp.getX(), temp.getY(), code); // next =
-         * semiStableFinitePath(lnSt, lnNd, prev.getX(), prev.getY(), FinitePathType.ARC, prevOld);
-         * next = semiStableMidpointPath(lnSt, lnNd, prev, prevOld); //
-         * System.out.println("Point1: " + prevOld + "\nPoint2: " + prev + "\nPoint3: " + next);
-         * in.drawLine(prev, next, in.awtSemiStableColor, 3); Platform.runLater(in::render); diff =
-         * next.subtract(prev);
-         *
-         * if(isA) { if(Math.abs(diff.getY()/diff.getX()) < 1D) isA = false; } else {
-         * if(Math.abs(diff.getY()/diff.getX()) > 1D) isA = true; } prevOld = prev; prev = next;
-         * System.out.println(prev); System.out.println(isA); throwCount = 0; } catch (RootNotFound
-         * r) {
-         *
-         * if (prev.distance(st) < Math.min(aInc, bInc)) break; if (throwCount >= 2) {
-         * System.out.println("breaking"); break; } else { code = (code + 1) % 4; throwCount++; } }
-         * } aInc = -aInc; bInc = -bInc; code = (code + 2) % 4; } in.gc.setStroke(Color.BLACK);
-         *
-         * Platform.runLater(this::draw);
-         */
-        in.render();
+        finder.run();
     }
 
-    private Point2D semiStableLoop(Point2D lnSt, Point2D lnNd, Point2D center, LoopType lty)[]
-            throws RootNotFound {
-        double px = ((in.xMax.get() - in.xMin.get() + in.yMax.get() - in.yMin.get()) / 2)
-                / ((in.getWidth() + in.getHeight()) / 2D);
-        LoopGenerator gen = GeneratorFactory.getLoopGenerator(lty, px / 3, center, 6);
-        int cd1;
-        int cd2 = hasLimCycle(lnSt, lnNd, gen.getCurrent());
-        ;
-        for (int i = 0; i < 10 && cd2 < 0; ++i) {
-            System.out.println("retrying: " + i);
-            if (cd2 == -1)
-                lnSt = lnSt.multiply(0.9).add(lnNd.multiply(0.1));
-            else
-                lnNd = lnNd.multiply(0.9).add(lnSt.multiply(0.1));
-            cd2 = hasLimCycle(lnSt, lnNd, gen.getCurrent());
-
-        }
-
-        Point2D temp[] = new Point2D[2];
-        int currentVal = 0;
-        // assertCode(cd2);
-        Point2D next;
-        while (!gen.completed() && !Thread.interrupted()) {
-            System.out.println(gen.getCurrent());
-            next = gen.next();
-            cd1 = cd2;
-            cd2 = hasLimCycle(lnSt, lnNd, next);
-            if (cd2 != cd1 && (cd2 == 2 || cd2 == 0) && (cd1 == 0 || cd1 == 2)) {
-                temp[currentVal] = gen.getCurrent();
-                gen.advanceOneQuarter();
-                currentVal++;
-                if (currentVal > 1)
-                    break;
-            }
-        }
-        if (currentVal < 1) {
-            System.out.println("didn't get them all");
-            throw new RootNotFound();
-        }
-        return temp;
-    }
-
-    private void assertCode(int cd) throws RootNotFound {
-        if (cd != 0 && cd != 2)
-            throw new RootNotFound();
-    }
-
-    Point2D semiStableMidpointPath(Point2D lnSt, Point2D lnNd, Point2D prev1, Point2D prev2)
-            throws RootNotFound {
-        double px = ((in.xMax.get() - in.xMin.get() + in.yMax.get() - in.yMin.get()) / 2)
-                / ((in.canv.getWidth() + in.canv.getHeight()) / 2D);
-        MidpointPathGenerator gen = GeneratorFactory.getMidpointArcGenerator(px, prev1, prev2);
-        int cdLeft = -1, cdRight = -1, cdCenter = -1, dir = 4;
-        while ((!gen.done() || dir > 1) && !Thread.interrupted()) {
-            System.out.println("current point: " + gen.getCurrentPoint());
-            switch (dir) {
-                case 0:
-                    cdLeft = cdCenter;
-                    cdCenter = hasLimCycle(lnSt, lnNd, gen.getCurrentPoint());
-                    break;
-                case 1:
-                    cdRight = cdCenter;
-                    cdCenter = hasLimCycle(lnSt, lnNd, gen.getCurrentPoint());
-                    break;
-                case 2:
-                    cdRight = hasLimCycle(lnSt, lnNd, gen.getCurrent().right);
-                    cdCenter = hasLimCycle(lnSt, lnNd, gen.getCurrent().center);
-                    break;
-                case 3:
-                    cdLeft = hasLimCycle(lnSt, lnNd, gen.getCurrent().left);
-                    cdCenter = hasLimCycle(lnSt, lnNd, gen.getCurrent().center);
-                    break;
-                default:
-                    cdLeft = hasLimCycle(lnSt, lnNd, gen.getCurrent().left);
-                    cdRight = hasLimCycle(lnSt, lnNd, gen.getCurrent().right);
-                    cdCenter = hasLimCycle(lnSt, lnNd, gen.getCurrent().center);
-                    break;
-            }
-
-            if (cdCenter != 0 && cdCenter != 2)
-                break;
-            if (cdLeft == 0 || cdLeft == 2) {
-                if (cdLeft == cdRight) {
-                    System.out.println("no variation");
-                    System.out.println("left: " + gen.getCurrent().left + "\nright: "
-                            + gen.getCurrent().right);
-                    throw new RootNotFound();
-                } else if (cdRight == 0 || cdRight == 2) {
-                    if (cdLeft == cdCenter) {
-                        gen.getNext(Side.RIGHT);
-                        dir = 0;
-                    } else {
-                        gen.getNext(Side.LEFT);
-                        dir = 1;
-                    }
-                } else {
-                    gen.refine(Side.LEFT);
-                    dir = 2;
-                }
-            } else {
-                gen.refine(Side.RIGHT);
-                dir = 3;
-            }
-        }
-        if (!gen.done()) {
-            System.out.println("defaulting out");
-            // return semiStableFinitePath(lnSt, lnNd, prev1.getX(), prev1.getY(),
-            // FinitePathType.ARC, prev2);
-            throw new RootNotFound();
-        } else if (dir == 0 || dir == 1)
-            return gen.getCurrentPoint();
-        else
-            throw new RootNotFound();
-    }
-
-//    private Point2D semiStableFinitePath(Point2D lnSt, Point2D lnNd, double a, double b,
-//                                         FinitePathType finitePathType, Point2D prev) throws RootNotFound {
-//        double px = ((in.xMax.get() - in.xMin.get() + in.yMax.get() - in.yMin.get()) / 2)
-//                / ((in.canv.getWidth() + in.canv.getHeight()) / 2D);
-//        Point2D p = new Point2D(a, b);
-//        int current = hasLimCycle(lnSt, lnNd, p);
-//        for (int i = 0; i < 10 && current < 0; ++i) {
-//            System.out.println("retrying: " + i);
-//            if (current == -1)
-//                lnSt = lnSt.multiply(0.9).add(lnNd.multiply(0.1));
-//            else
-//                lnNd = lnNd.multiply(0.9).add(lnSt.multiply(0.1));
-//            current = hasLimCycle(lnSt, lnNd, p);
-//
-//        }
-//        if (current != 0 && current != 2 && finitePathType == FinitePathType.SPIRAL) {
-//            System.out.println("bad init state spiral: " + current);
-//            throw new RootNotFound();
-//        }
-//        System.out.println("p1: " + p);
-//        FinitePathGenerator s =
-//                GeneratorFactory.getFinitePathGenerator(finitePathType, px, p, 15 * px, prev);
-//        Point2D pOld = p;
-//        p = s.next();
-//        System.out.println("p2: " + p);
-//        int cd;
-//        System.out.println("made it here?");
-//
-//        while (!Thread.interrupted() && !s.done()) {
-//            System.out.println("Point: " + p);
-//            cd = hasLimCycle(lnSt, lnNd, p);
-//            System.out.println("num cycles: " + cd);
-//            if (cd != current && (cd == 2 || cd == 0)) {
-//                break;
-//            } else {
-//                pOld = p;
-//                p = s.next();
-//            }
-//        }
-//        System.out.println("px: " + px);
-//        System.out.println("dist: " + s.distanceFromStart());
-//        return p.midpoint(pOld);
-//
-//
-//    }
-
-    /**
-     * Finds a semistable limit cycle bifurcation with the provided start info
-     *
-     * @param lnSt the start of the transverse line
-     * @param lnNd the end of the transverse line
-     * @param a    the a value
-     * @param b    the b value
-     * @param code least significant bit is isA, 2nd least is lookPos
-     * @return a point in the parameter space with a semistable limit cycle bifurcation
-     * @throws RootNotFound if no semistable limit cycle is found
-     */
-
-    private Point2D semiStable(Point2D lnSt, Point2D lnNd, double a, double b, int code)
-            throws RootNotFound {
-        boolean isA, lookPos;
-        isA = (code & 1) == 1;
-        lookPos = (code & 2) == 2;
-        double finA = Double.MAX_VALUE, finB = Double.MAX_VALUE;
-        if (!lookPos) {
-            finA = -finA;
-            finB = -finB;
-        }
-        double tol, incA, incB;
-        if (isA) {
-            tol = (in.xMax.get() - in.xMin.get()) / 2048D;
-            if (lookPos)
-                incA = tol * 16D;
-            else
-                incA = -tol * 16D;
-            incB = 0D;
-            finA = a + 8 * incA;
-
-        } else {
-            tol = (in.yMax.get() - in.yMin.get()) / 2048D;
-            incA = 0D;
-            if (lookPos)
-                incB = tol * 16D;
-            else
-                incB = -tol * 16D;
-            finB = b + 8 * incB;
-        }
-        int current = hasLimCycle(lnSt, lnNd, a, b);
-        if (current != 0 && current != 2) {
-            System.out.println("bad initial state");
-            throw new RootNotFound();
-        }
-        while (Math.max(Math.abs(incA), Math.abs(incB)) > tol && !Thread.interrupted()) {
-            System.out.println("a: " + a + "\nb: " + b);
-            int cd = hasLimCycle(lnSt, lnNd, a + incA, b + incB);
-            if (cd == current) {
-                a += incA;
-                b += incB;
-            } else if (cd != 0 && cd != 1)
-                throw new RootNotFound();
-            else {
-                incA /= 2D;
-                incB /= 2D;
-            }
-            if (lookPos && (a > finA || b > finB) || !lookPos && (a < finA || b < finB)) {
-                System.out.println("went out of bounds");
-                throw new RootNotFound();
-            }
-        }
-        if (current == 0) {
-            a += incA;
-            b += incB;
-        }
-        if (hasLimCycle(lnSt, lnNd, a, b) == 0) {
-            System.out.println("what the actual fuck");
-            throw new RootNotFound();
-        }
-        Point2D p1 = null, p2 = null;
-        Evaluator e1, e2;
-        e1 = EvaluatorFactory.getEvaluator(evalType, dx, dy);
-        e2 = EvaluatorFactory.getEvaluator(evalType, dx, dy);
-        e1.initialise(lnSt, 0, a, b, -inc);
-        e2.initialise(lnNd, 0, a, b, inc);
-        e1.next();
-        e2.next();
-        try {
-            e1.getNextIsectLn(lnSt, lnNd);
-        } catch (RootNotFound r) {
-            System.out.println("negating");
-            e1.negate();
-            e2.negate();
-            e1.advance(4);
-            e2.advance(4);
-        }
-        try {
-            for (int i = 0; i < 20; i++) {
-                p1 = e1.getNextIsectLn(lnSt, lnNd);
-                p2 = e2.getNextIsectLn(lnSt, lnNd);
-            }
-        } catch (RootNotFound r) {
-            System.out.println("problem.");
-            throw new RootNotFound();
-        }
-        // if(p1.distance(p2) > .2 * lnSt.distance(lnNd))
-        // {
-        // System.out.println("wrong end");
-        // throw new RootNotFound();
-        // }
-        System.out.println("returning");
-        return new Point2D(a, b);
-    }
-
-    private int hasLimCycle(Point2D lnSt, Point2D lnNd, Point2D params) {
-        return hasLimCycle(lnSt, lnNd, params.getX(), params.getY());
-    }
 
     private int hasLimCycle(Point2D lnSt, Point2D lnNd, double a, double b) {
         Evaluator e1 = EvaluatorFactory.getEvaluator(evalType, dx, dy);
@@ -1325,6 +971,12 @@ public class OutputPlane extends CoordPlane {
 
     public void renderSaddleCon(Point2D start, final SepStart s1, final SepStart s2, boolean add,
                                 SaddleConTransversal transversal) {
+        var finder = new SaddleConFinder(this, transversal, s1, s2);
+        finder.run();
+        if (true)
+            return;
+
+
         java.awt.Color tempCol;
         if (s1.saddle.point.distance(s2.saddle.point) < .000001
                 * ((xMax.get() - xMin.get()) + (yMax.get() - yMin.get())) / 2)
@@ -1889,7 +1541,7 @@ public class OutputPlane extends CoordPlane {
             throw new RootNotFound();
         }
         FinitePathGenerator s =
-                GeneratorFactory.getFinitePathGenerator(finitePathType, getPxX(), getPxY(), p, 50 * px, prev);
+                GeneratorFactory.getFinitePathGenerator(finitePathType, getPxX(), getPxY(), p, 15, prev);
         Point2D pOld = p;
         p = s.next();
         boolean ready;
@@ -2650,95 +2302,5 @@ public class OutputPlane extends CoordPlane {
         }
     }
 
-
-    /*
-     * private Point2D semiStable(LimCycleStart l1, LimCycleStart l2, boolean isA, double a, double
-     * b) throws RootNotFound { double incT; boolean flipped = false; if(isA) { incT =
-     * (in.xMax.get() - in.xMin.get())/800; } else { incT = (in.yMax.get() - in.yMin.get())/800; }
-     * while(l1.st.distance(l2.st) > inc/100 && !Thread.interrupted()) {
-     *
-     * LimCycleStart temp1, temp2; if(isA) a += incT; else b += incT; try { temp1 =
-     * updateLimCycle(l1, a, b); temp2 = updateLimCycle(l2, a, b); System.out.println("Dist: " +
-     * l1.st.distance((l2.st))); System.out.println("Start1: " + l1.st);
-     * System.out.println("(a, b): (" + a + ", " + b + ")"); System.out.println("inc: " + incT);
-     * if(temp1.st.distance(temp2.st) > l1.st.distance(l2.st)) { if(!flipped) {
-     * System.out.println("flipping"); incT = -incT; flipped = true; } else throw new
-     * RootNotFound(true); } else { l1 = temp1; l2 = temp2; } } catch (RootNotFound r) {
-     * if(!r.offTheScreen) { if (isA) { a -= incT; } else { b -= incT; } incT = incT / 10;
-     * System.out.println("WENT OFF"); } // else throw new RootNotFound(); }
-     *
-     * if(isA) { if( incT < (in.xMax.get() - in.xMin.get())/200000) throw new RootNotFound(); } else
-     * { if(incT < (in.yMax.get() - in.yMin.get())/200000) throw new RootNotFound(); }
-     *
-     * } System.out.println("found one!"); return new Point2D(a, b); }
-     */
-    @Deprecated
-    void findSemiStable(Point2D start, Point2D lnSt, Point2D lnNd, double a, double b, boolean add)
-            throws RootNotFound {
-        System.out.println(lnSt);
-        System.out.println(lnNd);
-        Evaluator eval = EvaluatorFactory.getEvaluator(evalType, dx, dy);
-        eval.initialise(start, 0, a, b, inc);
-        LimCycleStart stbl, unstbl;
-        Point2D isectStbl = null, isectUnstbl = null;
-        Point2D p1 = start;
-        Point2D p2 = eval.next();
-        while (eval.getT() < 100 && !Thread.interrupted()) {
-            try {
-                isectStbl = Intersections.getIntersection(p1, p2, lnSt, lnNd);
-                break;
-            } catch (RootNotFound r) {
-                p1 = p2;
-                p2 = eval.next();
-            }
-        }
-        eval.initialise(start, 0, a, b, -inc);
-        p1 = start;
-        p2 = eval.next();
-        while (eval.getT() < 100 && !Thread.interrupted()) {
-            try {
-                isectUnstbl = Intersections.getIntersection(p1, p2, lnSt, lnNd);
-                break;
-            } catch (RootNotFound r) {
-                p1 = p2;
-                p2 = eval.next();
-            }
-        }
-        System.out.println("Initialised both");
-        if (isectStbl == null || isectUnstbl == null)
-            throw new RootNotFound();
-        p1 = isectStbl;
-        eval.initialise(isectStbl, 0, a, b, inc);
-        p2 = eval.getNextIsectLn(lnSt, lnNd);
-        while (p1.distance(p2) > inc / 1000 && !Thread.interrupted()) {
-            p1 = p2;
-            p2 = eval.getNextIsectLn(lnSt, lnNd);
-            eval.resetT();
-        }
-        System.out.println("hopefully i get here");
-        stbl = new LimCycleStart(p2, true, lnSt, lnNd);
-        p1 = isectUnstbl;
-        eval.initialise(isectUnstbl, 0, a, b, -inc);
-        try {
-            p2 = eval.getNextIsectLn(lnSt, lnNd);
-        } catch (RootNotFound r) {
-            System.out.println(isectUnstbl);
-        }
-        while (p1.distance(p2) > inc / 1000 && !Thread.interrupted()) {
-            p1 = p2;
-            try {
-                p2 = eval.getNextIsectLn(lnSt, lnNd);
-                eval.resetT();
-            } catch (RootNotFound r) {
-                System.out.println("well it went wrong at " + eval.getT());
-                System.out.println("with the inc of: " + eval.getInc());
-                throw new RootNotFound();
-            }
-        }
-
-        System.out.println("def didn't get here....");
-        unstbl = new LimCycleStart(p2, false, lnSt, lnNd);
-        renderSemiStable(lnSt, lnNd, new Point2D(a, b), true);
-    }
 
 }

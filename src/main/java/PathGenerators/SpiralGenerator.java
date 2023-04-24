@@ -20,7 +20,7 @@ public class SpiralGenerator extends GeneratorImpl {
         super(inc, start);
         this.rx = rx;
         this.ry = ry;
-        this.theta = 0;
+        this.theta = Math.PI;
         this.currentR = 0;
     }
 

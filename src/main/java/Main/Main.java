@@ -2,15 +2,11 @@ package Main;
 
 import AST.Derivative;
 import Evaluation.EvalType;
-import Events.SaddleSelected;
 import Events.HopfPointSelected;
+import Events.SaddleSelected;
 import Events.UpdatedState;
 import Exceptions.SyntaxError;
-import FXObjects.ClickModeType;
-import FXObjects.DerivativeGraph;
-import FXObjects.InClickModeType;
-import FXObjects.InputPlane;
-import FXObjects.OutputPlane;
+import FXObjects.*;
 import Instr.InstructionsWindow;
 import Parser.Tokenizer;
 import Settings.Settings;
@@ -23,14 +19,9 @@ import javafx.scene.Scene;
 import javafx.scene.control.*;
 import javafx.scene.input.KeyCode;
 import javafx.scene.input.KeyEvent;
-import javafx.scene.layout.AnchorPane;
-import javafx.scene.layout.HBox;
-import javafx.scene.layout.Priority;
-import javafx.scene.layout.Region;
-import javafx.scene.layout.VBox;
+import javafx.scene.layout.*;
 import javafx.stage.FileChooser;
 import javafx.stage.Stage;
-
 
 import java.io.File;
 import java.io.InputStream;
@@ -91,7 +82,6 @@ public class Main extends Application {
     private MenuItem positiveDivBif, negativeDivBif;
     private MenuItem info;
     private MenuItem instructions;
-
 
 
     private MenuItem english;
@@ -281,6 +271,7 @@ public class Main extends Application {
         btnInterruptSadCon = new Button();
         btnInterruptSadCon.setOnAction((actionEvent -> {
             inPlane.interrupt();
+            outPlane.interrupt();
         }));
         btnResetInZoom = new Button();
         btnResetInZoom.setOnAction(actionEvent -> {
@@ -329,7 +320,7 @@ public class Main extends Application {
         AnchorPane.setTopAnchor(mainH, 20.0);
 
         anchor.getChildren().addAll(mainH);
-        TextField[] fields = new TextField[] {aField, bField, tField};
+        TextField[] fields = new TextField[]{aField, bField, tField};
         for (TextField fld : fields) {
             fld.setOnMouseClicked(e -> fld.selectAll());
         }
@@ -605,7 +596,6 @@ public class Main extends Application {
         inPlane.addEventHandler(ActionEvent.ANY, handler);
 
 
-
         primaryStage.setTitle("Differential Equations");
         primaryStage.setScene(new Scene(root, 1200, 800));
         // primaryStage.setMaximized(true);
@@ -818,7 +808,7 @@ public class Main extends Application {
 
 
     private void openSecondary(Derivative n, char var, double a, double b, double x, double y,
-            double t) {
+                               double t) {
         Stage newWindow = new Stage();
         newWindow.setTitle("d" + n.getType() + "/dt vs " + var);
         TextField xInput = new TextField();
