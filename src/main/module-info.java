@@ -1,13 +1,14 @@
 module DiffEqGrapher.main {
-	requires java.desktop;
-	requires javafx.controls;
-	requires javafx.swing;
-	requires java.prefs;
-	requires ejml.simple;
-	requires ejml.core;
+    requires java.desktop;
+    requires javafx.controls;
+    requires javafx.swing;
+    requires java.prefs;
+    requires ejml.simple;
+    requires ejml.core;
+    requires org.jetbrains.annotations;
 
 
-	opens Main to javafx.graphics;
+    opens Main to javafx.graphics;
 }
 
 /*
