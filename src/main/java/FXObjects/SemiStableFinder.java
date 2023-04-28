@@ -22,6 +22,12 @@ class SemiStableFinder extends GlobalBifurcationFinder<SemiStableFinder.CycleCou
         return "semistable";
     }
 
+
+    @Override
+    protected java.awt.Color getColor() {
+        return o.in.awtSemiStableColor;
+    }
+
     CriticalPoint inner;
     Point2D outer;
 

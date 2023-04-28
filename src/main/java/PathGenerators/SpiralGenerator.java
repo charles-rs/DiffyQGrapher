@@ -33,7 +33,7 @@ public class SpiralGenerator extends GeneratorImpl {
         theta += theta == 0 ? Math.PI : inc * 2 * Math.asin(.5 / turns);
         System.out.println(theta);
         //currentR = theta * (r / (2 * Math.PI));
-        currentR = (rx * ry) / (2 * Math.PI * Math.sqrt(Math.pow(rx * Math.sin(theta), 2)
+        currentR = 10 * (rx * ry) / (2 * Math.PI * Math.sqrt(Math.pow(rx * Math.sin(theta), 2)
                 + Math.pow(ry * Math.cos(theta), 2)));
         current = start.add(new Point2D(currentR * Math.cos(theta), currentR * Math.sin(theta)));
         //current = start.add(new Point2D())

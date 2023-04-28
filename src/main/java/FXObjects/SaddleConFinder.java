@@ -5,7 +5,17 @@ import Evaluation.EvaluatorFactory;
 import Exceptions.RootNotFound;
 import javafx.geometry.Point2D;
 
+import java.awt.*;
+
 public class SaddleConFinder extends GlobalBifurcationFinder<SaddleConFinder.SaddleOrientation> {
+
+    @Override
+    protected Color getColor() {
+        if (trans.homo)
+            return o.in.awtHomoSaddleConColor;
+        else
+            return o.in.awtHeteroSaddleConColor;
+    }
 
     private final SaddleConTransversal trans;
     private SepStart s1, s2;
@@ -24,7 +34,7 @@ public class SaddleConFinder extends GlobalBifurcationFinder<SaddleConFinder.Sad
 
     @Override
     protected String getName() {
-        return null;
+        return "saddlecon";
     }
 
 
@@ -40,7 +50,7 @@ public class SaddleConFinder extends GlobalBifurcationFinder<SaddleConFinder.Sad
         var n1 = eval.getNextIsectLn(st, end);
         eval.initialise(s2.getStart(o.inc), 0, p.getX(), p.getY(), s2.getInc(o.inc));
         var n2 = eval.getNextIsectLn(st, end);
-        return new SaddleOrientation(n1.distance(st) < n2.distance(st));
+        return new SaddleOrientation(n1.distance(st) > n2.distance(st));
     }
 
     public static class SaddleOrientation extends SigIntf {
@@ -53,20 +63,25 @@ public class SaddleConFinder extends GlobalBifurcationFinder<SaddleConFinder.Sad
         @Override
         public boolean bifurcatesFrom(SigIntf _other) {
             if (_other instanceof SaddleOrientation other)
-                return other.left != this.left;
+                return !this.left && other.left;
             throw new ClassCastException();
         }
 
         @Override
         public boolean bifurcatesTo(SigIntf _other) {
             if (_other instanceof SaddleOrientation other)
-                return other.left != this.left;
+                return this.left && !other.left;
             throw new ClassCastException();
         }
 
         @Override
         public boolean isZero() {
             return left;
+        }
+
+        @Override
+        public String toString() {
+            return Boolean.toString(left);
         }
     }
 

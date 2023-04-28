@@ -8,6 +8,8 @@ import PathGenerators.GeneratorFactory;
 import javafx.application.Platform;
 import javafx.geometry.Point2D;
 
+import java.awt.*;
+
 public abstract class GlobalBifurcationFinder<Signature extends GlobalBifurcationFinder.SigIntf> implements Cloneable {
 
     public static abstract class SigIntf {
@@ -27,6 +29,8 @@ public abstract class GlobalBifurcationFinder<Signature extends GlobalBifurcatio
     }
 
 
+    protected abstract Color getColor();
+
     protected OutputPlane o;
 
     protected abstract String getName();
@@ -38,12 +42,17 @@ public abstract class GlobalBifurcationFinder<Signature extends GlobalBifurcatio
 
     abstract Signature classify(Point2D p) throws RootNotFound;
 
+    RenderedCurve render = new RenderedCurve();
+
     void run() {
+
         Point2D st;
         System.out.println("starting " + getName());
         try {
             //st = semiStableFinitePath(lnSt, lnNd, a, b, FinitePathType.SPIRAL, null);
             st = globalBifFinitePath(o.a, o.b, FinitePathType.SPIRAL, null);
+            render.start = st;
+            render.color = getColor();
         } catch (RootNotFound r) {
             return;
         }
@@ -61,8 +70,8 @@ public abstract class GlobalBifurcationFinder<Signature extends GlobalBifurcatio
 
         GlobalBifurcationDriver.init(o, Thread.currentThread());
 
-        var s1 = new GlobalBifurcationDriver(this, st, sides[0], Orientation.RIGHT);
-        var s2 = new GlobalBifurcationDriver(this.clone(), st, sides[1], Orientation.LEFT);
+        var s1 = new GlobalBifurcationDriver(this, st, sides[0], Orientation.RIGHT, render.right);
+        var s2 = new GlobalBifurcationDriver(this.clone(), st, sides[1], Orientation.LEFT, render.left);
         s1.start();
         s2.start();
         try {
@@ -90,13 +99,13 @@ public abstract class GlobalBifurcationFinder<Signature extends GlobalBifurcatio
         System.out.println("starting with " + cycleCounts);
         double px = ((o.in.xMax.get() - o.in.xMin.get() + o.in.yMax.get() - o.in.yMin.get()) / 2)
                 / ((o.in.canv.getWidth() + o.in.canv.getHeight()) / 2D);
-        double pxX = 5 * o.in.getPxX();
-        double pxY = 5 * o.in.getPxY();
+        double pxX = o.in.getPxX();
+        double pxY = o.in.getPxY();
         if (tp.equals(FinitePathType.SPIRAL)) {
-            pxX *= 2;
-            pxY *= 2;
+            pxX *= 1;
+            pxY *= 1;
         }
-        var s = GeneratorFactory.getFinitePathGenerator(tp, pxX, pxY, p, 15, prev);
+        var s = GeneratorFactory.getFinitePathGenerator(tp, pxX, pxY, p, 50, prev);
         var pOld = p;
         p = s.next();
         while (!Thread.interrupted() && !s.done()) {
@@ -113,8 +122,11 @@ public abstract class GlobalBifurcationFinder<Signature extends GlobalBifurcatio
         return p.midpoint(pOld);
     }
 
+    double pxRad = 2;
+    double thetaInc = .08 / pxRad;
+
     Point2D[] globalBifLoop(Point2D center) throws RootNotFound {
-        var gen = new EllipseGenerator(Math.PI / 16, center, 5 * o.in.getPxX(), 5 * o.in.getPxY());
+        var gen = new EllipseGenerator(thetaInc, center, pxRad * o.in.getPxX(), pxRad * o.in.getPxY());
         Signature count1;
         System.out.println("center: " + center);
         System.out.println("start: " + gen.getCurrent());
@@ -173,8 +185,8 @@ public abstract class GlobalBifurcationFinder<Signature extends GlobalBifurcatio
             case RIGHT -> count.isZero() ? -1 : 1;
         };
 
-        double rad = 5;
-        var gen = GeneratorFactory.getArcGenerator(.5 / rad, prev, o.in.getPxX() * rad, o.in.getPxY() * rad,
+
+        var gen = GeneratorFactory.getArcGenerator(thetaInc, prev, o.in.getPxX() * pxRad, o.in.getPxY() * pxRad,
                 theta, theta + sign * Math.PI / 1.1,
                 sign == 1 ? ArcDirection.ANTICLOCKWISE : ArcDirection.CLOCKWISE
         );

@@ -81,14 +81,15 @@ public class InputPlane extends CoordPlane {
     List<Point2D> degenSaddleCons;
     List<Point2D> degenHopf;
     List<SemiStableStart> semiStables;
+
+    List<RenderedCurve> renderedSemiStable = new ArrayList<>();
+    List<RenderedCurve> renderedSaddle = new ArrayList<>();
+
     /**
      * a separate thread that deals with drawing difficult bifurcations so as not to lock up the program
      */
     Thread artist;
-    /**
-     * canvas that is overlayed on the normal one for drawing saddle connection bifurcations.
-     * These are difficult bifurcations to draw, so we want to avoid redrawing them except when absolutely necessary
-     */
+
     boolean updateSaddleCons;
     public InPlaneSettings settings;
 
@@ -545,9 +546,9 @@ public class InputPlane extends CoordPlane {
      * @param cons       marks which variable is held constant
      * @return the value for the non constant variable, given the constant one
      */
-    private double bifHelp(double x, double y, double aTemp, double bTemp, Node n1, Node n2, Node n3, Node derivative[][], char cons)[] {
+    private double[] bifHelp(double x, double y, double aTemp, double bTemp, Node n1, Node n2, Node n3, Node[][] derivative, char cons) {
         double t = op.getT();
-        double temp[] = new double[4];
+        double[] temp = new double[4];
         try {
             double xt = x;
             double yt = y;
@@ -607,6 +608,20 @@ public class InputPlane extends CoordPlane {
         drawPentagrams();
     }
 
+    void renderCurve(RenderedCurve curve) {
+        Point2D prev = curve.start;
+        for (var pt : curve.left) {
+            drawLine(prev, pt, curve.color, 3);
+            prev = pt;
+        }
+        prev = curve.start;
+        for (var pt : curve.right) {
+            drawLine(prev, pt, curve.color, 3);
+            prev = pt;
+        }
+
+    }
+
     @Override
     public void draw() {
         super.draw();
@@ -619,9 +634,15 @@ public class InputPlane extends CoordPlane {
             hopfBifHelp(hopfBif, false);
         }
         drawDegenHopf();
-        drawSaddleCons();
-        drawSemiStables();
+        //drawSaddleCons();
+        //drawSemiStables();
         drawDegenSaddleCons();
+        for (var sad : renderedSaddle) {
+            renderCurve(sad);
+        }
+        for (var semi : renderedSemiStable) {
+            renderCurve(semi);
+        }
         render();
     }
 
@@ -709,6 +730,8 @@ public class InputPlane extends CoordPlane {
         degenSaddleCons.clear();
         degenHopf.clear();
         semiStables.clear();
+        renderedSaddle.clear();
+        renderedSemiStable.clear();
         for (Pentagram p : pentlist) {
             this.getChildren().remove(p);
         }
