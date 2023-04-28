@@ -26,7 +26,7 @@ repositories {
 
 
 javafx {
-    version = "12"
+    version = "18"
     modules = ['javafx.controls', 'javafx.swing']
 }
 
@@ -37,13 +37,10 @@ configurations.all {
 }
 
 
-
 dependencies {
     implementation group: 'org.ejml', name: 'ejml-simple', version: '0.38'
     implementation 'org.jetbrains:annotations:23.0.0'
 }
-
-
 
 
 version = '1.0.0'
