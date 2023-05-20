@@ -54,6 +54,7 @@ public abstract class GlobalBifurcationFinder<Signature extends GlobalBifurcatio
             render.start = st;
             render.color = getColor();
         } catch (RootNotFound r) {
+            render = null;
             return;
         }
         System.out.println("yay");
@@ -65,6 +66,7 @@ public abstract class GlobalBifurcationFinder<Signature extends GlobalBifurcatio
             sides = globalBifLoop(st);
         } catch (RootNotFound r) {
             System.out.println("oops, circle didn't work");
+            render = null;
             return;
         }
 

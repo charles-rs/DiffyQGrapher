@@ -369,12 +369,8 @@ public class Main extends Application {
                     try {
                         Derivative temp = Parser.Parser.parseDerivative(tokyBoi).collapse();
                         switch (temp.getType()) {
-                            case 'y':
-                                outPlane.updateDY(temp);
-                                break;
-                            case 'x':
-                                outPlane.updateDX(temp);
-                                break;
+                            case 'y' -> outPlane.updateDY(temp);
+                            case 'x' -> outPlane.updateDX(temp);
                         }
                         System.out.println(temp.prettyPrint(new StringBuilder()));
                     } catch (SyntaxError syntaxError) {

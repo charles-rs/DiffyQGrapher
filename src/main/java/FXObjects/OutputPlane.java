@@ -879,9 +879,13 @@ public class OutputPlane extends CoordPlane {
                                 SaddleConTransversal transversal) {
         selectedSeps.clear();
         draw();
+        var clone = transversal.clone();
         var finder = new SaddleConFinder(this, transversal, s1, s2);
         finder.run();
-        in.renderedSaddle.add(finder.render);
+        if (finder.render != null) {
+            in.addRendderedSaddleCon(finder.render, clone);
+            in.draw();
+        }
     }
 
 

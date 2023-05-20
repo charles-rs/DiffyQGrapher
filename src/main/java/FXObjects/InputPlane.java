@@ -3,6 +3,7 @@ package FXObjects;
 import AST.Maths;
 import AST.Node;
 import Exceptions.EvaluationException;
+import Exceptions.RootNotFound;
 import Settings.InPlaneSettings;
 import javafx.application.Platform;
 import javafx.geometry.Insets;
@@ -84,6 +85,41 @@ public class InputPlane extends CoordPlane {
 
     List<RenderedCurve> renderedSemiStable = new ArrayList<>();
     List<RenderedCurve> renderedSaddle = new ArrayList<>();
+
+
+    void addRendderedSaddleCon(RenderedCurve r, SaddleConTransversal transversal) {
+        renderedSaddle.add(r);
+        if (!transversal.homo)
+            return;
+        var start_saddle = transversal.saddle;
+        try {
+            var saddle = op.critical(start_saddle.point, r.start);
+            double st = Math.signum(saddle.jacob.trace());
+            var prev = r.start;
+            for (var next : r.left) {
+                saddle = op.critical(saddle.point, next);
+                if (Math.signum(saddle.jacob.trace()) != st) {
+                    st = Math.signum(saddle.jacob.trace());
+                    degenSaddleCons.add(prev.midpoint(next));
+                    System.out.println("FOUND DEGEN");
+                }
+                prev = next;
+            }
+            prev = r.start;
+            saddle = op.critical(start_saddle.point, r.start);
+            st = Math.signum(saddle.jacob.trace());
+            for (var next : r.right) {
+                saddle = op.critical(saddle.point, next);
+                if (Math.signum(saddle.jacob.trace()) != st) {
+                    st = Math.signum(saddle.jacob.trace());
+                    degenSaddleCons.add(prev.midpoint(next));
+                    System.out.println("FOUND DEGEN");
+                }
+                prev = next;
+            }
+        } catch (RootNotFound ignored) {
+        }
+    }
 
     /**
      * a separate thread that deals with drawing difficult bifurcations so as not to lock up the program
@@ -235,18 +271,10 @@ public class InputPlane extends CoordPlane {
     public void setClickMode(InClickModeType ty) {
         clickMode = ty;
         switch (ty) {
-            case MOVEPOINT:
-                fireUpdate(100);
-                break;
-            case PLACEPENT:
-                fireUpdate(101);
-                break;
-            case EDITPENT:
-                fireUpdate(102);
-                break;
-            case REMOVEPENT:
-                fireUpdate(103);
-                break;
+            case MOVEPOINT -> fireUpdate(100);
+            case PLACEPENT -> fireUpdate(101);
+            case EDITPENT -> fireUpdate(102);
+            case REMOVEPENT -> fireUpdate(103);
         }
     }
 
@@ -258,13 +286,12 @@ public class InputPlane extends CoordPlane {
     public void handleMouseClick(MouseEvent e) {
         if (!e.isConsumed()) {
             switch (clickMode) {
-                case MOVEPOINT:
+                case MOVEPOINT -> {
                     a = scrToNormX(e.getX());
                     b = scrToNormY(e.getY());
                     showValues();
-                    break;
-                case PLACEPENT:
-                    getInfoAndAddPentagram(e.getX(), e.getY());
+                }
+                case PLACEPENT -> getInfoAndAddPentagram(e.getX(), e.getY());
             }
             render();
         }
@@ -758,7 +785,7 @@ public class InputPlane extends CoordPlane {
                 int x = imgNormToScrX(scrToNormX(p.getLayoutX()));
                 int y = imgNormToScrY(scrToNormY(p.getLayoutY()));
                 g2.drawRect(x, y, w, h);
-                g2.setFont(new Font("Big", Font.PLAIN, 20));
+                g2.setFont(new Font("Big", Font.PLAIN, 12));
                 g2.drawString(String.valueOf(p.getSaddles()),
                         x + w / 2 - g2.getFontMetrics().stringWidth(p.saddle.getText()) / 2,
                         y + h / 2 + g2.getFontMetrics().getHeight() / 2 - 5);
