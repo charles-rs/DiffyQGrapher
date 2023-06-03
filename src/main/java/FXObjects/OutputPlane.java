@@ -230,54 +230,22 @@ public class OutputPlane extends CoordPlane {
     public void setClickMode(ClickModeType cl) {
         this.clickMode = cl;
         switch (cl) {
-            case DRAWPATH:
-                fireUpdate(0);
-                break;
-            case DRAWISO:
-                fireUpdate(1);
-                break;
-            case FINDCRITICAL:
-                fireUpdate(2);
-                break;
-            case DRAWHORIZISO:
-                fireUpdate(3);
-                break;
-            case LINEARISATION:
-                fireUpdate(4);
-                break;
-            case SELECTSADDLE:
-                fireUpdate(5);
-                break;
-            case SELECTHOPFPOINT:
-                fireUpdate(6);
-                break;
-            case DRAWVERTISO:
-                fireUpdate(7);
-                break;
-            case DRAWBASIN:
-                fireUpdate(8);
-                break;
-            case DRAWCOBASIN:
-                fireUpdate(9);
-                break;
-            case FINDLIMCYCLE:
-                fireUpdate(10);
-                break;
-            case SELECTSEP:
-                fireUpdate(20);
-                break;
-            case SELECTHOMOCENTER:
-                fireUpdate(25);
-                break;
-            case SETTRAVERSAL:
-                fireUpdate(30);
-                break;
-            case SETDIRECTION:
-                fireUpdate(35);
-                break;
-            case SEMISTABLE:
-                fireUpdate(40);
-                break;
+            case DRAWPATH -> fireUpdate(0);
+            case DRAWISO -> fireUpdate(1);
+            case FINDCRITICAL -> fireUpdate(2);
+            case DRAWHORIZISO -> fireUpdate(3);
+            case LINEARISATION -> fireUpdate(4);
+            case SELECTSADDLE -> fireUpdate(5);
+            case SELECTHOPFPOINT -> fireUpdate(6);
+            case DRAWVERTISO -> fireUpdate(7);
+            case DRAWBASIN -> fireUpdate(8);
+            case DRAWCOBASIN -> fireUpdate(9);
+            case FINDLIMCYCLE -> fireUpdate(10);
+            case SELECTSEP -> fireUpdate(20);
+            case SELECTHOMOCENTER -> fireUpdate(25);
+            case SETTRAVERSAL -> fireUpdate(30);
+            case SETDIRECTION -> fireUpdate(35);
+            case SEMISTABLE -> fireUpdate(40);
         }
     }
 

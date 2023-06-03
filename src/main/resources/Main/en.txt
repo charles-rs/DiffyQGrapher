@@ -45,3 +45,5 @@ reset~Reset Zoom
 update~Update Graph
 interrupt~Interrupt
 settings~Settings
+editinput~Edit Parameter
+editoutput~Edit Solution

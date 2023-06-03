@@ -82,6 +82,8 @@ public class Main extends Application {
     private MenuItem positiveDivBif, negativeDivBif;
     private MenuItem info;
     private MenuItem instructions;
+    private MenuItem editInput;
+    private MenuItem editOutput;
 
 
     private MenuItem english;
@@ -158,6 +160,10 @@ public class Main extends Application {
         findCritical = new MenuItem();
         drawIso = new MenuItem();
         clickOpt.getItems().addAll(drawPath, findCritical, drawIso);
+
+        editInput = new MenuItem();
+        editOutput = new MenuItem();
+        options.getItems().addAll(editInput, editOutput);
 
         menDyDt = new Menu();
         menDxDt = new Menu();
@@ -254,9 +260,9 @@ public class Main extends Application {
             outPlane.clearObjects();
             outPlane.draw();
             outPlane.render();
-            inPlane.clear();
-            inPlane.draw();
-            inPlane.render();
+//            inPlane.clear();
+//            inPlane.draw();
+//            inPlane.render();
         });
         outPButtonBox.getChildren().addAll(btnClearOut, resetZoom, update);
         outPButtonBox.setAlignment(Pos.CENTER);
@@ -575,6 +581,8 @@ public class Main extends Application {
             InstructionsWindow.update();
             outPlane.fireEvent(new UpdatedState(Main.instructionCode));
         });
+        editInput.setOnAction(e -> new CoordPlaneEditWindow(inPlane));
+        editOutput.setOnAction(e -> new CoordPlaneEditWindow(outPlane));
         EventHandler<ActionEvent> handler = e -> {
             if (e instanceof SaddleSelected) {
                 if (((SaddleSelected) e).pt != null)
@@ -609,18 +617,10 @@ public class Main extends Application {
             temp = s.nextLine();
             split = temp.split("~");
             switch (split[0]) {
-                case "en":
-                    english.setText(split[1]);
-                    break;
-                case "es":
-                    espanol.setText(split[1]);
-                    break;
-                case "pt":
-                    portugues.setText(split[1]);
-                    break;
-                case "pi":
-                    pirate.setText(split[1]);
-                    break;
+                case "en" -> english.setText(split[1]);
+                case "es" -> espanol.setText(split[1]);
+                case "pt" -> portugues.setText(split[1]);
+                case "pi" -> pirate.setText(split[1]);
             }
         }
     }
@@ -634,165 +634,85 @@ public class Main extends Application {
             temp = s.nextLine();
             split = temp.split("~");
             switch (split[0]) {
-                case "file":
-                    file.setText(split[1]);
-                    break;
-                case "options":
-                    options.setText(split[1]);
-                    break;
-                case "view":
-                    view.setText(split[1]);
-                    break;
-                case "draw":
-                    draw.setText(split[1]);
-                    break;
-                case "bifurcation":
-                    bifurcation.setText(split[1]);
-                    break;
-                case "help":
-                    help.setText(split[1]);
-                    break;
-                case "language":
-                    language.setText(split[1]);
-                    break;
-                case "save in":
-                    saveInpt.setText(split[1]);
-                    break;
-                case "save out":
-                    saveOut.setText(split[1]);
-                    break;
-                case "quit":
-                    quit.setText(split[1]);
-                    break;
-                case "title":
-                    primaryStage.setTitle(split[1]);
-                    break;
-                case "euler":
+                case "file" -> file.setText(split[1]);
+                case "options" -> options.setText(split[1]);
+                case "view" -> view.setText(split[1]);
+                case "draw" -> draw.setText(split[1]);
+                case "bifurcation" -> bifurcation.setText(split[1]);
+                case "help" -> help.setText(split[1]);
+                case "language" -> language.setText(split[1]);
+                case "save in" -> saveInpt.setText(split[1]);
+                case "save out" -> saveOut.setText(split[1]);
+                case "quit" -> quit.setText(split[1]);
+                case "title" -> primaryStage.setTitle(split[1]);
+                case "euler" -> {
                     strEuler = split[1];
                     if (outPlane.evalType == EvalType.Euler)
                         euler.setText(strEuler + " x");
                     else
                         euler.setText(strEuler);
-                    break;
-                case "mideuler":
+                }
+                case "mideuler" -> {
                     strMidEuler = split[1];
                     if (outPlane.evalType == EvalType.MidEuler)
                         midEuler.setText(strMidEuler + " x");
                     else
                         midEuler.setText(strMidEuler);
-                    break;
-                case "runge":
+                }
+                case "runge" -> {
                     strRungeKutta = split[1];
                     if (outPlane.evalType == EvalType.RungeKutta)
                         rungeKutta.setText(strRungeKutta + " x");
                     else
                         rungeKutta.setText(strRungeKutta);
-                    break;
-                case "rkf45":
+                }
+                case "rkf45" -> {
                     strRkf45 = split[1];
                     if (outPlane.evalType == EvalType.RKF45)
                         rkf45.setText(strRkf45 + " x");
                     else
                         rkf45.setText(strRkf45);
-                    break;
-                case "evalopt":
-                    evalOpt.setText(split[1]);
-                    break;
-                case "clickopt":
-                    clickOpt.setText(split[1]);
-                    break;
-                case "drawpath":
-                    drawPath.setText(split[1]);
-                    break;
-                case "critical":
-                    findCritical.setText(split[1]);
-                    break;
-                case "isocline":
-                    drawIso.setText(split[1]);
-                    break;
-                case "dx":
-                    menDxDt.setText(split[1]);
-                    break;
-                case "dy":
-                    menDyDt.setText(split[1]);
-                    break;
-                case "lin":
-                    linearisation.setText(split[1]);
-                    break;
-                case "sep":
-                    separatrices.setText(split[1]);
-                    break;
-                case "horiz":
-                    horizIso.setText(split[1]);
-                    break;
-                case "vert":
-                    vertIso.setText(split[1]);
-                    break;
-                case "pent":
-                    pentagram.setText(split[1]);
-                    break;
-                case "rmpent":
-                    noMorePentagram.setText(split[1]);
-                    break;
-                case "editpent":
-                    editPentagram.setText(split[1]);
-                    break;
-                case "limcyc":
-                    limCycle.setText(split[1]);
-                    break;
-                case "basin":
-                    basin.setText(split[1]);
-                    break;
-                case "cobasin":
-                    coBasin.setText(split[1]);
-                    break;
-                case "saddlenode":
-                    saddleBif.setText(split[1]);
-                    break;
-                case "hopf":
-                    hopfBif.setText(split[1]);
-                    break;
-                case "saddlecon":
-                    sdlConBif.setText(split[1]);
-                    break;
-                case "semistable":
-                    cycleBif.setText(split[1]);
-                    break;
-                case "divbif":
-                    divBif.setText(split[1]);
-                    break;
-                case "posdivbif":
-                    positiveDivBif.setText(split[1]);
-                    break;
-                case "negdivbif":
-                    negativeDivBif.setText(split[1]);
-                    break;
-                case "info":
-                    info.setText(split[1]);
-                    break;
-                case "instr":
-                    instructions.setText(split[1]);
-                    break;
-                case "init":
-                    tLabel.setText(split[1]);
-                    break;
-                case "clear":
+                }
+                case "evalopt" -> evalOpt.setText(split[1]);
+                case "clickopt" -> clickOpt.setText(split[1]);
+                case "drawpath" -> drawPath.setText(split[1]);
+                case "critical" -> findCritical.setText(split[1]);
+                case "isocline" -> drawIso.setText(split[1]);
+                case "dx" -> menDxDt.setText(split[1]);
+                case "dy" -> menDyDt.setText(split[1]);
+                case "lin" -> linearisation.setText(split[1]);
+                case "sep" -> separatrices.setText(split[1]);
+                case "horiz" -> horizIso.setText(split[1]);
+                case "vert" -> vertIso.setText(split[1]);
+                case "pent" -> pentagram.setText(split[1]);
+                case "rmpent" -> noMorePentagram.setText(split[1]);
+                case "editpent" -> editPentagram.setText(split[1]);
+                case "limcyc" -> limCycle.setText(split[1]);
+                case "basin" -> basin.setText(split[1]);
+                case "cobasin" -> coBasin.setText(split[1]);
+                case "saddlenode" -> saddleBif.setText(split[1]);
+                case "hopf" -> hopfBif.setText(split[1]);
+                case "saddlecon" -> sdlConBif.setText(split[1]);
+                case "semistable" -> cycleBif.setText(split[1]);
+                case "divbif" -> divBif.setText(split[1]);
+                case "posdivbif" -> positiveDivBif.setText(split[1]);
+                case "negdivbif" -> negativeDivBif.setText(split[1]);
+                case "info" -> info.setText(split[1]);
+                case "instr" -> instructions.setText(split[1]);
+                case "init" -> tLabel.setText(split[1]);
+                case "clear" -> {
                     btnClearIn.setText(split[1]);
                     btnClearOut.setText(split[1]);
-                    break;
-                case "reset":
+                }
+                case "reset" -> {
                     resetZoom.setText(split[1]);
                     btnResetInZoom.setText(split[1]);
-                    break;
-                case "update":
-                    update.setText(split[1]);
-                    break;
-                case "interrupt":
-                    btnInterruptSadCon.setText(split[1]);
-                    break;
-                case "settings":
-                    sets.setText(split[1]);
-                    break;
+                }
+                case "update" -> update.setText(split[1]);
+                case "interrupt" -> btnInterruptSadCon.setText(split[1]);
+                case "settings" -> sets.setText(split[1]);
+                case "editinput" -> editInput.setText(split[1]);
+                case "editoutput" -> editOutput.setText(split[1]);
             }
         }
     }

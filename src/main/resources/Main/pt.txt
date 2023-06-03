@@ -45,3 +45,5 @@ reset~Reinicializar zoom
 update~Atualizar
 interrupt~Interromper
 settings~Configurações
+editinput~Editar parâmetro
+editoutput~Editar solução

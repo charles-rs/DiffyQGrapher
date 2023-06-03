@@ -69,7 +69,7 @@ public abstract class CoordPlane extends Pane {
     /**
      * stores the initial bounds for resetting
      */
-    private final double initZoom[];
+    private final double[] initZoom;
 
     /**
      * the currently active plane
@@ -178,10 +178,11 @@ public abstract class CoordPlane extends Pane {
         yMinLbl.setFont(font);
         yMaxLbl.setFont(font);
 
-        xMinLbl.textProperty().bind(xMin.asString());
-        xMaxLbl.textProperty().bind(xMax.asString());
-        yMinLbl.textProperty().bind(yMin.asString());
-        yMaxLbl.textProperty().bind(yMax.asString());
+
+        xMinLbl.textProperty().bind(xMin.asString("%.3f"));
+        xMaxLbl.textProperty().bind(xMax.asString("%.3f"));
+        yMinLbl.textProperty().bind(yMin.asString("%.3f"));
+        yMaxLbl.textProperty().bind(yMax.asString("%.3f"));
         getChildren().addAll(xMinLbl, xMaxLbl, yMinLbl, yMaxLbl);
 
 
@@ -220,8 +221,7 @@ public abstract class CoordPlane extends Pane {
                     zoomBox.setWidth(mouseEvent.getX() - zoomBox.getX());
                     zoomBox.setHeight(mouseEvent.getY() - zoomBox.getY());
 
-                } else if (mouseEvent.getEventType() == MouseEvent.MOUSE_DRAGGED) {
-
+                } else if (mouseEvent.getEventType() == MouseEvent.MOUSE_DRAGGED && activeResize) {
                     setPrefWidth(Math.max(this.getMinWidth(),
                             Math.min(mouseEvent.getX(), mouseEvent.getY())));
                     setPrefHeight(Math.max(this.getMinWidth(),
@@ -231,67 +231,68 @@ public abstract class CoordPlane extends Pane {
                     mouseEvent.consume();
                 } else if (mouseEvent.getEventType() == MouseEvent.MOUSE_RELEASED
                         && zoomBox.getHeight() != 0 && zoomBox.getWidth() != 0) {
-                    zoomBox.setVisible(false);
-                    if (zoomBox.getWidth() > 5 && zoomBox.getHeight() > 5) {
-                        double xMinTemp, xMaxTemp, yMinTemp, yMaxTemp;
-                        if (mouseEvent.isControlDown() || mouseEvent.isMetaDown()) {
-                            xMaxTemp =
-                                    (xMax.get() - scrToNormX(zoomBox.getX() + zoomBox.getWidth()))
-                                            * (xMax.get() - xMin.get())
-                                            / (scrToNormX(zoomBox.getX() + zoomBox.getWidth())
-                                            - scrToNormX(zoomBox.getX()))
-                                            + xMax.get();
-                            xMinTemp = (xMin.get() - scrToNormX(zoomBox.getX()))
-                                    * (xMax.get() - xMin.get())
-                                    / (scrToNormX(zoomBox.getX() + zoomBox.getWidth())
-                                    - scrToNormX(zoomBox.getX()))
-                                    + xMin.get();
+                    if (zoomBox.isVisible()) {
+                        zoomBox.setVisible(false);
+                        if (zoomBox.getWidth() > 5 && zoomBox.getHeight() > 5) {
+                            double xMinTemp, xMaxTemp, yMinTemp, yMaxTemp;
+                            if (mouseEvent.isControlDown() || mouseEvent.isMetaDown()) {
+                                xMaxTemp =
+                                        (xMax.get() - scrToNormX(zoomBox.getX() + zoomBox.getWidth()))
+                                                * (xMax.get() - xMin.get())
+                                                / (scrToNormX(zoomBox.getX() + zoomBox.getWidth())
+                                                - scrToNormX(zoomBox.getX()))
+                                                + xMax.get();
+                                xMinTemp = (xMin.get() - scrToNormX(zoomBox.getX()))
+                                        * (xMax.get() - xMin.get())
+                                        / (scrToNormX(zoomBox.getX() + zoomBox.getWidth())
+                                        - scrToNormX(zoomBox.getX()))
+                                        + xMin.get();
 
-                            yMaxTemp = (yMax.get() - scrToNormY(zoomBox.getY()))
-                                    * (yMax.get() - yMin.get())
-                                    / (scrToNormY(zoomBox.getY() - zoomBox.getHeight())
-                                    - scrToNormY(zoomBox.getY()))
-                                    + yMax.get();
-                            yMinTemp =
-                                    (yMin.get() - scrToNormY(zoomBox.getY() + zoomBox.getHeight()))
-                                            * (yMax.get() - yMin.get())
-                                            / (scrToNormY(zoomBox.getY() - zoomBox.getHeight())
-                                            - scrToNormY(zoomBox.getY()))
-                                            + yMin.get();
-                        } else {
-                            xMaxTemp = scrToNormX(zoomBox.getX() + zoomBox.getWidth());
-                            xMinTemp = scrToNormX(zoomBox.getX());
-                            yMaxTemp = scrToNormY(zoomBox.getY());
-                            yMinTemp = scrToNormY(zoomBox.getY() + zoomBox.getHeight());
+                                yMaxTemp = (yMax.get() - scrToNormY(zoomBox.getY()))
+                                        * (yMax.get() - yMin.get())
+                                        / (scrToNormY(zoomBox.getY() - zoomBox.getHeight())
+                                        - scrToNormY(zoomBox.getY()))
+                                        + yMax.get();
+                                yMinTemp =
+                                        (yMin.get() - scrToNormY(zoomBox.getY() + zoomBox.getHeight()))
+                                                * (yMax.get() - yMin.get())
+                                                / (scrToNormY(zoomBox.getY() - zoomBox.getHeight())
+                                                - scrToNormY(zoomBox.getY()))
+                                                + yMin.get();
+                            } else {
+                                xMaxTemp = scrToNormX(zoomBox.getX() + zoomBox.getWidth());
+                                xMinTemp = scrToNormX(zoomBox.getX());
+                                yMaxTemp = scrToNormY(zoomBox.getY());
+                                yMinTemp = scrToNormY(zoomBox.getY() + zoomBox.getHeight());
+                            }
+                            zoomBox.setWidth(0);
+                            zoomBox.setHeight(0);
+                            xMin.set(xMinTemp);
+                            yMin.set(yMinTemp);
+                            xMax.set(xMaxTemp);
+                            yMax.set(yMaxTemp);
+                            updateForZoom();
+                            draw();
+                            mouseEvent.consume();
                         }
+                    } else {
                         zoomBox.setWidth(0);
                         zoomBox.setHeight(0);
-                        xMin.set(xMinTemp);
-                        yMin.set(yMinTemp);
-                        xMax.set(xMaxTemp);
-                        yMax.set(yMaxTemp);
-                        updateForZoom();
-                        draw();
                         mouseEvent.consume();
-                    } else if (!activeResize) {
-                        handleMouseClick(mouseEvent);
                     }
-
-                } else if (mouseEvent.getEventType() == MouseEvent.MOUSE_RELEASED
-                        || mouseEvent.getEventType() == MouseEvent.MOUSE_EXITED) {
-                    zoomBox.setVisible(false);
-                    if (activeResize) {
-                        if (mouseEvent.getEventType() == MouseEvent.MOUSE_EXITED)
-                            m_dirty = true;
-                        activeResize = false;
-                        mouseEvent.consume();
-                    } else if (mouseEvent.getEventType() == MouseEvent.MOUSE_RELEASED) {
+                } else if (mouseEvent.getEventType() == MouseEvent.MOUSE_RELEASED) {
+                    if (!activeResize) {
                         if (m_dirty)
                             m_dirty = false;
                         else {
                             handleMouseClick(mouseEvent);
                         }
+                    } else {
+                        activeResize = false;
                     }
+                } else if (mouseEvent.getEventType() == MouseEvent.MOUSE_EXITED) {
+                    zoomBox.setVisible(false);
+
                 }
             } else if (mouseEvent.getEventType() == MouseEvent.MOUSE_CLICKED) {
                 selectMe(mouseEvent);

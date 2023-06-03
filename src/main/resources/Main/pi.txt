@@ -45,3 +45,5 @@ reset~Remove Telescope
 update~Get 'er up to date
 interrupt~Stop!
 settings~Change Things
+editinput~Edit Parameter
+editoutput~Edit Solution

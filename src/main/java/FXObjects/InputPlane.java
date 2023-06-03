@@ -85,6 +85,8 @@ public class InputPlane extends CoordPlane {
 
     List<RenderedCurve> renderedSemiStable = new ArrayList<>();
     List<RenderedCurve> renderedSaddle = new ArrayList<>();
+    List<RenderedCurve> renderedHopf = new ArrayList<>();
+    List<RenderedCurve> renderedSaddleNode = new ArrayList<>();
 
 
     void addRendderedSaddleCon(RenderedCurve r, SaddleConTransversal transversal) {
@@ -347,12 +349,15 @@ public class InputPlane extends CoordPlane {
      * @param start the starting point
      * @param add   whether or not to add this one to the list of saddle node bifurcations
      */
-    private void saddleBifHelp(double start[], boolean add) {
+    private void saddleBifHelp(double[] start, boolean add) {
+        var render = new RenderedCurve();
+        render.start = new Point2D(start[2], start[3]);
+        render.color = awtSaddleBifColor;
         Node dx = op.getDx();
         Node dy = op.getDy();
         Node det = Maths.minus(Maths.mult(dx.diff('x'), dy.diff('y')),
                 Maths.mult(dx.diff('y'), dy.diff('x'))).collapse();
-        Node derivative[][] = new Node[3][4];
+        Node[][] derivative = new Node[3][4];
         derivative[0][0] = dx.diff('x');
         derivative[0][1] = dx.diff('y');
         derivative[0][2] = dx.diff('a');
@@ -390,6 +395,7 @@ public class InputPlane extends CoordPlane {
                     det, derivative, 'b');
             if (second == null) break;
             drawLine(first[2], first[3], second[2], second[3], awtSaddleBifColor, 3);
+            render.left.add(new Point2D(second[2], second[3]));
         }
         first = start;
         {
@@ -409,7 +415,9 @@ public class InputPlane extends CoordPlane {
                     det, derivative, 'b');
             if (second == null) break;
             drawLine(first[2], first[3], second[2], second[3], awtSaddleBifColor, 3);
+            render.right.add(new Point2D(second[2], second[3]));
         }
+        renderedSaddleNode.add(render);
 
     }
 
@@ -440,7 +448,10 @@ public class InputPlane extends CoordPlane {
      * @param start the starting point
      * @param add   whether or not to add it to the list of hopf bifurcations
      */
-    private void hopfBifHelp(double start[], boolean add) {
+    private void hopfBifHelp(double[] start, boolean add) {
+        var render = new RenderedCurve();
+        render.start = new Point2D(start[2], start[3]);
+        render.color = awtHopfBifColor;
         Node dx = op.getDx().getVal();
         Node dy = op.getDy().getVal();
         Node tr = Maths.add(dx.diff('x'), dy.diff('y')).collapse();
@@ -507,18 +518,16 @@ public class InputPlane extends CoordPlane {
                 if (second == null) break;
                 double firstEval = L.eval(first, t);
                 double secondEval = L.eval(second, t);
-//				if(firstEval == 0D || firstEval == -0D)
-//					degenHopf.add(new Point2D(first[2], first[3]));
-//				else if (secondEval == 0D || secondEval == -0D)
-//					degenHopf.add(new Point2D(second[2], second[3]));
                 if (Math.signum(firstEval) != Math.signum(secondEval)) {
                     Point2D prev = new Point2D(first[2], first[3]);
                     Point2D next = new Point2D(second[2], second[3]);
                     double factor = Math.abs(firstEval) / (Math.abs(secondEval) + Math.abs(firstEval));
-                    degenHopf.add(prev.add(next.subtract(prev).multiply(factor)));
+                    //degenHopf.add(prev.add(next.subtract(prev).multiply(factor)));
+                    degenHopf.add(prev.midpoint(next));
                     System.out.println("DEGEN DEGEN DEGEN");
                 }
                 drawLine(first[2], first[3], second[2], second[3], awtHopfBifColor, 3);
+                render.left.add(new Point2D(second[2], second[3]));
             }
             first = start;
             {
@@ -537,19 +546,17 @@ public class InputPlane extends CoordPlane {
                 if (second == null) break;
                 double firstEval = L.eval(first, t);
                 double secondEval = L.eval(second, t);
-//				if(firstEval == 0D || firstEval == -0D)
-//					degenHopf.add(new Point2D(first[2], first[3]));
-//				else if (secondEval == 0D || secondEval == -0D)
-//					degenHopf.add(new Point2D(second[2], second[3]));
                 if (Math.signum(firstEval) != Math.signum(secondEval)) {
                     Point2D prev = new Point2D(first[2], first[3]);
                     Point2D next = new Point2D(second[2], second[3]);
                     double factor = Math.abs(firstEval) / (Math.abs(secondEval) + Math.abs(firstEval));
-                    degenHopf.add(prev.add(next.subtract(prev).multiply(factor)));
+                    //degenHopf.add(prev.add(next.subtract(prev).multiply(factor)));
+                    degenHopf.add(prev.midpoint(next));
                     System.out.println("DEGEN DEGEN DEGEN");
                 }
 
                 drawLine(first[2], first[3], second[2], second[3], awtHopfBifColor, 3);
+                render.right.add(new Point2D(second[2], second[3]));
             }
         } catch (EvaluationException ignored) {
         }
@@ -654,21 +661,19 @@ public class InputPlane extends CoordPlane {
         super.draw();
         g.setStroke(new BasicStroke(2));
 
-        for (double saddleBif[] : saddleBifs) {
-            saddleBifHelp(saddleBif, false);
-        }
-        for (double hopfBif[] : hopfBifs) {
-            hopfBifHelp(hopfBif, false);
-        }
         drawDegenHopf();
-        //drawSaddleCons();
-        //drawSemiStables();
         drawDegenSaddleCons();
         for (var sad : renderedSaddle) {
             renderCurve(sad);
         }
         for (var semi : renderedSemiStable) {
             renderCurve(semi);
+        }
+        for (var sad : renderedSaddleNode) {
+            renderCurve(sad);
+        }
+        for (var hop : renderedHopf) {
+            renderCurve(hop);
         }
         render();
     }
