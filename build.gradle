@@ -43,7 +43,8 @@ dependencies {
     implementation files('lib/lwon.jar')
 }
 
-version = '1.0.0'
+
+version = '1.0.2'
 
 jlink {
     options = ['--strip-debug', '--compress', '2', '--no-header-files', '--no-man-pages']
@@ -55,9 +56,11 @@ jlink {
 
 //        jpackageHome = 'C:\\Users\\charl\\.jdks\\openjdk-14.0.2'
         //installerType = 'deb'
-        installerOptions = [
+        
+	installerOptions = [
                 '--app-version', version,
-        ]
+        	'--icon', 'ico/homo.icns',
+	]
         if (installerType == 'msi') {
             imageOptions += ['--icon', 'ico/homo.ico']
             installerOptions += [
