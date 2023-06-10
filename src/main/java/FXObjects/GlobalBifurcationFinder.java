@@ -3,14 +3,20 @@ package FXObjects;
 import Exceptions.RootNotFound;
 import PathGenerators.ArcDirection;
 import PathGenerators.EllipseGenerator;
-import PathGenerators.FinitePathType;
 import PathGenerators.GeneratorFactory;
+import PathGenerators.SegmentGenerator;
+import Utils.MyClonable;
 import javafx.application.Platform;
 import javafx.geometry.Point2D;
+import javafx.util.Pair;
 
 import java.awt.*;
+import java.util.concurrent.atomic.AtomicBoolean;
+import java.util.concurrent.atomic.AtomicReference;
 
-public abstract class GlobalBifurcationFinder<Signature extends GlobalBifurcationFinder.SigIntf> implements Cloneable {
+import static FXObjects.GlobalBifurcationFinder.BifurcationType.*;
+
+public abstract class GlobalBifurcationFinder<Signature extends GlobalBifurcationFinder.SigIntf, Context extends MyClonable> implements Cloneable {
 
     public static abstract class SigIntf {
         public abstract boolean bifurcatesFrom(SigIntf other);
@@ -28,6 +34,8 @@ public abstract class GlobalBifurcationFinder<Signature extends GlobalBifurcatio
         }
     }
 
+    Context globalContext;
+
 
     protected abstract Color getColor();
 
@@ -36,39 +44,34 @@ public abstract class GlobalBifurcationFinder<Signature extends GlobalBifurcatio
     protected abstract String getName();
 
     @Override
-    public abstract GlobalBifurcationFinder<Signature> clone();
+    public abstract GlobalBifurcationFinder<Signature, Context> clone();
 
     public enum Orientation {LEFT, RIGHT}
 
-    abstract Signature classify(Point2D p) throws RootNotFound;
+
+    Signature classify(Point2D p) throws RootNotFound {
+        return classify(p, globalContext);
+    }
+
+    abstract Signature classify(Point2D p, Context c) throws RootNotFound;
 
     RenderedCurve render = new RenderedCurve();
 
     void run() {
 
-        Point2D st;
+        Point2D st = globalBifSinglePoint(o.a, o.b);
         System.out.println("starting " + getName());
-        try {
-            //st = semiStableFinitePath(lnSt, lnNd, a, b, FinitePathType.SPIRAL, null);
-            st = globalBifFinitePath(o.a, o.b, FinitePathType.SPIRAL, null);
-            render.start = st;
-            o.updateA(st.getX());
-            o.updateB(st.getY());
-            o.in.updateA(st.getX());
-            o.in.updateB(st.getY());
-            render.color = getColor();
-        } catch (RootNotFound r) {
+        if (st == null) {
             render = null;
             return;
         }
+        render.start = st;
+        render.color = getColor();
+
         System.out.println("yay");
         System.out.println(st);
-        Point2D[] sides;
-
-        try {
-            //sides = semiStableLoop(lnSt, lnNd, st, LoopType.CIRCLE);
-            sides = globalBifLoop(st);
-        } catch (RootNotFound r) {
+        var sides = globalBifLoop(st);
+        if (sides.getKey() == null || sides.getValue() == null) {
             System.out.println("oops, circle didn't work");
             render = null;
             return;
@@ -76,8 +79,8 @@ public abstract class GlobalBifurcationFinder<Signature extends GlobalBifurcatio
 
         GlobalBifurcationDriver.init(o, Thread.currentThread());
 
-        var s1 = new GlobalBifurcationDriver(this, st, sides[0], Orientation.RIGHT, render.right);
-        var s2 = new GlobalBifurcationDriver(this.clone(), st, sides[1], Orientation.LEFT, render.left);
+        var s1 = new GlobalBifurcationDriver(this, st, sides.getKey(), Orientation.RIGHT, render.right);
+        var s2 = new GlobalBifurcationDriver(this.clone(), st, sides.getValue(), Orientation.LEFT, render.left);
         s1.start();
         s2.start();
         try {
@@ -97,77 +100,129 @@ public abstract class GlobalBifurcationFinder<Signature extends GlobalBifurcatio
     }
 
 
-    Point2D globalBifFinitePath(double a, double b,
-                                FinitePathType tp, Point2D prev) throws RootNotFound {
+    Point2D globalBifSinglePoint(double a, double b) {
+        Object lock = new Object();
+        AtomicReference<Point2D> dest = new AtomicReference<>();
+        AtomicBoolean found = new AtomicBoolean(false);
 
-        var p = new Point2D(a, b);
-        var cycleCounts = classify(p);
-        System.out.println("starting with " + cycleCounts);
-        double px = ((o.in.xMax.get() - o.in.xMin.get() + o.in.yMax.get() - o.in.yMin.get()) / 2)
-                / ((o.in.canv.getWidth() + o.in.canv.getHeight()) / 2D);
-        double pxX = o.in.getPxX();
-        double pxY = o.in.getPxY();
-        if (tp.equals(FinitePathType.SPIRAL)) {
-            pxX *= 1;
-            pxY *= 1;
+        double pxRad = 40;
+        double xRad = pxRad * o.in.getPxX();
+        double yRad = pxRad * o.in.getPxY();
+
+        Thread[] threads = new Thread[8];
+        var start = new Point2D(a, b);
+        for (int i = 0; i < 8; ++i) {
+            var finalI = i;
+            threads[i] = new Thread(() ->
+            {
+                double θ = ((double) finalI) * (Math.PI / 4);
+                var end = new Point2D(a + xRad * Math.cos(θ), b + yRad * Math.sin(θ));
+                var gen = new SegmentGenerator(start, end,
+                        o.in.getPxX() / 4, o.in.getPxY() / 4);
+                var pOld = start;
+                Context context = (Context) globalContext.clone(); // evil reflection hack
+
+                var oldCounts = nullClassify(pOld, context);
+
+                while (!gen.done()) {
+                    var p = gen.next();
+                    var newCounts = nullClassify(p, context);
+                    switch (bif(oldCounts, newCounts)) {
+                        case TO, FROM -> {
+                            synchronized (lock) {
+                                if (!found.get()) {
+                                    found.set(true);
+                                    dest.set(pOld.midpoint(p));
+                                }
+                            }
+                        }
+                    }
+                    if (found.get())
+                        return;
+                    oldCounts = newCounts;
+                    pOld = p;
+                }
+            });
+            threads[i].start();
         }
-        var s = GeneratorFactory.getFinitePathGenerator(tp, pxX, pxY, p, 50, prev);
-        var pOld = p;
-        p = s.next();
-        while (!Thread.interrupted() && !s.done()) {
-            var count = classify(p);
-            System.out.println("starting with " + cycleCounts);
-            System.out.println("now with " + count);
-            if (count.bifurcates(cycleCounts))
-                break;
-            cycleCounts = count;
-            p = s.next();
+        for (int i = 0; i < 8; ++i) {
+            try {
+                if (threads[i] != null)
+                    threads[i].join();
+            } catch (InterruptedException ignored) {
+            }
         }
-        if (s.done())
-            throw new RootNotFound();
-        return p.midpoint(pOld);
+        return dest.get();
     }
+
 
     double pxRad = 2;
     double thetaInc = .08 / pxRad;
 
-    Point2D[] globalBifLoop(Point2D center) throws RootNotFound {
-        var gen = new EllipseGenerator(thetaInc, center, pxRad * o.in.getPxX(), pxRad * o.in.getPxY());
-        Signature count1;
-        System.out.println("center: " + center);
-        System.out.println("start: " + gen.getCurrent());
-        var count2 = classify(gen.getCurrent());
-        var temp = new Point2D[2];
-        int bifCount = 0;
-        Point2D next = gen.getCurrent();
-        Point2D prev;
-        while (!gen.completed() && !Thread.interrupted()) {
-            System.out.println("prev: " + next);
-            prev = next;
-            next = gen.next();
-            System.out.println("next: " + next);
-            System.out.println("center: " + center);
-            count1 = count2;
-            count2 = classify(next);
-            System.out.println("count: " + count2);
-            if (count1.bifurcatesFrom(count2)) {
-                temp[0] = gen.getCurrent().midpoint(prev);
-                gen.advanceOneQuarter();
-                ++bifCount;
-            } else if (count1.bifurcatesTo(count2)) {
-                temp[1] = gen.getCurrent().midpoint(prev);
-                gen.advanceOneQuarter();
-                ++bifCount;
-            }
-            if (bifCount == 2) break;
+    Signature nullClassify(Point2D pt, Context context) {
+        try {
+            return classify(pt, context);
+        } catch (RootNotFound r) {
+            return null;
         }
-        if (bifCount < 2)
-            throw new RootNotFound();
-        System.out.println("CENTER: " + center);
-        System.out.println("FIRST: " + temp[0]);
-        System.out.println("SECOND: " + temp[1]);
-        return temp;
     }
+
+    Signature nullClassify(Point2D pt) {
+        return nullClassify(pt, globalContext);
+    }
+
+    enum BifurcationType {
+        FROM, TO, NEITHER;
+    }
+
+    BifurcationType bif(Signature oldCount, Signature newCount) {
+        if (oldCount != null && newCount != null) {
+            if (oldCount.bifurcatesTo(newCount)) {
+                return TO;
+            } else if (oldCount.bifurcatesFrom(newCount)) {
+                return FROM;
+            } else {
+                return NEITHER;
+            }
+        } else {
+            return NEITHER;
+        }
+    }
+
+    Pair<Point2D, Point2D> globalBifLoop(Point2D center) {
+        var gen = new EllipseGenerator(thetaInc, center, pxRad * o.in.getPxX(), pxRad * o.in.getPxY());
+        Signature oldCount = null, newCount = null;
+        oldCount = nullClassify(gen.getCurrent());
+        Point2D oldPoint = gen.getCurrent();
+        Point2D newPoint;
+        Point2D bif1 = null, bif2 = null;
+        while (!gen.completed() && !Thread.interrupted()) {
+            newPoint = gen.next();
+            newCount = nullClassify(newPoint);
+            var bif = bif(oldCount, newCount);
+            boolean bifurcated = false;
+            switch (bif) {
+                case FROM -> {
+                    bif1 = newPoint.midpoint(oldPoint);
+                    bifurcated = true;
+                }
+                case TO -> {
+                    bif2 = newPoint.midpoint(oldPoint);
+                    bifurcated = true;
+                }
+            }
+            if (bifurcated) {
+                gen.advanceOneQuarter();
+                oldPoint = gen.getCurrent();
+                oldCount = nullClassify(oldPoint);
+            } else {
+                oldPoint = newPoint;
+                oldCount = newCount;
+            }
+        }
+        return new Pair<>(bif1, bif2);
+    }
+
 
     /**
      * @param prev    the previous point on the bifurcation

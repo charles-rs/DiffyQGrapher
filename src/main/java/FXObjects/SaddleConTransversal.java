@@ -120,9 +120,9 @@ public class SaddleConTransversal implements Cloneable {
 
     public void update(Point2D p) throws RootNotFound {
         switch (mode) {
-            case STATIC:
-                return;
-            case DYNAMIC:
+            case STATIC -> {
+            }
+            case DYNAMIC -> {
                 if (homo) {
                     saddle = o.critical(saddle.point, p.getX(), p.getY());
                     central = o.critical(central.point, p.getX(), p.getY());
@@ -130,8 +130,8 @@ public class SaddleConTransversal implements Cloneable {
                     s1 = o.critical(s1.point, p.getX(), p.getY());
                     s2 = o.critical(s2.point, p.getX(), p.getY());
                 }
-                return;
-            case FIXEDDIR:/*
+            }
+            case FIXEDDIR -> {/*
 				GraphicsContext g = o.labelCanv.getGraphicsContext2D();
 				Point2D p1 = o.normToScr(getStart());
 				Point2D p2 = o.normToScr(getEnd());
@@ -141,7 +141,7 @@ public class SaddleConTransversal implements Cloneable {
                 saddle = o.critical(saddle.point, p.getX(), p.getY());
                 if (saddle == null)
                     System.out.println("WHAT THE ACtUAL fUcK");
-                return;
+            }
         }
     }
 

@@ -5,6 +5,7 @@ import FXObjects.OutputPlane;
 import easyIO.EOF;
 import easyIO.Scanner;
 import javafx.scene.control.TextArea;
+import javafx.scene.control.TextField;
 import javafx.stage.FileChooser;
 import javafx.stage.Stage;
 import lwon.data.Dictionary;
@@ -23,11 +24,14 @@ public class Saver {
     OutputPlane outP;
     InputPlane inP;
     TextArea inputArea;
+    TextField aField, bField;
 
-    public Saver(OutputPlane outP, InputPlane inP, TextArea inputArea, Stage primaryStage, boolean write) {
+    public Saver(OutputPlane outP, InputPlane inP, TextArea inputArea, TextField aField, TextField bField, Stage primaryStage, boolean write) {
         this.outP = outP;
         this.inP = inP;
         this.inputArea = inputArea;
+        this.aField = aField;
+        this.bField = bField;
         FileChooser chooser = new FileChooser();
         chooser.setTitle("Select File");
         chooser.setInitialDirectory(new File(System.getProperty("user.home")));
@@ -69,17 +73,12 @@ public class Saver {
         Parser p = new Parser(new Scanner(new FileReader(f), f.getName()));
         var _topLevel = p.parse();
         if (_topLevel instanceof Dictionary topLevel) {
-            double aVal = 0, bVal = 0;
             if (topLevel.get("a").get(0) instanceof Text t) {
-                aVal = Double.parseDouble(t.value());
+                aField.setText(t.value());
             }
             if (topLevel.get("b").get(0) instanceof Text t) {
-                bVal = Double.parseDouble(t.value());
+                bField.setText(t.value());
             }
-            inP.updateA(aVal);
-            outP.updateA(aVal);
-            inP.updateB(bVal);
-            outP.updateB(bVal);
             var dx = textValue(topLevel.get("dx").get(0));
             var dy = textValue(topLevel.get("dy").get(0));
             String eqns = dx + "\n" + dy + "\n";

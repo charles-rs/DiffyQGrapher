@@ -3,33 +3,30 @@ package FXObjects;
 import Evaluation.Evaluator;
 import Evaluation.EvaluatorFactory;
 import Exceptions.RootNotFound;
+import Utils.MyClonable;
 import javafx.geometry.Point2D;
 
 import java.awt.*;
 
-public class SaddleConFinder extends GlobalBifurcationFinder<SaddleConFinder.SaddleOrientation> {
+public class SaddleConFinder extends GlobalBifurcationFinder<SaddleConFinder.SaddleOrientation, SaddleConFinder.SaddleContext> {
 
     @Override
     protected Color getColor() {
-        if (trans.homo)
+        if (globalContext.trans.homo)
             return o.in.awtHomoSaddleConColor;
         else
             return o.in.awtHeteroSaddleConColor;
     }
 
-    private final SaddleConTransversal trans;
-    private SepStart s1, s2;
 
     public SaddleConFinder(OutputPlane o, SaddleConTransversal trans, SepStart s1, SepStart s2) {
-        this.trans = trans.clone();
-        this.s1 = s1.clone();
-        this.s2 = s2.clone();
+        globalContext = new SaddleContext(trans.clone(), s1.clone(), s2.clone());
         this.o = o;
     }
 
     @Override
     public SaddleConFinder clone() {
-        return new SaddleConFinder(o, trans, s1, s2);
+        return new SaddleConFinder(o, globalContext.trans, globalContext.s1, globalContext.s2);
     }
 
     @Override
@@ -39,18 +36,35 @@ public class SaddleConFinder extends GlobalBifurcationFinder<SaddleConFinder.Sad
 
 
     @Override
-    SaddleOrientation classify(Point2D p) throws RootNotFound {
-        trans.update(p);
-        s1 = s1.update(p, o);
-        s2 = s2.update(p, o);
-        final var st = trans.getStart();
-        final var end = trans.getEnd();
+    SaddleOrientation classify(Point2D p, SaddleContext context) throws RootNotFound {
+        context.trans.update(p);
+        context.s1 = context.s1.update(p, o);
+        context.s2 = context.s2.update(p, o);
+        final var st = context.trans.getStart();
+        final var end = context.trans.getEnd();
         Evaluator eval = EvaluatorFactory.getBestEvaluator(o.getDx(), o.getDy());
-        eval.initialise(s1.getStart(o.inc), 0, p.getX(), p.getY(), s1.getInc(o.inc));
+        eval.initialise(context.s1.getStart(o.inc), 0, p.getX(), p.getY(), context.s1.getInc(o.inc));
         var n1 = eval.getNextIsectLn(st, end);
-        eval.initialise(s2.getStart(o.inc), 0, p.getX(), p.getY(), s2.getInc(o.inc));
+        eval.initialise(context.s2.getStart(o.inc), 0, p.getX(), p.getY(), context.s2.getInc(o.inc));
         var n2 = eval.getNextIsectLn(st, end);
         return new SaddleOrientation(n1.distance(st) > n2.distance(st));
+    }
+
+    public static class SaddleContext implements MyClonable {
+        private SaddleConTransversal trans;
+        private SepStart s1, s2;
+
+        public SaddleContext(SaddleConTransversal trans, SepStart s1, SepStart s2) {
+            this.trans = trans;
+            this.s1 = s1;
+            this.s2 = s2;
+        }
+
+
+        @Override
+        public SaddleContext clone() {
+            return new SaddleContext(trans.clone(), s1.clone(), s2.clone());
+        }
     }
 
     public static class SaddleOrientation extends SigIntf {

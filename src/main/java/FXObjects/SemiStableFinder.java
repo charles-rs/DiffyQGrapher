@@ -5,6 +5,7 @@ import Evaluation.Evaluator;
 import Evaluation.EvaluatorFactory;
 import Exceptions.RootNotFound;
 import PathGenerators.SegmentGenerator;
+import Utils.MyClonable;
 import javafx.application.Platform;
 import javafx.geometry.Point2D;
 import javafx.scene.paint.Color;
@@ -15,7 +16,7 @@ import org.jetbrains.annotations.NotNull;
 import java.util.ArrayList;
 import java.util.function.Consumer;
 
-class SemiStableFinder extends GlobalBifurcationFinder<SemiStableFinder.CycleCounts> {
+class SemiStableFinder extends GlobalBifurcationFinder<SemiStableFinder.CycleCounts, SemiStableFinder.CycleContext> {
 
     @Override
     protected String getName() {
@@ -28,15 +29,12 @@ class SemiStableFinder extends GlobalBifurcationFinder<SemiStableFinder.CycleCou
         return o.in.awtSemiStableColor;
     }
 
-    CriticalPoint inner;
-    Point2D outer;
 
     double incX, incY;
 
     public SemiStableFinder(@NotNull OutputPlane o, @NotNull CriticalPoint inner, @NotNull Point2D outer) {
         this.o = o;
-        this.inner = inner;
-        this.outer = outer;
+        this.globalContext = new CycleContext(inner, outer);
         incX = (o.xMax.get() - o.xMin.get()) / 512;
         incY = (o.yMax.get() - o.yMin.get()) / 512;
     }
@@ -44,7 +42,33 @@ class SemiStableFinder extends GlobalBifurcationFinder<SemiStableFinder.CycleCou
 
     @Override
     public SemiStableFinder clone() {
-        return new SemiStableFinder(o, inner, outer);
+        return new SemiStableFinder(o, globalContext.inner.clone(), globalContext.outer);
+    }
+
+    public class CycleContext implements MyClonable {
+
+        public CycleContext(CriticalPoint inner, Point2D outer) {
+            this.inner = inner;
+            this.outer = outer;
+        }
+
+        CriticalPoint inner;
+        Point2D outer;
+
+        void updateInner(Point2D params) throws RootNotFound {
+            var eval = EvaluatorFactory.getBestEvaluator(SemiStableFinder.this.o.getDx(), SemiStableFinder.this.o.getDy());
+            var tmp = eval.findCritical(inner.point, params.getX(), params.getY(), 0);
+            var diff = tmp.point.subtract(inner.point);
+            inner = tmp;
+            outer = outer.add(diff);
+        }
+
+        @Override
+        public CycleContext clone() {
+            return new CycleContext(inner.clone(), outer);
+        }
+
+
     }
 
     public static class CycleCounts extends SigIntf {
@@ -90,13 +114,6 @@ class SemiStableFinder extends GlobalBifurcationFinder<SemiStableFinder.CycleCou
         }
     }
 
-    void updateInner(Point2D params) throws RootNotFound {
-        var eval = EvaluatorFactory.getBestEvaluator(o.getDx(), o.getDy());
-        var tmp = eval.findCritical(inner.point, params.getX(), params.getY(), 0);
-        var diff = tmp.point.subtract(inner.point);
-        inner = tmp;
-        outer = outer.add(diff);
-    }
 
 /*
     Point2D semiStableMidpointPath(Point2D prev1, Point2D prev2) throws RootNotFound {
@@ -168,20 +185,20 @@ class SemiStableFinder extends GlobalBifurcationFinder<SemiStableFinder.CycleCou
     }
 
 
-    CycleCounts classify(Point2D p) throws RootNotFound {
-        return countCycles(p, false);
+    CycleCounts classify(Point2D p, CycleContext context) throws RootNotFound {
+        return countCycles(p, context, false);
     }
 
     @Override
     void markPoint(Point2D pt) throws RootNotFound {
-        countCycles(pt, true);
+        countCycles(pt, globalContext, true);
     }
 
-    CycleCounts countCycles(Point2D p, boolean mark) throws RootNotFound {
-        updateInner(p);
+    CycleCounts countCycles(Point2D p, CycleContext context, boolean mark) throws RootNotFound {
+        context.updateInner(p);
         var stableCycles = new ArrayList<Point2D>();
         var unstableCycles = new ArrayList<Point2D>();
-        var path = new SegmentGenerator(outer, inner.point, incX, incY);
+        var path = new SegmentGenerator(context.outer, context.inner.point, incX, incY);
         path.advance(1);
         final var dir = new CycleDirWrap(CycleDir.UNKNOWN);
         var eval = EvaluatorFactory.getBestEvaluator(o.getDx(), o.getDy());
@@ -206,9 +223,9 @@ class SemiStableFinder extends GlobalBifurcationFinder<SemiStableFinder.CycleCou
             eval.next();
             //System.out.println(prev);
             try {
-                var next = eval.getNextIsectLn(inner.point, outer);
+                var next = eval.getNextIsectLn(context.inner.point, context.outer);
                 //System.out.println(next);
-                if (next.distance(outer) < prev.distance(outer)) {
+                if (next.distance(context.outer) < prev.distance(context.outer)) {
                     if (eval.getInc() > 0D) {
                         forwardToBack.accept(prev);
                     } else {
@@ -227,22 +244,22 @@ class SemiStableFinder extends GlobalBifurcationFinder<SemiStableFinder.CycleCou
 //                    System.out.println("current: " + path.getCurrent());
 //                    System.out.println("next: " + next);
 //                    System.out.println("advancing");
-                } while (!path.done() && path.getCurrent().distance(outer) < next.distance(outer));
+                } while (!path.done() && path.getCurrent().distance(context.outer) < next.distance(context.outer));
             } catch (RootNotFound r) {
                 //dir.val = CycleDir.UNKNOWN;
                 eval.negate();
             }
         }
         System.out.println("steps: " + steps);
-        stableCycles.removeIf((Point2D pt) -> pt.distance(inner.point) < 5 * path.getInc());
-        unstableCycles.removeIf((Point2D pt) -> pt.distance(inner.point) < 5 * path.getInc());
+        stableCycles.removeIf((Point2D pt) -> pt.distance(context.inner.point) < 5 * path.getInc());
+        unstableCycles.removeIf((Point2D pt) -> pt.distance(context.inner.point) < 5 * path.getInc());
         //System.out.println(new CycleCounts(stableCycles.size(), unstableCycles.size()));
 
         if (eval.getInc() < 0)
             eval.negate();
-        checkPoint(stableCycles, path, eval);
+        checkPoint(stableCycles, path, eval, context);
         eval.negate();
-        checkPoint(unstableCycles, path, eval);
+        checkPoint(unstableCycles, path, eval, context);
         if (mark) {
             for (var pt : stableCycles) {
                 var scrCoords = o.normToScr(pt);
@@ -258,8 +275,8 @@ class SemiStableFinder extends GlobalBifurcationFinder<SemiStableFinder.CycleCou
                 circ.setFill(new Color(0, 0, 1, 1));
                 Platform.runLater(() -> o.getChildren().add(circ));
             }
-            var in = o.normToScr(inner.point);
-            var out = o.normToScr(outer);
+            var in = o.normToScr(context.inner.point);
+            var out = o.normToScr(context.outer);
             var line = new Line(in.getX(), in.getY(), out.getX(), out.getY());
             Platform.runLater(() -> o.getChildren().add(line));
 
@@ -268,7 +285,7 @@ class SemiStableFinder extends GlobalBifurcationFinder<SemiStableFinder.CycleCou
         return new CycleCounts(stableCycles.size(), unstableCycles.size());
     }
 
-    private void checkPoint(ArrayList<Point2D> cycles, SegmentGenerator path, Evaluator eval) {
+    private void checkPoint(ArrayList<Point2D> cycles, SegmentGenerator path, Evaluator eval, CycleContext context) {
         var mistakes = new ArrayList<Point2D>();
 
         for (var p : cycles) {
@@ -279,7 +296,7 @@ class SemiStableFinder extends GlobalBifurcationFinder<SemiStableFinder.CycleCou
             //System.out.println("now: " + eval.getCurrent());
 
             try {
-                var next = eval.getNextIsectLn(inner.point, outer);
+                var next = eval.getNextIsectLn(context.inner.point, context.outer);
                 //System.out.println("from " + p + " to " + next);
                 if (next.distance(p) > 3 * path.getInc()) {
                     System.out.println("pathinc: " + path.getInc());

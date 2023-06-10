@@ -545,9 +545,9 @@ public class Main extends Application {
                 outPlane.writePNG(selected);
         });
         saveState.setOnAction(e ->
-                new Saver(outPlane, inPlane, inputArea, primaryStage, true)
+                new Saver(outPlane, inPlane, inputArea, aField, bField, primaryStage, true)
         );
-        loadState.setOnAction(e -> new Saver(outPlane, inPlane, inputArea, primaryStage, false));
+        loadState.setOnAction(e -> new Saver(outPlane, inPlane, inputArea, aField, bField, primaryStage, false));
         instructions.setOnAction(e -> {
             InstructionsWindow temp = new InstructionsWindow(inPlane, outPlane);
             temp.setX(primaryStage.getWidth());
