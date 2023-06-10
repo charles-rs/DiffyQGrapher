@@ -89,16 +89,17 @@ public class GeneratorFactory {
             FinitePathType ty, double pxX, double pxY, Point2D center,
             double maxDist, Point2D old) {
         switch (ty) {
-            case ARC:
+            case ARC -> {
                 Point2D diff = center.subtract(old);
                 double th = Math.atan2(diff.getY(), diff.getX());
                 System.out.println("calculated theta: " + th);
                 System.out.println("diff: " + diff);
                 return getArcGenerator(pxX, center, 4 * pxX, 4 * pxY, th - Math.PI / 2, th + Math.PI / 2, ArcDirection.ANTICLOCKWISE);
-            case SPIRAL:
+            }
+            case SPIRAL -> {
                 return getFiniteSpiralGenerator(pxX, pxY, center, maxDist);
-            default:
-                throw new IllegalArgumentException();
+            }
+            default -> throw new IllegalArgumentException();
         }
     }
 

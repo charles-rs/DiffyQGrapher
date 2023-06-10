@@ -15,7 +15,7 @@ public class Derivative extends Node {
 
     /**
      * Returns the character that determines which derivative this is.
-     * 
+     *
      * @return The char of the upper differential, be it x or y.
      */
     public char getType() {
@@ -68,5 +68,10 @@ public class Derivative extends Node {
         diff.toLatex(sb);
         val.toLatex(sb);
         return sb;
+    }
+
+    @Override
+    public String toString() {
+        return prettyPrint(new StringBuilder()).toString();
     }
 }

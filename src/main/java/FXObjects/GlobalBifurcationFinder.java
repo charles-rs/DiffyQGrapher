@@ -52,6 +52,10 @@ public abstract class GlobalBifurcationFinder<Signature extends GlobalBifurcatio
             //st = semiStableFinitePath(lnSt, lnNd, a, b, FinitePathType.SPIRAL, null);
             st = globalBifFinitePath(o.a, o.b, FinitePathType.SPIRAL, null);
             render.start = st;
+            o.updateA(st.getX());
+            o.updateB(st.getY());
+            o.in.updateA(st.getX());
+            o.in.updateB(st.getY());
             render.color = getColor();
         } catch (RootNotFound r) {
             render = null;

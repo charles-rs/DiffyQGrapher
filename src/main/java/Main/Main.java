@@ -56,6 +56,9 @@ public class Main extends Application {
     private MenuItem sets;
     private MenuItem saveInpt;
     private MenuItem saveOut;
+
+    private MenuItem saveState;
+    private MenuItem loadState;
     private MenuItem quit;
     private MenuItem euler;
     private MenuItem midEuler;
@@ -103,7 +106,7 @@ public class Main extends Application {
     public static Language lang;
     public static int instructionCode = -1;
     private Preferences prefs;
-    private Stage primaryStage;
+    public Stage primaryStage;
     private Settings settings;
 
     @Override
@@ -140,7 +143,9 @@ public class Main extends Application {
         saveInpt = new MenuItem();
         saveOut = new MenuItem();
         quit = new MenuItem();
-        file.getItems().addAll(saveInpt, saveOut, quit);
+        saveState = new MenuItem();
+        loadState = new MenuItem();
+        file.getItems().addAll(saveInpt, saveOut, saveState, loadState, quit);
 
 
         evalOpt = new Menu();
@@ -308,7 +313,10 @@ public class Main extends Application {
         rightBox.setAlignment(Pos.TOP_CENTER);
 
         // rightBox.getChildren().addAll(outP, outPButtonBox);
-        rightBox.getChildren().addAll(outPlane, outPButtonBox);
+
+        Label outPlaneLabel = new Label();
+        outPlaneLabel.textProperty().bind(outPlane.clickModeTxt);
+        rightBox.getChildren().addAll(outPlane, outPButtonBox, outPlaneLabel);
         rightBox.setFillWidth(false);
         leftBox.setFillWidth(false);
         // VBox.setVgrow(outPlane, Priority.NEVER);
@@ -438,18 +446,10 @@ public class Main extends Application {
         root.setOnKeyPressed((k) -> {
             if (k.getCode() == KeyCode.T && (k.isControlDown() || k.isMetaDown())) {
                 switch (outPlane.getClickMode()) {
-                    case DRAWPATH:
-                        // findCritical.setText(strFindCritical + " x");
-                        // drawPath.setText(strDrawGraph);
-                        outPlane.setClickMode(ClickModeType.FINDCRITICAL);
-                        break;
-                    case FINDCRITICAL:
-                        // drawPath.setText(strDrawGraph + " x");
-                        // findCritical.setText(strFindCritical);
-                        outPlane.setClickMode(ClickModeType.DRAWPATH);
-                        break;
-                    default:
-                        break;
+                    case DRAWPATH -> outPlane.setClickMode(ClickModeType.FINDCRITICAL);
+                    case FINDCRITICAL -> outPlane.setClickMode(ClickModeType.DRAWPATH);
+                    default -> {
+                    }
                 }
             }
         });
@@ -544,6 +544,10 @@ public class Main extends Application {
             if (selected != null)
                 outPlane.writePNG(selected);
         });
+        saveState.setOnAction(e ->
+                new Saver(outPlane, inPlane, inputArea, primaryStage, true)
+        );
+        loadState.setOnAction(e -> new Saver(outPlane, inPlane, inputArea, primaryStage, false));
         instructions.setOnAction(e -> {
             InstructionsWindow temp = new InstructionsWindow(inPlane, outPlane);
             temp.setX(primaryStage.getWidth());
@@ -642,6 +646,8 @@ public class Main extends Application {
                 case "help" -> help.setText(split[1]);
                 case "language" -> language.setText(split[1]);
                 case "save in" -> saveInpt.setText(split[1]);
+                case "save state" -> saveState.setText(split[1]);
+                case "load state" -> loadState.setText(split[1]);
                 case "save out" -> saveOut.setText(split[1]);
                 case "quit" -> quit.setText(split[1]);
                 case "title" -> primaryStage.setTitle(split[1]);

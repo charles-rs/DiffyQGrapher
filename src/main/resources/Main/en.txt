@@ -8,6 +8,8 @@ help~Help
 language~Language
 save in~Save Parameter Space
 save out~Save Solution Space
+save state~Save
+load state~Load
 quit~Quit
 euler~Euler's Method
 mideuler~Midpoint Euler's Method

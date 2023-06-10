@@ -4,6 +4,8 @@ import Events.UpdatedState;
 import javafx.application.Platform;
 import javafx.beans.property.DoubleProperty;
 import javafx.beans.property.SimpleDoubleProperty;
+import javafx.beans.property.SimpleStringProperty;
+import javafx.beans.property.StringProperty;
 import javafx.embed.swing.SwingFXUtils;
 import javafx.geometry.Point2D;
 import javafx.scene.canvas.Canvas;
@@ -38,6 +40,8 @@ public abstract class CoordPlane extends Pane {
      * border of the plane. changes colour for selection
      */
     private final Rectangle border;
+
+    public StringProperty clickModeTxt = new SimpleStringProperty("default");
 
     private final Line sel1, sel2;
     /**

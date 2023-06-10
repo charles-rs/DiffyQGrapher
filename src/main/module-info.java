@@ -6,6 +6,7 @@ module DiffEqGrapher.main {
     requires ejml.simple;
     requires ejml.core;
     requires org.jetbrains.annotations;
+    requires lwon.*;
 
 
     opens Main to javafx.graphics;

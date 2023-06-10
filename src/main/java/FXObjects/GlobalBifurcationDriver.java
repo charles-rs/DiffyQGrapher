@@ -5,7 +5,7 @@ import Exceptions.RootNotFound;
 import javafx.application.Platform;
 import javafx.geometry.Point2D;
 
-import java.util.ArrayList;
+import java.util.List;
 
 public class GlobalBifurcationDriver extends Thread {
 
@@ -16,9 +16,9 @@ public class GlobalBifurcationDriver extends Thread {
 
     GlobalBifurcationFinder.Orientation orient;
 
-    ArrayList<Point2D> render;
+    List<Point2D> render;
 
-    GlobalBifurcationDriver(GlobalBifurcationFinder finder, Point2D st, Point2D nx, GlobalBifurcationFinder.Orientation orient, ArrayList<Point2D> render) {
+    GlobalBifurcationDriver(GlobalBifurcationFinder finder, Point2D st, Point2D nx, GlobalBifurcationFinder.Orientation orient, List<Point2D> render) {
         //setDaemon(true);
         System.out.println("st: " + st);
         System.out.println("nx: " + nx);

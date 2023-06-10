@@ -8,6 +8,8 @@ help~Help Matey!
 language~Speakin
 save in~Save th' Parameter Space
 save out~Save th' Solution Space
+save state~Save
+load state~Load
 quit~Leave the Math for a bottle of Rum!
 euler~Euler's Technique
 mideuler~Midpoint Euler's Technique

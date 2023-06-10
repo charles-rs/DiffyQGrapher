@@ -21,6 +21,9 @@ import javafx.scene.paint.Color;
 import javafx.scene.shape.Circle;
 import javafx.stage.Stage;
 import javafx.stage.WindowEvent;
+import lwon.data.Array;
+import lwon.data.Dictionary;
+import lwon.data.Text;
 import org.ejml.data.SingularMatrixException;
 import org.ejml.simple.SimpleMatrix;
 
@@ -351,7 +354,6 @@ public class InputPlane extends CoordPlane {
      */
     private void saddleBifHelp(double[] start, boolean add) {
         var render = new RenderedCurve();
-        render.start = new Point2D(start[2], start[3]);
         render.color = awtSaddleBifColor;
         Node dx = op.getDx();
         Node dy = op.getDy();
@@ -386,6 +388,7 @@ public class InputPlane extends CoordPlane {
         }
         if (second == null) return;
         if (add) saddleBifs.add(second);
+        render.start = new Point2D(second[2], second[3]);
         while (inBounds(first[2], first[3])) {
             first = second;
             if (isA)
@@ -450,7 +453,6 @@ public class InputPlane extends CoordPlane {
      */
     private void hopfBifHelp(double[] start, boolean add) {
         var render = new RenderedCurve();
-        render.start = new Point2D(start[2], start[3]);
         render.color = awtHopfBifColor;
         Node dx = op.getDx().getVal();
         Node dy = op.getDy().getVal();
@@ -508,6 +510,7 @@ public class InputPlane extends CoordPlane {
         }
         if (second == null) return;
         if (add) hopfBifs.add(second);
+        render.start = new Point2D(second[2], second[3]);
         double t = op.getT();
         try {
             while (inBounds(first[2], first[3]) && det.eval(first, t) > 0.) {
@@ -558,6 +561,7 @@ public class InputPlane extends CoordPlane {
                 drawLine(first[2], first[3], second[2], second[3], awtHopfBifColor, 3);
                 render.right.add(new Point2D(second[2], second[3]));
             }
+            renderedHopf.add(render);
         } catch (EvaluationException ignored) {
         }
     }
@@ -764,6 +768,8 @@ public class InputPlane extends CoordPlane {
         semiStables.clear();
         renderedSaddle.clear();
         renderedSemiStable.clear();
+        renderedSaddleNode.clear();
+        renderedHopf.clear();
         for (Pentagram p : pentlist) {
             this.getChildren().remove(p);
         }
@@ -934,4 +940,45 @@ public class InputPlane extends CoordPlane {
         }
     }
 
+    Array curvesToLwon(List<RenderedCurve> curves) {
+        var builder = new Array.Builder();
+        for (int i = 0; i < curves.size(); ++i) {
+            var idx = new int[]{i};
+            builder.set(idx, curves.get(i).toLwon());
+        }
+        return builder.build(null);
+    }
+
+    List<RenderedCurve> curvesFromLwon(Array arr) {
+        var tmp = new ArrayList<RenderedCurve>();
+        for (var obj : arr) {
+            if (obj instanceof Text) {
+                break;
+            } else {
+                tmp.add(new RenderedCurve((Dictionary) obj));
+            }
+        }
+        return tmp;
+    }
+
+    public Dictionary toLwon() {
+        var builder = new Dictionary.Builder();
+        builder.put("saddleNodes", curvesToLwon(renderedSaddleNode));
+        builder.put("hopf", curvesToLwon(renderedHopf));
+        builder.put("saddleCon", curvesToLwon(renderedSaddle));
+        builder.put("semistable", curvesToLwon(renderedSemiStable));
+        builder.put("degenHopf", RenderedCurve.arrayOfPoints(degenHopf));
+        builder.put("degenSaddle", RenderedCurve.arrayOfPoints(degenSaddleCons));
+        return builder.build(null);
+    }
+
+    public void fromLwon(Dictionary obj) {
+        renderedSaddleNode = curvesFromLwon((Array) obj.get("saddleNodes").get(0));
+        renderedHopf = curvesFromLwon((Array) obj.get("hopf").get(0));
+        renderedSaddle = curvesFromLwon((Array) obj.get("saddleCon").get(0));
+        renderedSemiStable = curvesFromLwon((Array) obj.get("semistable").get(0));
+        degenHopf = RenderedCurve.pointsOfArray((Array) obj.get("degenHopf").get(0));
+        degenSaddleCons = RenderedCurve.pointsOfArray((Array) obj.get("degenSaddle").get(0));
+        draw();
+    }
 }

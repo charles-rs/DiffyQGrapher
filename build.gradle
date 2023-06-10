@@ -40,8 +40,8 @@ configurations.all {
 dependencies {
     implementation group: 'org.ejml', name: 'ejml-simple', version: '0.38'
     implementation 'org.jetbrains:annotations:23.0.0'
+    implementation files('lib/lwon.jar')
 }
-
 
 version = '1.0.0'
 

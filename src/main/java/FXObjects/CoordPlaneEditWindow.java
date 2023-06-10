@@ -46,7 +46,7 @@ public class CoordPlaneEditWindow extends Stage {
             plane.yMax.set(Double.parseDouble(yMax.getText()));
             plane.xMax.set(Double.parseDouble(xMax.getText()));
             plane.updateForZoom();
-            plane.drawAxes(false);
+            plane.draw();
             this.close();
         });
 
@@ -56,7 +56,7 @@ public class CoordPlaneEditWindow extends Stage {
 //        AnchorPane.setBottomAnchor(yMin, 1.0);
 //        AnchorPane.setTopAnchor(yMax, 1.0);
 
-        pane.getChildren().addAll(xMin, xMax, yMin, yMax);
+        pane.getChildren().addAll(yMax, xMin, xMax, yMin);
         pane.setMinSize(300, 200);
         pane.setPadding(new Insets(5));
 

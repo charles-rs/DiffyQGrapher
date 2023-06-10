@@ -21,6 +21,8 @@ import javafx.scene.layout.VBox;
 import javafx.scene.paint.Color;
 import javafx.scene.shape.Line;
 import javafx.scene.text.Text;
+import lwon.data.Array;
+import lwon.data.Dictionary;
 
 import javax.imageio.ImageIO;
 import java.awt.*;
@@ -40,7 +42,7 @@ public class OutputPlane extends CoordPlane {
     public double dSaddleXMin, dSaddleXMax, dSaddleYMin, dSaddleYMax;
 
 
-    private Line cycleLine;
+    private final Line cycleLine;
     private CriticalPoint semiStableInner;
     private Point2D semiStableOuter;
 
@@ -50,19 +52,19 @@ public class OutputPlane extends CoordPlane {
     public VBox progressBarBox;
 
     private double t = 0;
-    private final List<InitCond> initials;
-    private final List<InitCond> isoclines;
+    private List<InitCond> initials;
+    private List<InitCond> isoclines;
     private List<CriticalPoint> criticalPoints;
     private List<Point2D> selectedCritPoints;
-    private final List<Point2D> horizIsos;
-    private final List<Point2D> vertIsos;
+    private List<Point2D> horizIsos;
+    private List<Point2D> vertIsos;
     private final List<SepStart> selectedSeps;
     private List<LimCycleStart> limCycles;
     double inc;
     volatile double a, b;
     private Derivative dx, dy;
     public EvalType evalType;
-    private ClickModeType clickMode = ClickModeType.DRAWPATH;
+    private ClickModeType clickMode;
     private boolean drawSep = true;
     private CriticalPoint currentPoint = null;
 
@@ -104,6 +106,7 @@ public class OutputPlane extends CoordPlane {
 
     public OutputPlane(double side, TextField tField, OutPlaneSettings settings) {
         super(side);
+        setClickMode(ClickModeType.DRAWPATH);
         limCycleArtist.setDaemon(true);
         limCycleUpdater.setDaemon(true);
         solutionArtist.setDaemon(true);
@@ -229,6 +232,7 @@ public class OutputPlane extends CoordPlane {
 
     public void setClickMode(ClickModeType cl) {
         this.clickMode = cl;
+        clickModeTxt.set(cl.toString());
         switch (cl) {
             case DRAWPATH -> fireUpdate(0);
             case DRAWISO -> fireUpdate(1);
@@ -324,6 +328,28 @@ public class OutputPlane extends CoordPlane {
         dy = temp;
     }
 
+    void addCritical(Point2D pt) {
+        try {
+            CriticalPoint root =
+                    EvaluatorFactory.getBestEvaluator(dx, dy).findCritical(pt, a, b, t);
+            boolean add = true;
+            for (var existing : criticalPoints)
+                if (existing.point.distance(root.point) < Math.ulp(20.0))
+                    add = false;
+            if (add) {
+                criticalPoints.add(root);
+                labelCritical(root);
+                if (drawSep && root.type == CritPointTypes.SADDLE)
+                    drawSep(root);
+                render();
+            }
+        } catch (RootNotFound r) {
+            // TODO better output system
+            System.out.println("Root not found");
+        }
+    }
+
+
     @Override
     public void handleMouseClick(MouseEvent e) {
         double x = scrToNormX(e.getX());
@@ -332,34 +358,15 @@ public class OutputPlane extends CoordPlane {
         InitCond temp = new InitCond(x / r2, y / r2, t);
         Point2D pt = new Point2D(x / r2, y / r2);
         switch (clickMode) {
-
-            case DRAWPATH:
+            case DRAWPATH -> {
                 initials.add(temp);
                 drawGraph(temp, true, awtSolutionColor);
                 render();
-                break;
-            case FINDCRITICAL:
-                try {
-                    CriticalPoint root =
-                            EvaluatorFactory.getBestEvaluator(dx, dy).findCritical(pt, a, b, t);
-                    boolean add = true;
-                    for (var existing : criticalPoints)
-                        if (existing.point.distance(root.point) < Math.ulp(10.0))
-                            add = false;
-                    if (add) {
-                        criticalPoints.add(root);
-                        labelCritical(root);
-                        if (drawSep && root.type == CritPointTypes.SADDLE)
-                            drawSep(root);
-                        // drawGraphs();
-                        render();
-                    }
-                } catch (RootNotFound r) {
-                    // TODO better output system
-                    System.out.println("Root not found");
-                }
-                break;
-            case LINEARISATION:
+            }
+            case FINDCRITICAL -> {
+                addCritical(pt);
+            }
+            case LINEARISATION -> {
                 try {
                     CriticalPoint root = critical(pt);
                     new LinearisationWindow(root);
@@ -367,32 +374,33 @@ public class OutputPlane extends CoordPlane {
                     System.out.println("Root not found");
                 }
                 setClickMode(ClickModeType.DRAWPATH);
-                break;
-            case DRAWHORIZISO:
+            }
+            case DRAWHORIZISO -> {
                 drawHorizIso(pt);
                 horizIsos.add(pt);
                 setClickMode(ClickModeType.DRAWPATH);
                 render();
-                break;
-            case DRAWVERTISO:
+            }
+            case DRAWVERTISO -> {
                 drawVertIso(new Point2D(x, y));
                 vertIsos.add(pt);
                 setClickMode(ClickModeType.DRAWPATH);
                 render();
-                break;
-            case DRAWISO:
+            }
+            case DRAWISO -> {
                 isoclines.add(temp);
                 drawIso(temp);
                 render();
-                break;
-            case DRAWBASIN:
+            }
+            case DRAWBASIN -> {
                 drawBasin(pt);
                 setClickMode(ClickModeType.DRAWPATH);
-                break;
-            case DRAWCOBASIN:
+            }
+            case DRAWCOBASIN -> {
                 drawCoBasin(pt);
                 setClickMode(ClickModeType.DRAWPATH);
-            case SELECTSADDLE:
+            }
+            case SELECTSADDLE -> {
                 try {
                     Point2D p = getSaddle(pt);
                     fireEvent(new SaddleSelected(p));
@@ -401,8 +409,8 @@ public class OutputPlane extends CoordPlane {
                     render();
                 } catch (RootNotFound ignored) {
                 }
-                break;
-            case SELECTHOPFPOINT:
+            }
+            case SELECTHOPFPOINT -> {
                 try {
                     Point2D p = getPointForHopf(pt);
                     fireEvent(new HopfPointSelected(p));
@@ -411,8 +419,8 @@ public class OutputPlane extends CoordPlane {
                     render();
                 } catch (RootNotFound ignored) {
                 }
-                break;
-            case SELECTSEP:
+            }
+            case SELECTSEP -> {
                 try {
                     CriticalPoint p = critical(pt);
                     if (selectedSeps.size() < 2) {
@@ -491,8 +499,8 @@ public class OutputPlane extends CoordPlane {
                     }
                 } catch (RootNotFound ignored) {
                 }
-                break;
-            case SETDIRECTION:
+            }
+            case SETDIRECTION -> {
                 try {
                     SaddleConTransversal transversal =
                             new SaddleConTransversal(pt, selectedSeps.get(0).saddle);
@@ -512,8 +520,8 @@ public class OutputPlane extends CoordPlane {
                     setClickMode(ClickModeType.DRAWPATH);
                 } catch (BadSaddleTransversalException ignored) {
                 }
-                break;
-            case SETTRAVERSAL:
+            }
+            case SETTRAVERSAL -> {
                 if (!saddleTravStarted) {
                     saddleTravStart = pt;
                     saddleTravStarted = true;
@@ -538,8 +546,8 @@ public class OutputPlane extends CoordPlane {
                     saddleTravStarted = false;
                     setClickMode(ClickModeType.DRAWPATH);
                 }
-                break;
-            case SELECTHOMOCENTER:
+            }
+            case SELECTHOMOCENTER -> {
                 try {
                     CriticalPoint center = critical(pt);
                     try {
@@ -566,8 +574,8 @@ public class OutputPlane extends CoordPlane {
                     setClickMode(ClickModeType.DRAWPATH);
                 } catch (RootNotFound ignored) {
                 }
-                break;
-            case FINDLIMCYCLE:
+            }
+            case FINDLIMCYCLE -> {
                 switch (limCycStep) {
                     case 0:
                         cycleLine.setStartX(e.getX());
@@ -600,8 +608,8 @@ public class OutputPlane extends CoordPlane {
                         setClickMode(ClickModeType.DRAWPATH);
                         break;
                 }
-                break;
-            case SEMISTABLE:
+            }
+            case SEMISTABLE -> {
                 switch (limCycStep) {
                     case 0:
                         try {
@@ -637,6 +645,7 @@ public class OutputPlane extends CoordPlane {
                         limCycStep = 0;
                         setClickMode(ClickModeType.DRAWPATH);
                 }
+            }
         }
 
     }
@@ -1404,5 +1413,46 @@ public class OutputPlane extends CoordPlane {
         }
     }
 
+    private static Array initCondToLwon(List<InitCond> conds) {
+        var builder = new Array.Builder();
+        for (int i = 0; i < conds.size(); ++i) {
+            builder.set(new int[]{i}, conds.get(i).toLwon());
+        }
+        return builder.build(null);
+    }
+
+    private static List<InitCond> initCondFromLwon(Array arr) {
+        var lst = new ArrayList<InitCond>();
+        for (var elem : arr) {
+            if (elem instanceof Dictionary d)
+                lst.add(new InitCond(d));
+            else break;
+        }
+        return lst;
+    }
+
+    public Dictionary toLwon() {
+        var builder = new Dictionary.Builder();
+        builder.put("initials", initCondToLwon(initials));
+        builder.put("isoclines", initCondToLwon(isoclines));
+        builder.put("horizIsos", RenderedCurve.arrayOfPoints(horizIsos));
+        builder.put("vertIsos", RenderedCurve.arrayOfPoints(vertIsos));
+        var critPoints = criticalPoints.stream().map(pt -> pt.point).toList();
+        builder.put("critPoints", RenderedCurve.arrayOfPoints(critPoints));
+        return builder.build(null);
+    }
+
+    public void fromLwon(Dictionary lwon) {
+        clear();
+        initials = initCondFromLwon((Array) lwon.get("initials").get(0));
+        isoclines = initCondFromLwon((Array) lwon.get("isoclines").get(0));
+        horizIsos = RenderedCurve.pointsOfArray((Array) lwon.get("horizIsos").get(0));
+        vertIsos = RenderedCurve.pointsOfArray((Array) lwon.get("vertIsos").get(0));
+        var critPoints = RenderedCurve.pointsOfArray((Array) lwon.get("critPoints").get(0));
+        for (Point2D pt : critPoints) {
+            addCritical(pt);
+        }
+        draw();
+    }
 
 }

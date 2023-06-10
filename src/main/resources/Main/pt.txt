@@ -8,6 +8,8 @@ help~Ajuda
 language~Língua
 save in~Salvar espaço de parâmetros
 save out~Salvar espaço de solucões
+save state~Salvar
+load state~Carregar
 quit~Sair
 euler~Método de Euler
 mideuler~Método de Euler central
