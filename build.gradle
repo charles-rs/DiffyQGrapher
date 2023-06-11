@@ -44,7 +44,7 @@ dependencies {
 }
 
 
-version = '1.0.2'
+version = '1.0.3'
 
 jlink {
     options = ['--strip-debug', '--compress', '2', '--no-header-files', '--no-man-pages']
